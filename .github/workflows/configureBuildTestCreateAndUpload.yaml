@@ -2,9 +2,11 @@ on:
   push:
     branches:
       - '**'
+    tags-ignore:
+      - '**'
   pull_request:
   release:
-    types: [released, prereleased]
+    types: [released]
 
 name: Configure, Build, Test, Create and Upload library
 
@@ -23,21 +25,14 @@ jobs:
     - name: Install Conan
       uses: turtlebrowser/get-conan@main
     - name: Add artifactory remote
-      run: conan remote add jothepro-conan-public https://jothepro.jfrog.io/artifactory/api/conan/conan-public
+      run: conan remote add gitlab https://gitlab.com/api/v4/projects/15425736/packages/conan
     - name: Install dependencies
-      run: conan install .
-    - name: configure, build and test project
-      if: github.event_name != 'release'
-      run: conan build .
-    - name: configure, build, test and create project for beta channel
-      if: github.event.release.prerelease
-      run: conan create . jothepro/beta
-    - name: configure, build, test and create project for stable channel
-      if: ${{ !github.event.release.prerelease }}
-      run: conan create . jothepro/stable
+      run: conan install -if build --build missing .
+    - name: configure, build, test and create project
+      run: conan create  -tbf build . jothepro/release
     - name: upload to artifactory
       if: github.event_name == 'release'
-      run: conan upload mylibrary -r=jothepro-conan-public --all --confirm
+      run: conan upload libcloudsync -r=gitlab --all --confirm
       env:
         CONAN_LOGIN_USERNAME: ${{ secrets.CONAN_LOGIN_USERNAME }}
         CONAN_PASSWORD: ${{ secrets.CONAN_PASSWORD }}

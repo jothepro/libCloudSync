@@ -10,15 +10,15 @@ def get_version():
     return version[1:]
 
 
-class MyLibraryConan(ConanFile):
-    name = "mylibrary"
+class LibCloudSyncConan(ConanFile):
+    name = "libcloudsync"
     version = get_version()
-    description = """A basic C++ library project template using cmake and conan."""
+    description = """A simple to use C++ interface to interact with cloud storage providers."""
     settings = "os", "compiler", "build_type", "arch"
     license = "AGPL-3.0-or-later"
     generators = "cmake_find_package", "cmake_paths"
     exports = "VERSION"
-    exports_sources = "src/*", "test/*", "cmake/*", "VERSION", "LICENSE", "CMakeLists.txt"
+    exports_sources = "lib/*", "test/*", "cmake/*", "VERSION", "LICENSE", "CMakeLists.txt"
     author = "jothepro"
     options = {
         "shared": [True, False],
@@ -26,13 +26,26 @@ class MyLibraryConan(ConanFile):
     }
     default_options = {
         "shared": False,
-        "fPIC": True
+        "fPIC": True,
+        "fakeit:integration": "catch",
+        "libcurl:with_ftp": False,
+        "libcurl:with_imap": False,
+        "libcurl:with_mqtt": False,
+        "libcurl:with_pop3": False,
+        "libcurl:with_rtsp": False,
+        "libcurl:with_smb": False,
+        "libcurl:with_smtp": False,
+        "libcurl:with_tftp": False,
     }
     requires = (
-        "nlohmann_json/3.9.1"
+        "nlohmann_json/3.9.1",
+        "pugixml/1.11",
+        "libcurl/7.79.1",
+        "cxxopts/2.2.1"
     )
     build_requires = (
-        "catch2/2.13.4"
+        "catch2/2.13.4",
+        "fakeit/2.0.7"
     )
 
     def build(self):
@@ -46,6 +59,6 @@ class MyLibraryConan(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.names["cmake_find_package"] = "MyLibrary"
-        self.cpp_info.names["cmake_find_package_multi"] = "MyLibrary"
-        self.cpp_info.libs = ["MyLibrary"]
+        self.cpp_info.names["cmake_find_package"] = "CloudSync"
+        self.cpp_info.names["cmake_find_package_multi"] = "CloudSync"
+        self.cpp_info.libs = ["CloudSync"]

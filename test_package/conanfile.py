@@ -1,7 +1,7 @@
 from conans import ConanFile, CMake, tools
 import os
 
-class MyLibraryTestConan(ConanFile):
+class CloudSyncTestConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake_find_package", "cmake_paths"
 
@@ -17,4 +17,4 @@ class MyLibraryTestConan(ConanFile):
     def test(self):
         if not tools.cross_building(self):
             os.chdir("bin")
-            self.run(".%sexample" % os.sep)
+            self.run(".%sPackageTest" % os.sep)

@@ -1,9 +1,9 @@
-#include "MyLibrary/example.hpp"
+#include "CloudSync/CloudFactory.hpp"
 #include <memory>
 
-using namespace MyLibrary;
+using namespace CloudSync;
 
 int main() {
-    auto example = std::make_shared<Example>();
-    example->test("test");
+    auto factory = std::make_shared<CloudFactory>();
+    factory->dropbox();
 }

@@ -1,18 +1,45 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(MyLibraryTest)
+project(CloudSyncTest)
 
 find_package(Catch2 MODULE REQUIRED)
+find_package(fakeit MODULE REQUIRED)
 
-add_executable(MyLibraryTest
-    mylibrarytest.cpp
+include(Catch)
+
+add_executable(CloudSyncTest
+    main.cpp
+    OAuth2CredentialsTest.cpp
+    UsernamePasswordCredentialsTest.cpp
+    WebdavCloudTest.cpp
+    NextcloudCloudTest.cpp
+    WebdavDirectoryTest.cpp
+    WebdavFileTest.cpp
+    DropboxCloudTest.cpp
+    DropboxDirectoryTest.cpp
+    DropboxFileTest.cpp
+    BoxCloudTest.cpp
+    BoxDirectoryTest.cpp
+    BoxFileTest.cpp
+    OneDriveCloudTest.cpp
+    OneDriveDirectoryTest.cpp
+    OneDriveFileTest.cpp
+    GDriveCloudTest.cpp
+    GDriveDirectoryTest.cpp
+    GDriveFileTest.cpp
+    CloudFactoryTest.cpp
 )
 
-target_link_libraries(MyLibraryTest
+target_link_libraries(CloudSyncTest
     Catch2::Catch2
-    MyLibrary::MyLibrary
+    fakeit::fakeit
+    CloudSync::CloudSync
 )
 
-add_test(MyLibraryTest MyLibraryTest)
+set_target_properties (CloudSyncTest PROPERTIES
+    FOLDER CloudSync
+)
 
-target_compile_features(MyLibraryTest PRIVATE cxx_std_17)
+catch_discover_tests(CloudSyncTest)
+
+target_compile_features(CloudSyncTest PRIVATE cxx_std_17)

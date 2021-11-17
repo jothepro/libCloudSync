@@ -7,7 +7,7 @@ include(${CMAKE_BINARY_DIR}/conan_paths.cmake OPTIONAL)
 
 get_version(PROJECT_VERSION)
 
-project(MyLibrary 
+project(CloudSync
     LANGUAGES CXX
     VERSION ${PROJECT_VERSION})
 
@@ -22,7 +22,11 @@ if(DOXYGEN_FOUND)
     )
 endif(DOXYGEN_FOUND)
 
-add_subdirectory(src)
+add_subdirectory(lib)
+
+if(EXISTS example)
+    add_subdirectory(example)
+endif()
 
 include(CTest)
 if(BUILD_TESTING)
