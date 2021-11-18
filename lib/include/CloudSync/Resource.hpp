@@ -45,11 +45,6 @@ class Resource {
      */
     virtual bool isFile() = 0;
 
-    friend std::ostream &operator<<(std::ostream &output, const Resource *resource) {
-        output << resource->describe();
-        return output;
-    }
-
   protected:
     Resource(
         std::string baseUrl,
@@ -60,8 +55,6 @@ class Resource {
         , path(std::move(workingDir))
         , _baseUrl(std::move(baseUrl))
         , request(std::move(request)){};
-
-    virtual std::string describe() const = 0;
 
     // MARK: - properties
     const std::string _baseUrl;

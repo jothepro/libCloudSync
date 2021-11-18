@@ -8,6 +8,21 @@
 #include <iostream>
 #include <vector>
 
+std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::Cloud>& cloud) {
+    output << "[Cloud url: " << cloud->getBaseUrl() << "]" << std::endl;
+    return output;
+}
+
+std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::Resource>& resource) {
+    if(resource->isFile()) {
+        std::string revision = std::dynamic_pointer_cast<CloudSync::File>(resource)->revision();
+        output << std::setw(10) << std::left << (revision.size() > 10 ? revision.substr(0, 10) : revision) << " " << resource->name;
+    } else {
+        output << std::setw(10) << std::left << "d" << " " << resource->name;
+    }
+    return output;
+}
+
 int main(int argc, char *argv[]) {
     std::string providerUrl;
     std::shared_ptr<CloudSync::Cloud> cloud;
@@ -115,7 +130,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Logged in as: " << cloud->getUserDisplayName() << std::endl;
     dir = cloud->root();
 
-    std::cout << dir << std::endl;
+    std::cout << dir->pwd() << std::endl;
 
     // cli loop waiting for commands
     while (true) {
@@ -134,7 +149,6 @@ int main(int argc, char *argv[]) {
                 std::string path;
                 std::cin >> path;
                 dir = dir->cd(path);
-                std::cout << dir << std::endl;
             } else if (action == "pwd") {
                 std::cout << dir->pwd() << std::endl;
             } else if (action == "file") {

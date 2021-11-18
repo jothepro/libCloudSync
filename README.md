@@ -21,7 +21,7 @@ To use this library in you project, you can install it in the following ways:
 
 ### Conan
 ```sh
-# Add artifactory repository as remote:
+# Add conan remote:
 conan remote add gitlab-cloudsync https://gitlab.com/api/v4/projects/15425736/packages/conan
 ```
 

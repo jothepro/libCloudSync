@@ -22,7 +22,6 @@ set(INCLUDE
 
 set(SRC
     src/CloudFactory.cpp
-    src/Cloud.cpp
     src/CloudImpl.hpp
     src/CloudImpl.cpp
     src/OAuth2Credentials.cpp

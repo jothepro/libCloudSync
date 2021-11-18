@@ -72,12 +72,7 @@ class File : public Resource {
         const std::string &name, std::string revision)
         : Resource(baseUrl, dir, request, name)
         , _revision(std::move(revision)){};
-    virtual std::string describe() const override {
-        std::ostringstream output;
-        std::string str = this->revision();
-        output << std::setw(10) << std::left << (str.size() > 10 ? str.substr(0, 10) : str) << " " << this->name;
-        return output.str();
-    }
+
     std::string _revision;
 };
 } // namespace CloudSync

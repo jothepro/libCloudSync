@@ -75,12 +75,6 @@ class Directory : public Resource {
     };
 
   protected:
-    virtual std::string describe() const override {
-        std::ostringstream output;
-        output << std::setw(10) << std::left << "d"
-               << " " << this->name;
-        return output.str();
-    }
     Directory(
         const std::string &baseUrl, const std::string &dir, const std::shared_ptr<request::Request> &request,
         const std::string &name);
