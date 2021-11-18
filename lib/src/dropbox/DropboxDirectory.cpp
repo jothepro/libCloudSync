@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
 namespace CloudSync::dropbox {
 std::vector<std::shared_ptr<Resource>> DropboxDirectory::ls() const {
     // TODO implement paging logic when list is split in multiple responses
-    const auto resourcePath = DropboxDirectory::parsePath(this->path);
+    const auto resourcePath = DropboxDirectory::parsePath(this->path());
     std::vector<std::shared_ptr<Resource>> resources;
     try {
         json responseJson = this->request
@@ -32,7 +32,7 @@ std::vector<std::shared_ptr<Resource>> DropboxDirectory::ls() const {
     return resources;
 }
 std::shared_ptr<Directory> DropboxDirectory::cd(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path, path);
+    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
     std::shared_ptr<DropboxDirectory> directory;
     // get_metadata is not supported for the root folder
     if (!resourcePath.empty()) {
@@ -55,7 +55,7 @@ std::shared_ptr<Directory> DropboxDirectory::cd(const std::string &path) const {
 }
 
 void DropboxDirectory::rmdir() const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path);
+    const auto resourcePath = DropboxDirectory::parsePath(this->path());
     if (resourcePath.empty()) {
         throw PermissionDenied("deleting the root folder is not allowed");
     }
@@ -70,7 +70,7 @@ void DropboxDirectory::rmdir() const {
 }
 
 std::shared_ptr<Directory> DropboxDirectory::mkdir(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path, path);
+    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
     std::shared_ptr<DropboxDirectory> directory;
     try {
         json responseJson = this->request
@@ -87,7 +87,7 @@ std::shared_ptr<Directory> DropboxDirectory::mkdir(const std::string &path) cons
     return directory;
 }
 std::shared_ptr<File> DropboxDirectory::touch(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path, path);
+    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
     std::shared_ptr<DropboxFile> file;
     try {
         const auto responseJson = this->request
@@ -104,7 +104,7 @@ std::shared_ptr<File> DropboxDirectory::touch(const std::string &path) const {
     return file;
 }
 std::shared_ptr<File> DropboxDirectory::file(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path, path);
+    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
     std::shared_ptr<DropboxFile> file;
     try {
         json responseJson = this->request

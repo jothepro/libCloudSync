@@ -24,7 +24,7 @@ std::vector<std::shared_ptr<Resource>> GDriveDirectory::ls() const {
             resourceList.push_back(this->parseFile(file));
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
     return resourceList;
 }
@@ -33,7 +33,7 @@ std::shared_ptr<Directory> GDriveDirectory::cd(const std::string &path) const {
     // calculate "diff" between current position & wanted path. What do we need
     // to do to get there?
     const auto relativePath =
-        (fs::path(this->path) / path).lexically_normal().lexically_relative(this->path);
+        (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
     try {
         if (relativePath == ".") {
             // no path change required, return current dir
@@ -42,9 +42,9 @@ std::shared_ptr<Directory> GDriveDirectory::cd(const std::string &path) const {
                 this->rootName,
                 this->resourceId,
                 this->parentResourceId,
-                this->path,
+                this->path(),
                 this->request,
-                this->name);
+                this->name());
         } else if (relativePath.begin() == --relativePath.end() && *relativePath.begin() != "..") {
             // depth of navigation = 1, get a list of all folders in folder and
             // pick the desired one.
@@ -57,9 +57,9 @@ std::shared_ptr<Directory> GDriveDirectory::cd(const std::string &path) const {
                 this->rootName,
                 this->resourceId,
                 this->parentResourceId,
-                this->path,
+                this->path(),
                 this->request,
-                this->name);
+                this->name());
             for (const auto &pathComponent : relativePath) {
                 if (pathComponent == "..") {
                     currentDir = currentDir->parent();
@@ -70,20 +70,20 @@ std::shared_ptr<Directory> GDriveDirectory::cd(const std::string &path) const {
             newDir = currentDir;
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
 
     return newDir;
 }
 void GDriveDirectory::rmdir() const {
     try {
-        if (this->path != "/") {
+        if (this->path() != "/") {
             this->request->DELETE(this->_baseUrl + "/files/" + this->resourceId);
         } else {
             throw PermissionDenied("deleting the root folder is not allowed");
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 std::shared_ptr<Directory> GDriveDirectory::mkdir(const std::string &path) const {
@@ -161,7 +161,7 @@ GDriveDirectory::parseFile(const json &file, ResourceType expectedType, const st
     const std::string name = file.at("title");
     const std::string id = file.at("id");
     const std::string mimeType = file.at("mimeType");
-    const std::string resourcePath = (fs::path(this->path) / name).lexically_normal().generic_string();
+    const std::string resourcePath = (fs::path(this->path()) / name).lexically_normal().generic_string();
     std::string parentId;
     if (file.at("parents").at(0).at("isRoot") == true) {
         parentId = "root";
@@ -202,7 +202,7 @@ GDriveDirectory::parseFile(const json &file, ResourceType expectedType, const st
 
 /// @return parent of the current directory
 std::shared_ptr<GDriveDirectory> GDriveDirectory::parent() const {
-    const auto parentPath = fs::path(this->path).parent_path();
+    const auto parentPath = fs::path(this->path()).parent_path();
     std::shared_ptr<GDriveDirectory> parentDirectory;
     if (parentPath == "/") {
         // query for root is not possible.
@@ -229,7 +229,7 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent() const {
 /// @return parent of the given path
 std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path, std::string &folderName) const {
     const auto relativePath =
-        (fs::path(this->path) / path).lexically_normal().lexically_relative(this->path);
+        (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
     const auto relativeParentPath = relativePath.parent_path();
     folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
     return std::static_pointer_cast<GDriveDirectory>(this->cd(relativeParentPath.generic_string()));
@@ -248,7 +248,7 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name)
         childDir = std::dynamic_pointer_cast<GDriveDirectory>(
             this->parseFile(responseJson.at("items").at(0), ResourceType::FOLDER));
     } else {
-        throw NoSuchFileOrDirectory(fs::path(this->path + "/" + name).lexically_normal().generic_string());
+        throw NoSuchFileOrDirectory(fs::path(this->path() + "/" + name).lexically_normal().generic_string());
     }
     return childDir;
 }

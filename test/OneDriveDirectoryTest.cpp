@@ -51,10 +51,10 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
 
                 THEN("a list with one file & one directory should be returned") {
                     REQUIRE(dirList.size() == 2);
-                    REQUIRE(dirList[0]->name == "somefile.txt");
-                    REQUIRE(dirList[0]->path == "/somefile.txt");
-                    REQUIRE(dirList[1]->name == "somefolder");
-                    REQUIRE(dirList[1]->path == "/somefolder");
+                    REQUIRE(dirList[0]->name() == "somefile.txt");
+                    REQUIRE(dirList[0]->path() == "/somefile.txt");
+                    REQUIRE(dirList[1]->name() == "somefolder");
+                    REQUIRE(dirList[1]->path() == "/somefolder");
                 }
             }
         }
@@ -78,8 +78,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/somefolder");
                 }
                 THEN("the folder 'somefolder' should be returned") {
-                    REQUIRE(newDirectory->name == "somefolder");
-                    REQUIRE(newDirectory->path == "/somefolder");
+                    REQUIRE(newDirectory->name() == "somefolder");
+                    REQUIRE(newDirectory->path() == "/somefolder");
                 }
             }
         }
@@ -119,10 +119,10 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
 
                 THEN("a list with one file & one directory should be returned") {
                     REQUIRE(dirList.size() == 2);
-                    REQUIRE(dirList[0]->name == "somefile.txt");
-                    REQUIRE(dirList[0]->path == "/some/folder/somefile.txt");
-                    REQUIRE(dirList[1]->name == "somefolder");
-                    REQUIRE(dirList[1]->path == "/some/folder/somefolder");
+                    REQUIRE(dirList[0]->name() == "somefile.txt");
+                    REQUIRE(dirList[0]->path() == "/some/folder/somefile.txt");
+                    REQUIRE(dirList[1]->name() == "somefolder");
+                    REQUIRE(dirList[1]->path() == "/some/folder/somefolder");
                 }
             }
         }
@@ -156,8 +156,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/some/folder/somefolder");
                 }
                 THEN("the folder 'somefolder' should be returned") {
-                    REQUIRE(newDirectory->name == "somefolder");
-                    REQUIRE(newDirectory->path == "/some/folder/somefolder");
+                    REQUIRE(newDirectory->name() == "somefolder");
+                    REQUIRE(newDirectory->path() == "/some/folder/somefolder");
                 }
             }
         }
@@ -186,8 +186,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                 }
 
                 THEN("the requested file would be returned") {
-                    REQUIRE(file->name == "somefile.txt");
-                    REQUIRE(file->path == "/some/folder/somefile.txt");
+                    REQUIRE(file->name() == "somefile.txt");
+                    REQUIRE(file->path() == "/some/folder/somefile.txt");
                     REQUIRE(file->revision() == "somerevision");
                 }
             }
@@ -227,8 +227,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     REQUIRE_REQUEST(0, body == "");
                 }
                 THEN("the new file should be returned") {
-                    REQUIRE(newFile->name == "somefile.txt");
-                    REQUIRE(newFile->path == "/some/folder/somefile.txt");
+                    REQUIRE(newFile->name() == "somefile.txt");
+                    REQUIRE(newFile->path() == "/some/folder/somefile.txt");
                     REQUIRE(newFile->revision() == "somerevision");
                 }
             }
@@ -258,8 +258,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                 }
 
                 THEN("the new folder should be returned") {
-                    REQUIRE(newFolder->name == "somefolder");
-                    REQUIRE(newFolder->path == "/some/folder/somefolder");
+                    REQUIRE(newFolder->name() == "somefolder");
+                    REQUIRE(newFolder->path() == "/some/folder/somefolder");
                 }
             }
         }

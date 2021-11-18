@@ -1,16 +1,16 @@
 #pragma once
 
-#include "CloudSync/Directory.hpp"
+#include "DirectoryImpl.hpp"
 #include "request/Response.hpp"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 namespace CloudSync::dropbox {
-class DropboxDirectory : public Directory {
+class DropboxDirectory : public DirectoryImpl {
   public:
     DropboxDirectory(const std::string &dir, const std::shared_ptr<request::Request> &request, const std::string &name)
-        : Directory("", dir, request, name){};
+        : DirectoryImpl("", dir, request, name){};
     std::vector<std::shared_ptr<Resource>> ls() const override;
     std::shared_ptr<Directory> cd(const std::string &path) const override;
     void rmdir() const override;

@@ -27,7 +27,10 @@ set(SRC
     src/OAuth2Credentials.cpp
     src/UsernamePasswordCredentials.cpp
     src/Proxy.cpp
-    src/Directory.cpp
+    src/DirectoryImpl.hpp
+    src/DirectoryImpl.cpp
+    src/FileImpl.cpp
+    src/FileImpl.hpp
 )
 
 set(SRC_WEBDAV

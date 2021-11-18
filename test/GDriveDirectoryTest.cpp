@@ -63,11 +63,11 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 }
                 THEN("a list of 2 resources should be returned") {
                     REQUIRE(resourceList.size() == 2);
-                    REQUIRE(resourceList[0]->name == "testfolder");
-                    REQUIRE(resourceList[0]->path == "/testfolder");
+                    REQUIRE(resourceList[0]->name() == "testfolder");
+                    REQUIRE(resourceList[0]->path() == "/testfolder");
                     const auto file = std::dynamic_pointer_cast<File>(resourceList[1]);
-                    REQUIRE(file->name == "test.txt");
-                    REQUIRE(file->path == "/test.txt");
+                    REQUIRE(file->name() == "test.txt");
+                    REQUIRE(file->path() == "/test.txt");
                     REQUIRE(file->revision() == "1");
                 }
             }
@@ -112,8 +112,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                             "items(kind,id,title,mimeType,etag,parents(id,isRoot))");
                 }
                 THEN("the desired folder should be returned") {
-                    REQUIRE(newDir->name == "testfolder");
-                    REQUIRE(newDir->path == "/testfolder");
+                    REQUIRE(newDir->name() == "testfolder");
+                    REQUIRE(newDir->path() == "/testfolder");
                 }
             }
         }
@@ -146,8 +146,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                             "items(kind,id,title,mimeType,etag,parents(id,isRoot))");
                 }
                 THEN("the desired file should be returned") {
-                    REQUIRE(file->name == "test.txt");
-                    REQUIRE(file->path == "/test.txt");
+                    REQUIRE(file->name() == "test.txt");
+                    REQUIRE(file->path() == "/test.txt");
                     REQUIRE(file->revision() == "2");
                 }
             }
@@ -182,8 +182,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the new folder should be returned") {
-                    REQUIRE(newDir->name == "newfolder");
-                    REQUIRE(newDir->path == "/newfolder");
+                    REQUIRE(newDir->name() == "newfolder");
+                    REQUIRE(newDir->path() == "/newfolder");
                 }
             }
         }
@@ -217,8 +217,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                                 "\"parents\":[{\"id\":\"root\"}],\"title\":\"newfile.txt\"}");
                 }
                 THEN("the new file resource should be returned") {
-                    REQUIRE(newFile->name == "newfile.txt");
-                    REQUIRE(newFile->path == "/newfile.txt");
+                    REQUIRE(newFile->name() == "newfile.txt");
+                    REQUIRE(newFile->path() == "/newfile.txt");
                 }
             }
         }
@@ -264,8 +264,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 }
 
                 THEN("the parent directory should be returned") {
-                    REQUIRE(parentDir->name == "test");
-                    REQUIRE(parentDir->path == "/test");
+                    REQUIRE(parentDir->name() == "test");
+                    REQUIRE(parentDir->path() == "/test");
                 }
             }
             WHEN("calling cd(../../") {
@@ -274,8 +274,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST_CALLED().Once();
                 }
                 THEN("the root dir should be returned") {
-                    REQUIRE(rootDir->name == "");
-                    REQUIRE(rootDir->path == "/");
+                    REQUIRE(rootDir->name() == "");
+                    REQUIRE(rootDir->path() == "/");
                 }
             }
         }

@@ -16,9 +16,9 @@ std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::
 std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::Resource>& resource) {
     if(resource->isFile()) {
         std::string revision = std::dynamic_pointer_cast<CloudSync::File>(resource)->revision();
-        output << std::setw(10) << std::left << (revision.size() > 10 ? revision.substr(0, 10) : revision) << " " << resource->name;
+        output << std::setw(10) << std::left << (revision.size() > 10 ? revision.substr(0, 10) : revision) << " " << resource->name();
     } else {
-        output << std::setw(10) << std::left << "d" << " " << resource->name;
+        output << std::setw(10) << std::left << "d" << " " << resource->name();
     }
     return output;
 }
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     // cli loop waiting for commands
     while (true) {
         try {
-            std::cout << dir->path << "> ";
+            std::cout << dir->path() << "> ";
             std::string action;
             std::cin >> action;
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
                 std::string filename;
                 std::cin >> filename;
                 auto file = dir->file(filename);
-                std::cout << "Are you sure you want to delete the file '" << file->path << "'? (y/n) ";
+                std::cout << "Are you sure you want to delete the file '" << file->path() << "'? (y/n) ";
                 std::string confirmation;
                 std::cin >> confirmation;
                 if (confirmation == "y") {

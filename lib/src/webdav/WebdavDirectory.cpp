@@ -152,7 +152,7 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
         // remove any trailing slashes because webdav returns folders with
         // trailing slashes.
         WebdavDirectory::removeTrailingSlashes(resourceHref);
-        if (resourceHref != this->path) {
+        if (resourceHref != this->path()) {
             // parse the href as path so the filename/foldername can be
             // extracted
             const auto resourcePath = fs::path(resourceHref);
@@ -193,7 +193,7 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
 
 std::string WebdavDirectory::requestUrl(const std::string &path) const {
     // normalize path
-    std::string normalizedPath = (fs::path(this->path) / path).lexically_normal().generic_string();
+    std::string normalizedPath = (fs::path(this->path()) / path).lexically_normal().generic_string();
     // remove any trailing slashes, because we cannot be sure if the user adds
     // them or not
     WebdavDirectory::removeTrailingSlashes(normalizedPath);

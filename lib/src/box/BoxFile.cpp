@@ -10,7 +10,7 @@ void BoxFile::rm() {
     try {
         this->request->DELETE("https://api.box.com/2.0/files/" + this->resourceId);
     } catch (...) {
-        BoxCloud::handleExceptions(std::current_exception(), this->path);
+        BoxCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 
@@ -29,7 +29,7 @@ bool BoxFile::pollChange(bool longPoll) {
             }
         }
     } catch (...) {
-        BoxCloud::handleExceptions(std::current_exception(), this->path);
+        BoxCloud::handleExceptions(std::current_exception(), this->path());
     }
     return hasChanged;
 }
@@ -39,7 +39,7 @@ std::string BoxFile::read() const {
     try {
         fileContent = this->request->GET("https://api.box.com/2.0/files/" + this->resourceId + "/content").data;
     } catch (...) {
-        BoxCloud::handleExceptions(std::current_exception(), this->path);
+        BoxCloud::handleExceptions(std::current_exception(), this->path());
     }
     return fileContent;
 }
@@ -56,7 +56,7 @@ void BoxFile::write(const std::string &content) {
                                       .json();
         this->_revision = responseJson.at("entries").at(0).at("etag");
     } catch (...) {
-        BoxCloud::handleExceptions(std::current_exception(), this->path);
+        BoxCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 } // namespace CloudSync::box

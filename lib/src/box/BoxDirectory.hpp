@@ -1,18 +1,18 @@
 #pragma once
 
-#include "CloudSync/Directory.hpp"
+#include "DirectoryImpl.hpp"
 #include "request/Response.hpp"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 namespace CloudSync::box {
-class BoxDirectory : public Directory {
+class BoxDirectory : public DirectoryImpl {
   public:
     BoxDirectory(
         const std::string &resourceId, const std::string &parentResourceId, const std::string &dir,
         const std::shared_ptr<request::Request> &request, const std::string &name)
-        : Directory("", dir, request, name), resourceId(resourceId), parentResourceId(parentResourceId){};
+        : DirectoryImpl("", dir, request, name), resourceId(resourceId), parentResourceId(parentResourceId){};
     std::vector<std::shared_ptr<Resource>> ls() const override;
     std::shared_ptr<Directory> cd(const std::string &path) const override;
     void rmdir() const override;

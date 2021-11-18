@@ -71,10 +71,10 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
                 THEN("a list of all resources contained in the directory should be returned") {
                     REQUIRE(list.size() == 2);
-                    REQUIRE(list[0]->name == "test");
-                    REQUIRE(list[0]->path == "/test");
-                    REQUIRE(list[1]->name == "test.txt");
-                    REQUIRE(list[1]->path == "/test.txt");
+                    REQUIRE(list[0]->name() == "test");
+                    REQUIRE(list[0]->path() == "/test");
+                    REQUIRE(list[1]->name() == "test.txt");
+                    REQUIRE(list[1]->path() == "/test.txt");
                 }
             }
         }
@@ -102,7 +102,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a dir called 'test' should be returned") {
-                    REQUIRE(newDir->name == "test");
+                    REQUIRE(newDir->name() == "test");
                     REQUIRE(newDir->pwd() == "/test");
                 }
             }
@@ -135,7 +135,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a new dir called 'test' should be returned") {
-                    REQUIRE(newDir->name == "test");
+                    REQUIRE(newDir->name() == "test");
                 }
             }
         }
@@ -169,7 +169,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_BINARY);
                 }
                 THEN("a new file called 'test.txt' should be returned") {
-                    REQUIRE(newFile->name == "test.txt");
+                    REQUIRE(newFile->name() == "test.txt");
                 }
             }
         }
@@ -201,7 +201,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a file called 'test.txt' should be returned") {
-                    REQUIRE(file->name == "test.txt");
+                    REQUIRE(file->name() == "test.txt");
                 }
             }
         }

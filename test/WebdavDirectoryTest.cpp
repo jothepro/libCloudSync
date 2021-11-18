@@ -36,8 +36,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
         const auto directory = std::make_shared<WebdavDirectory>(BASE_URL, "", "/", request, "");
 
         THEN("the a directory with path '/' & name '' should be returned") {
-            REQUIRE(directory->path == "/");
-            REQUIRE(directory->name == "");
+            REQUIRE(directory->path() == "/");
+            REQUIRE(directory->name() == "");
         }
 
         AND_GIVEN("a PROPFIND request that returns a valid webdav directory description (Depth:0)") {
@@ -78,8 +78,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("a object representing the new directory should be returned") {
-                    REQUIRE(newDirectory->name == "folder");
-                    REQUIRE(newDirectory->path == "/folder");
+                    REQUIRE(newDirectory->name() == "folder");
+                    REQUIRE(newDirectory->path() == "/folder");
                 }
             }
         }
@@ -127,8 +127,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
                 THEN("a object representing the new directory should be "
                      "returned") {
-                    REQUIRE(newDirectory->name == "newDirectory");
-                    REQUIRE(newDirectory->path == "/newDirectory");
+                    REQUIRE(newDirectory->name() == "newDirectory");
+                    REQUIRE(newDirectory->path() == "/newDirectory");
                 }
             }
         }
@@ -185,8 +185,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST(1, body == xmlQuery);
                 }
                 THEN("an object representing the file should be returned") {
-                    REQUIRE(newFile->name == "newfile.txt");
-                    REQUIRE(newFile->path == "/newfile.txt");
+                    REQUIRE(newFile->name() == "newfile.txt");
+                    REQUIRE(newFile->path() == "/newfile.txt");
                     REQUIRE(newFile->revision() == "\"5e18e1bede073\"");
                 }
             }
@@ -268,13 +268,13 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE(dirlist.size() == 2);
                 }
                 THEN("the first item should be a directory named 'subfolder/'") {
-                    REQUIRE(dirlist[0]->name == "subfolder");
-                    REQUIRE(dirlist[0]->path == "/subfolder");
+                    REQUIRE(dirlist[0]->name() == "subfolder");
+                    REQUIRE(dirlist[0]->path() == "/subfolder");
                 }
                 THEN("the second item should be a textfile named 'somefile.txt'") {
                     const auto file = std::dynamic_pointer_cast<File>(dirlist[1]);
-                    REQUIRE(file->name == "somefile.txt");
-                    REQUIRE(file->path == "/somefile.txt");
+                    REQUIRE(file->name() == "somefile.txt");
+                    REQUIRE(file->path() == "/somefile.txt");
                     REQUIRE(file->revision() == "\"5e18e1bede073\"");
                 }
             }
@@ -310,8 +310,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("the file should be returned") {
-                    REQUIRE(file->name == "somefile.txt");
-                    REQUIRE(file->path == "/some/path/somefile.txt");
+                    REQUIRE(file->name() == "somefile.txt");
+                    REQUIRE(file->path() == "/some/path/somefile.txt");
                     REQUIRE(file->revision() == "\"5e18e1bede073\"");
                 }
             }
@@ -355,8 +355,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
         THEN("the a directory with path '/some/folder' & name 'folder' should "
              "be returned") {
-            REQUIRE(directory->path == "/some/folder");
-            REQUIRE(directory->name == "folder");
+            REQUIRE(directory->path() == "/some/folder");
+            REQUIRE(directory->name() == "folder");
         }
 
         AND_GIVEN("a PROPFIND request that returns a valid webdav directory description (Depth:0)") {
@@ -401,8 +401,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
                 THEN("a object representing the new directory should be "
                      "returned") {
-                    REQUIRE(newDirectory->name == "somefolder");
-                    REQUIRE(newDirectory->path == "/some/folder/somefolder");
+                    REQUIRE(newDirectory->name() == "somefolder");
+                    REQUIRE(newDirectory->path() == "/some/folder/somefolder");
                 }
             }
         }
@@ -450,8 +450,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
 
                 THEN("the folder 'somefolder' should be returned with the path '/some/folder/somefolder'") {
-                    REQUIRE(newNextcloudDir->name == "somefolder");
-                    REQUIRE(newNextcloudDir->path == "/some/folder/somefolder");
+                    REQUIRE(newNextcloudDir->name() == "somefolder");
+                    REQUIRE(newNextcloudDir->path() == "/some/folder/somefolder");
                 }
             }
         }

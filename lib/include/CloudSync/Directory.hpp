@@ -50,7 +50,7 @@ class Directory : public Resource {
      * print working directory. alias for `folder->path`.
      * @return the absolute path of the folder without trailing slash.
      */
-    std::string pwd() const;
+    virtual std::string pwd() const = 0;
     /**
      * create a new directory
      * @param path to the new folder. Does not create intermediate directories.
@@ -69,14 +69,5 @@ class Directory : public Resource {
      * @return the requested file
      */
     virtual std::shared_ptr<File> file(const std::string &path) const = 0;
-
-    bool isFile() override {
-        return false;
-    };
-
-  protected:
-    Directory(
-        const std::string &baseUrl, const std::string &dir, const std::shared_ptr<request::Request> &request,
-        const std::string &name);
 };
 } // namespace CloudSync

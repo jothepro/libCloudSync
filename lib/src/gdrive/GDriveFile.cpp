@@ -10,7 +10,7 @@ void GDriveFile::rm() {
     try {
         this->request->DELETE(this->_baseUrl + "/files/" + this->resourceId);
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 bool GDriveFile::pollChange(bool longPoll) {
@@ -25,7 +25,7 @@ bool GDriveFile::pollChange(bool longPoll) {
             this->_revision = newRevision;
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
     return hasChanged;
 }
@@ -39,7 +39,7 @@ std::string GDriveFile::read() const {
         const std::string webContentLink = responseJson.at("downloadUrl");
         content = this->request->GET(webContentLink).data;
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
     return content;
 }
@@ -55,7 +55,7 @@ void GDriveFile::write(const std::string &content) {
                 .json();
         this->_revision = res.at("etag");
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path);
+        GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 } // namespace CloudSync::gdrive

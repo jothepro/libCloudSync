@@ -56,8 +56,8 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
         WHEN("calling root()") {
             const auto rootDir = cloud->root();
             THEN("a root dir with path '/' & name '' should be returned") {
-                REQUIRE(rootDir->name == "");
-                REQUIRE(rootDir->path == "/");
+                REQUIRE(rootDir->name() == "");
+                REQUIRE(rootDir->path() == "/");
             }
         }
     }

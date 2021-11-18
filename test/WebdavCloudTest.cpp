@@ -56,8 +56,8 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
         WHEN("calling root()") {
             const auto directory = cloud->root();
             THEN("the root directory is returned") {
-                REQUIRE(directory->name.empty());
-                REQUIRE(directory->path == "/");
+                REQUIRE(directory->name().empty());
+                REQUIRE(directory->path() == "/");
             }
         }
     }

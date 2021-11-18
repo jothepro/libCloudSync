@@ -6,9 +6,7 @@
 #include <utility>
 
 namespace CloudSync {
-namespace request {
-class Request;
-}
+
 class Resource {
   public:
     class ResourceException : public BaseException {
@@ -32,9 +30,9 @@ class Resource {
         explicit ResourceHasChanged(const std::string &path) : ResourceException("Resource has changed: " + path){};
     };
 
-    virtual ~Resource() = default;;
-    const std::string name;
-    const std::string path;
+    virtual ~Resource() = default;
+    virtual std::string name() const = 0;
+    virtual std::string path() const = 0;
 
     /**
      * Wether the Resource is a file or a directory.
@@ -43,21 +41,6 @@ class Resource {
      *       A resource can not be of any other type than `File` or `Folder`, so you can safely determine it's type with
      * just this method.
      */
-    virtual bool isFile() = 0;
-
-  protected:
-    Resource(
-        std::string baseUrl,
-        std::string workingDir,
-        std::shared_ptr<request::Request> request,
-        std::string name)
-        : name(std::move(name))
-        , path(std::move(workingDir))
-        , _baseUrl(std::move(baseUrl))
-        , request(std::move(request)){};
-
-    // MARK: - properties
-    const std::string _baseUrl;
-    std::shared_ptr<request::Request> request;
+    virtual bool isFile() const = 0;
 };
 } // namespace CloudSync

@@ -32,8 +32,8 @@ SCENARIO("OneDriveCloud", "[cloud][onedrive]") {
         WHEN("calling root()") {
             const auto directory = cloud->root();
             THEN("the root directory is returned") {
-                REQUIRE(directory->name == "");
-                REQUIRE(directory->path == "/");
+                REQUIRE(directory->name() == "");
+                REQUIRE(directory->path() == "/");
             }
         }
     }

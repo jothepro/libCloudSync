@@ -1,18 +1,18 @@
 #pragma once
 
-#include "CloudSync/Directory.hpp"
+#include "DirectoryImpl.hpp"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 namespace CloudSync::gdrive {
-class GDriveDirectory : public Directory {
+class GDriveDirectory : public DirectoryImpl {
   public:
     GDriveDirectory(
         const std::string &baseUrl, const std::string &rootName, const std::string &resourceId,
         const std::string &parentResourceId, const std::string &dir, const std::shared_ptr<request::Request> &request,
         const std::string &name)
-        : Directory(baseUrl, dir, request, name), resourceId(resourceId), parentResourceId(parentResourceId),
+        : DirectoryImpl(baseUrl, dir, request, name), resourceId(resourceId), parentResourceId(parentResourceId),
           rootName(rootName){};
     std::vector<std::shared_ptr<Resource>> ls() const override;
     std::shared_ptr<Directory> cd(const std::string &path) const override;

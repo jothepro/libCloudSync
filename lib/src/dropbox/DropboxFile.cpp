@@ -14,9 +14,9 @@ void DropboxFile::rm() {
         this->request->POST(
             "https://api.dropboxapi.com/2/files/delete_v2",
             {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-            json{{"path", this->path}}.dump());
+            json{{"path", this->path()}}.dump());
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path);
+        DropboxCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 
@@ -31,7 +31,7 @@ bool DropboxFile::pollChange(bool longPoll) {
                                           ->POST(
                                               "https://api.dropboxapi.com/2/files/get_metadata",
                                               {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                                              json{{"path", this->path}}.dump())
+                                              json{{"path", this->path()}}.dump())
                                           .json();
             const std::string newRevision = responseJson.at("rev");
             if (this->revision() != newRevision) {
@@ -40,7 +40,7 @@ bool DropboxFile::pollChange(bool longPoll) {
             }
         }
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path);
+        DropboxCloud::handleExceptions(std::current_exception(), this->path());
     }
     return hasChanged;
 }
@@ -52,11 +52,11 @@ std::string DropboxFile::read() const {
                    ->POST(
                        "https://content.dropboxapi.com/2/files/download",
                        {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_TEXT}}},
-                        {P::QUERY_PARAMS, {{"arg", json{{"path", this->path}}.dump()}}}},
+                        {P::QUERY_PARAMS, {{"arg", json{{"path", this->path()}}.dump()}}}},
                        "")
                    .data;
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path);
+        DropboxCloud::handleExceptions(std::current_exception(), this->path());
     }
     return data;
 }
@@ -69,13 +69,13 @@ void DropboxFile::write(const std::string &content) {
                     {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_BINARY}}},
                      {P::QUERY_PARAMS,
                       {{"arg",
-                        json{{"path", this->path}, {"mode", {{".tag", "update"}, {"update", this->revision()}}}}
+                        json{{"path", this->path()}, {"mode", {{".tag", "update"}, {"update", this->revision()}}}}
                             .dump()}}}},
                     content)
                 .json();
         this->_revision = responseJson.at("rev");
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path);
+        DropboxCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 } // namespace CloudSync::dropbox

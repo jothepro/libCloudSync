@@ -18,7 +18,7 @@ std::string WebdavFile::xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\
                                    "</d:propfind>";
 
 void WebdavFile::rm() {
-    const std::string resourcePath = this->_baseUrl + this->path;
+    const std::string resourcePath = this->_baseUrl + this->path();
     try {
         this->request->DELETE(resourcePath);
     } catch (...) {
@@ -28,7 +28,7 @@ void WebdavFile::rm() {
 
 bool WebdavFile::pollChange(bool longPoll) {
     bool hasChanged = false;
-    const std::string resourcePath = this->_baseUrl + this->path;
+    const std::string resourcePath = this->_baseUrl + this->path();
     try {
         if (longPoll) {
             throw Cloud::MethodNotSupportedError("Longpoll not supported");
@@ -67,7 +67,7 @@ bool WebdavFile::pollChange(bool longPoll) {
 
 std::string WebdavFile::read() const {
     std::string data;
-    const std::string resourcePath = this->_baseUrl + this->path;
+    const std::string resourcePath = this->_baseUrl + this->path();
     try {
         data = this->request->GET(resourcePath).data;
     } catch (...) {
@@ -76,7 +76,7 @@ std::string WebdavFile::read() const {
     return data;
 }
 void WebdavFile::write(const std::string &input) {
-    const std::string resourcePath = this->_baseUrl + this->path;
+    const std::string resourcePath = this->_baseUrl + this->path();
     try {
         const auto putResult = this->request->PUT(
             resourcePath,

@@ -53,10 +53,10 @@ SCENARIO("BoxDirectory", "[directory][box]") {
 
                 THEN("a list of all resources contained in the directory should be returned") {
                     REQUIRE(list.size() == 2);
-                    REQUIRE(list[0]->name == "test.txt");
-                    REQUIRE(list[0]->path == "/test.txt");
-                    REQUIRE(list[1]->name == "testfolder");
-                    REQUIRE(list[1]->path == "/testfolder");
+                    REQUIRE(list[0]->name() == "test.txt");
+                    REQUIRE(list[0]->path() == "/test.txt");
+                    REQUIRE(list[1]->name() == "testfolder");
+                    REQUIRE(list[1]->path() == "/testfolder");
                 }
             }
 
@@ -76,8 +76,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
 
                 THEN("the sub-folder called 'testfolder' should be returned") {
-                    REQUIRE(newDir->name == "testfolder");
-                    REQUIRE(newDir->path == "/testfolder");
+                    REQUIRE(newDir->name() == "testfolder");
+                    REQUIRE(newDir->path() == "/testfolder");
                 }
             }
 
@@ -90,8 +90,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
 
                 THEN("the file called test.txt should be returned") {
-                    REQUIRE(file->name == "test.txt");
-                    REQUIRE(file->path == "/test.txt");
+                    REQUIRE(file->name() == "test.txt");
+                    REQUIRE(file->path() == "/test.txt");
                 }
             }
         }
@@ -175,8 +175,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
 
                 THEN("the sub-sub folder 'testfolder2' should be returned") {
-                    REQUIRE(newDir->name == "testfolder2");
-                    REQUIRE(newDir->path == "/testfolder/testfolder2");
+                    REQUIRE(newDir->name() == "testfolder2");
+                    REQUIRE(newDir->path() == "/testfolder/testfolder2");
                 }
             }
         }
@@ -204,8 +204,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the new folder resource should be returned") {
-                    REQUIRE(newFolder->name == "newfolder");
-                    REQUIRE(newFolder->path == "/newfolder");
+                    REQUIRE(newFolder->name() == "newfolder");
+                    REQUIRE(newFolder->path() == "/newfolder");
                 }
             }
         }
@@ -258,8 +258,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                     REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the newly created folder should be returned") {
-                    REQUIRE(newDir->name == "newfolder");
-                    REQUIRE(newDir->path == "/testfolder/newfolder");
+                    REQUIRE(newDir->name() == "newfolder");
+                    REQUIRE(newDir->path() == "/testfolder/newfolder");
                 }
             }
         }
@@ -297,8 +297,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
 
                 THEN("the root directory should be returned") {
-                    REQUIRE(root->name == "");
-                    REQUIRE(root->path == "/");
+                    REQUIRE(root->name() == "");
+                    REQUIRE(root->path() == "/");
                 }
             }
         }

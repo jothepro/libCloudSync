@@ -15,12 +15,12 @@ namespace CloudSync::onedrive {
 std::vector<std::shared_ptr<Resource>> OneDriveDirectory::ls() const {
     std::vector<std::shared_ptr<Resource>> resourceList;
     try {
-        json responseJson = this->request->GET(this->apiResourcePath(this->path, true)).json();
+        json responseJson = this->request->GET(this->apiResourcePath(this->path(), true)).json();
         for (const auto& value : responseJson.at("value")) {
             resourceList.push_back(this->parseDriveItem(value));
         }
     } catch (...) {
-        OneDriveCloud::handleExceptions(std::current_exception(), this->path);
+        OneDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
     return resourceList;
 }
@@ -45,13 +45,13 @@ std::shared_ptr<Directory> OneDriveDirectory::cd(const std::string &path) const 
 
 void OneDriveDirectory::rmdir() const {
     try {
-        if (this->path != "/") {
-            this->request->DELETE(this->_baseUrl + ":" + this->path);
+        if (this->path() != "/") {
+            this->request->DELETE(this->_baseUrl + ":" + this->path());
         } else {
             throw PermissionDenied("deleting the root folder is not allowed");
         }
     } catch (...) {
-        OneDriveCloud::handleExceptions(std::current_exception(), this->path);
+        OneDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
 }
 
@@ -142,7 +142,7 @@ std::string OneDriveDirectory::apiResourcePath(const std::string &path, bool chi
 }
 
 std::string OneDriveDirectory::newResourcePath(const std::string &path) const {
-    std::string normalizedPath = (fs::path(this->path) / path).lexically_normal().generic_string();
+    std::string normalizedPath = (fs::path(this->path()) / path).lexically_normal().generic_string();
     // remove trailing slashes because onedrive won't accept them
     while (normalizedPath.size() > 1 && normalizedPath.back() == '/') {
         normalizedPath = normalizedPath.erase(normalizedPath.size() - 1);

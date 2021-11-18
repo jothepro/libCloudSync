@@ -24,9 +24,7 @@ class File : public Resource {
      *       It's a unique identifier for the current file version that changes with every change of the file.
      * @return the revision/etag of the file.
      */
-    std::string revision() const {
-        return this->_revision;
-    }
+    virtual std::string revision() const = 0;
     /**
      * @warning Don't be fooled by the return type of `std::string`. This may also be binary data and it is up to you to
      * handle the file content correctly. Some providers also provide mimetypes for files. That information cannot be
@@ -59,20 +57,5 @@ class File : public Resource {
      * @endcode
      */
     virtual bool supportsLongPoll() const = 0;
-
-    bool isFile() override {
-        return true;
-    };
-
-  protected:
-    File(
-        const std::string &baseUrl, 
-        const std::string &dir,
-        const std::shared_ptr<request::Request> &request,
-        const std::string &name, std::string revision)
-        : Resource(baseUrl, dir, request, name)
-        , _revision(std::move(revision)){};
-
-    std::string _revision;
 };
 } // namespace CloudSync
