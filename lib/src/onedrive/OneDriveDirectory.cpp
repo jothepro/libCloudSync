@@ -141,7 +141,7 @@ std::string OneDriveDirectory::apiResourcePath(const std::string &path, bool chi
 }
 
 std::string OneDriveDirectory::newResourcePath(const std::string &path) const {
-    std::string normalizedPath = std::filesystem::path(this->path + "/" + path).lexically_normal().generic_string();
+    std::string normalizedPath = (std::filesystem::path(this->path) / path).lexically_normal().generic_string();
     // remove trailing slashes because onedrive won't accept them
     while (normalizedPath.size() > 1 && normalizedPath.back() == '/') {
         normalizedPath = normalizedPath.erase(normalizedPath.size() - 1);

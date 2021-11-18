@@ -32,7 +32,7 @@ std::shared_ptr<Directory> GDriveDirectory::cd(const std::string &path) const {
     // calculate "diff" between current position & wanted path. What do we need
     // to do to get there?
     const auto relativePath =
-        std::filesystem::path(this->path + "/" + path).lexically_normal().lexically_relative(this->path);
+        (std::filesystem::path(this->path) / path).lexically_normal().lexically_relative(this->path);
     try {
         if (relativePath == ".") {
             // no path change required, return current dir
@@ -160,7 +160,7 @@ GDriveDirectory::parseFile(const json &file, ResourceType expectedType, const st
     const std::string name = file.at("title");
     const std::string id = file.at("id");
     const std::string mimeType = file.at("mimeType");
-    const std::string resourcePath = std::filesystem::path(this->path + "/" + name).lexically_normal().generic_string();
+    const std::string resourcePath = (std::filesystem::path(this->path) / name).lexically_normal().generic_string();
     std::string parentId;
     if (file.at("parents").at(0).at("isRoot") == true) {
         parentId = "root";
@@ -221,17 +221,17 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent() const {
                     {{P::QUERY_PARAMS, {{"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}}}})
                 .json();
         parentDirectory =
-            std::dynamic_pointer_cast<GDriveDirectory>(this->parseFile(responseJson, ResourceType::FOLDER, parentPath.string()));
+            std::dynamic_pointer_cast<GDriveDirectory>(this->parseFile(responseJson, ResourceType::FOLDER, parentPath.generic_string()));
     }
     return parentDirectory;
 }
 /// @return parent of the given path
 std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path, std::string &folderName) const {
     const auto relativePath =
-        std::filesystem::path(this->path + "/" + path).lexically_normal().lexically_relative(this->path);
+        (std::filesystem::path(this->path) / path).lexically_normal().lexically_relative(this->path);
     const auto relativeParentPath = relativePath.parent_path();
-    folderName = relativePath.lexically_relative(relativeParentPath).string();
-    return std::static_pointer_cast<GDriveDirectory>(this->cd(relativeParentPath.string()));
+    folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
+    return std::static_pointer_cast<GDriveDirectory>(this->cd(relativeParentPath.generic_string()));
 }
 std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name) const {
     std::shared_ptr<GDriveDirectory> childDir;

@@ -390,8 +390,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     as<std::string>{},
                     "somefolder",
                     "somefolder/",
-                    "somefolder/morefolder/..",
-                    "/somefolder/");
+                    "somefolder/morefolder/..");
                 const auto newDirectory = directory->cd(path);
                 THEN("a PROPFIND request on the desired folder should be made") {
                     REQUIRE_REQUEST_CALLED().Once();

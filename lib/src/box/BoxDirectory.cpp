@@ -28,7 +28,7 @@ std::shared_ptr<Directory> BoxDirectory::cd(const std::string &path) const {
     // calculate "diff" between current position & wanted path. What do we need
     // to do to get there?
     const auto relativePath =
-        std::filesystem::path(this->path + "/" + path).lexically_normal().lexically_relative(this->path);
+        (std::filesystem::path(this->path) / path).lexically_normal().lexically_relative(this->path);
     try {
         if (relativePath == ".") {
             // no path change required, return current instance
@@ -146,10 +146,10 @@ std::shared_ptr<BoxDirectory> BoxDirectory::parent() const {
 
 std::shared_ptr<BoxDirectory> BoxDirectory::parent(const std::string &path, std::string &folderName) const {
     const auto relativePath =
-        std::filesystem::path(this->path + "/" + path).lexically_normal().lexically_relative(this->path);
+        (std::filesystem::path(this->path) / path).lexically_normal().lexically_relative(this->path);
     const auto relativeParentPath = relativePath.parent_path();
-    folderName = relativePath.lexically_relative(relativeParentPath).string();
-    return std::static_pointer_cast<BoxDirectory>(this->cd(relativeParentPath.string()));
+    folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
+    return std::static_pointer_cast<BoxDirectory>(this->cd(relativeParentPath.generic_string()));
 }
 
 std::shared_ptr<BoxDirectory> BoxDirectory::child(const std::string &name) const {
@@ -163,7 +163,7 @@ std::shared_ptr<BoxDirectory> BoxDirectory::child(const std::string &name) const
         }
     }
     if (childDir == nullptr) {
-        throw NoSuchFileOrDirectory(std::filesystem::path(this->path + "/" + name).lexically_normal().generic_string());
+        throw NoSuchFileOrDirectory((std::filesystem::path(this->path) / name).lexically_normal().generic_string());
     }
     return childDir;
 }
@@ -181,7 +181,7 @@ BoxDirectory::parseEntry(const json &entry, const std::string &expectedType, con
         if (expectedType != "" && expectedType != resourceType) {
             throw NoSuchFileOrDirectory("expected resource type does not match real resource type");
         }
-        const auto newResourcePath = std::filesystem::path(this->path + "/" + name).lexically_normal().generic_string();
+        const auto newResourcePath = (std::filesystem::path(this->path) / name).lexically_normal().generic_string();
         if (resourceType == "file") {
             resource = std::make_shared<BoxFile>(
                 resourceId,
