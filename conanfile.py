@@ -12,6 +12,7 @@ def get_version():
 
 class LibCloudSyncConan(ConanFile):
     name = "libcloudsync"
+    url = "https://github.com/jothepro/libCloudSync"
     version = get_version()
     description = """A simple to use C++ interface to interact with cloud storage providers."""
     settings = "os", "compiler", "build_type", "arch"
