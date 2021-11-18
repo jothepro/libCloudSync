@@ -1,5 +1,6 @@
 #pragma once
 
-#define SHARED_PTR_MOCK(name, type)                    \
-    Mock<type> name##Mock;                  \
+#define SHARED_PTR_MOCK(name, type)                             \
+    Mock<type> name##Mock;                                      \
+    Fake(Dtor(name##Mock));                                     \
     const auto name = std::shared_ptr<type>(&name##Mock());
