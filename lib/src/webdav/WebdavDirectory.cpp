@@ -94,7 +94,7 @@ std::shared_ptr<Directory> WebdavDirectory::mkdir(const std::string &name) const
             throw Cloud::CommunicationError("cannot get resource description");
         }
 
-    } catch (Response::Conflict e) {
+    } catch (Response::Conflict &e) {
         throw NoSuchFileOrDirectory(resourcePath);
     } catch (...) {
         WebdavCloud::handleExceptions(std::current_exception(), resourcePath);

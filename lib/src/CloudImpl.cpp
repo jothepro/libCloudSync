@@ -1,4 +1,6 @@
 #include "CloudImpl.hpp"
+
+#include <utility>
 #include "CloudSync/Credentials.hpp"
 #include "CloudSync/Proxy.hpp"
 #include "request/Request.hpp"
@@ -11,8 +13,8 @@ using C = CloudSync::request::Request::ConfigurationOption;
 
 namespace CloudSync {
 
-CloudImpl::CloudImpl(const std::string &url, const std::shared_ptr<request::Request> &request)
-    : baseUrl(url), request(request) {}
+CloudImpl::CloudImpl(std::string url, std::shared_ptr<request::Request> request)
+    : baseUrl(std::move(url)), request(std::move(request)) {}
 
 std::shared_ptr<Cloud> CloudImpl::login(const Credentials &credentials) {
     this->request->setTokenRequestUrl(this->getTokenUrl());

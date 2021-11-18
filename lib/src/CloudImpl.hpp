@@ -13,7 +13,7 @@ class CloudImpl : public Cloud, public std::enable_shared_from_this<CloudImpl> {
     virtual ~CloudImpl() = default;
 
   protected:
-    CloudImpl(const std::string &url, const std::shared_ptr<request::Request> &request);
+    CloudImpl(std::string url, std::shared_ptr<request::Request> request);
     std::shared_ptr<request::Request> request;
     std::string baseUrl;
 };

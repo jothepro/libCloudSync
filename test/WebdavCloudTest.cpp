@@ -34,7 +34,7 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
             }
         }
         WHEN("setting the proxy") {
-            When(Method((*requestMock), setProxy)).Return();
+            When(Method((requestMock), setProxy)).Return();
             ACCESS_PROTECTED((CloudSync::Proxy), apply);
             auto proxyMock = Mock<apply_struct>();
             When(Method(proxyMock, apply)).Return();
@@ -44,7 +44,7 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
             }
         }
         WHEN("setting the credentials") {
-            When(Method((*requestMock), setTokenRequestUrl)).Return();
+            When(Method((requestMock), setTokenRequestUrl)).Return();
             ACCESS_PROTECTED((CloudSync::Credentials), apply);
             auto credentialsMock = Mock<apply_struct>();
             When(Method(credentialsMock, apply)).Return();
@@ -56,7 +56,7 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
         WHEN("calling root()") {
             const auto directory = cloud->root();
             THEN("the root directory is returned") {
-                REQUIRE(directory->name == "");
+                REQUIRE(directory->name.empty());
                 REQUIRE(directory->path == "/");
             }
         }

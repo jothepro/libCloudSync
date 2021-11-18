@@ -9,7 +9,7 @@ using namespace CloudSync;
 
 namespace CloudSync {
 
-std::ostream &operator<<(std::ostream &output, std::shared_ptr<Cloud> cloud) {
+std::ostream &operator<<(std::ostream &output, const std::shared_ptr<Cloud>& cloud) {
     output << "[Cloud url: " << cloud->getBaseUrl() << "]" << std::endl;
     return output;
 }
