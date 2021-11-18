@@ -15,39 +15,39 @@ using C = CloudSync::request::Request::ConfigurationOption;
 
 namespace CloudSync {
 
-CloudFactory::CloudFactory() = default;
+    CloudFactory::CloudFactory() = default;
 
 
-std::shared_ptr<request::Request> CloudFactory::getRequestImplementation() {
-    if (this->requestImplementation == nullptr) {
-        this->requestImplementation = std::make_shared<CurlRequest>();
+    std::shared_ptr<request::Request> CloudFactory::getRequestImplementation() {
+        if (this->requestImplementation == nullptr) {
+            this->requestImplementation = std::make_shared<CurlRequest>();
+        }
+        this->requestImplementation->setOption(C::FOLLOW_REDIRECT, true);
+        return this->requestImplementation;
     }
-    this->requestImplementation->setOption(C::FOLLOW_REDIRECT, true);
-    return this->requestImplementation;
-}
 
-std::shared_ptr<Cloud> CloudFactory::webdav(const std::string &url) {
-    return std::make_shared<webdav::WebdavCloud>(url, this->getRequestImplementation());
-}
+    std::shared_ptr<Cloud> CloudFactory::webdav(const std::string &url) {
+        return std::make_shared<webdav::WebdavCloud>(url, this->getRequestImplementation());
+    }
 
-std::shared_ptr<Cloud> CloudFactory::nextcloud(const std::string &url) {
-    return std::make_shared<nextcloud::NextcloudCloud>(url, this->getRequestImplementation());
-}
+    std::shared_ptr<Cloud> CloudFactory::nextcloud(const std::string &url) {
+        return std::make_shared<nextcloud::NextcloudCloud>(url, this->getRequestImplementation());
+    }
 
-std::shared_ptr<Cloud> CloudFactory::dropbox() {
-    return std::make_shared<dropbox::DropboxCloud>(this->getRequestImplementation());
-}
+    std::shared_ptr<Cloud> CloudFactory::dropbox() {
+        return std::make_shared<dropbox::DropboxCloud>(this->getRequestImplementation());
+    }
 
-std::shared_ptr<Cloud> CloudFactory::box() {
-    return std::make_shared<box::BoxCloud>(this->getRequestImplementation());
-}
+    std::shared_ptr<Cloud> CloudFactory::box() {
+        return std::make_shared<box::BoxCloud>(this->getRequestImplementation());
+    }
 
-std::shared_ptr<Cloud> CloudFactory::onedrive(const std::string &drive) {
-    return std::make_shared<onedrive::OneDriveCloud>(drive, this->getRequestImplementation());
-}
+    std::shared_ptr<Cloud> CloudFactory::onedrive(const std::string &drive) {
+        return std::make_shared<onedrive::OneDriveCloud>(drive, this->getRequestImplementation());
+    }
 
-std::shared_ptr<Cloud> CloudFactory::gdrive(const std::string &rootName) {
-    return std::make_shared<gdrive::GDriveCloud>(rootName, this->getRequestImplementation());
-}
+    std::shared_ptr<Cloud> CloudFactory::gdrive(const std::string &rootName) {
+        return std::make_shared<gdrive::GDriveCloud>(rootName, this->getRequestImplementation());
+    }
 
 } // namespace CloudSync

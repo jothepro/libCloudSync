@@ -3,23 +3,23 @@
 #include <memory>
 
 namespace CloudSync {
-namespace request {
-class Request;
-}
-class CloudImpl;
+    namespace request {
+        class Request;
+    }
+    class CloudImpl;
 
-class Credentials {
-    friend class CloudImpl;
+    class Credentials {
+        friend class CloudImpl;
 
-  public:
-    virtual ~Credentials() = default;;
+    public:
+        virtual ~Credentials() = default;;
 
-  protected:
-    /**
-     * @exception CloudSync::Credentials::InvalidCredentials
-     * @exception CloudSync::Cloud::CommunicationError
-     */
-    virtual void apply(const std::shared_ptr<request::Request> &request) const {};
-};
+    protected:
+        /**
+         * @exception CloudSync::Credentials::InvalidCredentials
+         * @exception CloudSync::Cloud::CommunicationError
+         */
+        virtual void apply(const std::shared_ptr<request::Request> &request) const {};
+    };
 
 } // namespace CloudSync
