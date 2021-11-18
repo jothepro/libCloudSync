@@ -41,6 +41,6 @@ class DropboxDirectory : public Directory {
      * @param path a path representation
      * @return a normalized path
      */
-    static std::string parsePath(const std::string &path);
+    static std::string parsePath(const std::string &path, const std::string &path2 = "");
 };
 } // namespace CloudSync::dropbox

@@ -192,7 +192,7 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
 
 std::string WebdavDirectory::requestUrl(const std::string &path) const {
     // normalize path
-    std::string normalizedPath = std::filesystem::path(this->path + "/" + path).lexically_normal().generic_string();
+    std::string normalizedPath = (std::filesystem::path(this->path) / path).lexically_normal().generic_string();
     // remove any trailing slashes, because we cannot be sure if the user adds
     // them or not
     WebdavDirectory::removeTrailingSlashes(normalizedPath);
