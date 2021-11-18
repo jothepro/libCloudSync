@@ -129,7 +129,7 @@ class Cloud {
      */
     virtual std::shared_ptr<Directory> root() const = 0;
 
-    friend std::ostream &operator<<(std::ostream &output, std::shared_ptr<Cloud> cloud);
+    friend std::ostream &operator<<(std::ostream &output, const std::shared_ptr<Cloud>& cloud);
 };
 
 } // namespace CloudSync

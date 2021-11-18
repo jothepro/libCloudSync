@@ -46,7 +46,7 @@ SCENARIO("BoxDirectory", "[directory][box]") {
             WHEN("calling ls()") {
                 auto list = directory->ls();
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
-                    Verify(Method((*requestMock), request)).Once();
+                    Verify(Method((requestMock), request)).Once();
                     REQUIRE(requestRecording.front().verb == "GET");
                     REQUIRE(requestRecording.front().url == "https://api.box.com/2.0/folders/0/items");
                 }
@@ -70,7 +70,7 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 const auto newDir = directory->cd(path);
 
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
-                    Verify(Method((*requestMock), request)).Once();
+                    Verify(Method((requestMock), request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://api.box.com/2.0/folders/0/items");
                 }

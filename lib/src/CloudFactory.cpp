@@ -15,7 +15,7 @@ using C = CloudSync::request::Request::ConfigurationOption;
 
 namespace CloudSync {
 
-CloudFactory::CloudFactory() {}
+CloudFactory::CloudFactory() = default;
 
 
 std::shared_ptr<request::Request> CloudFactory::getRequestImplementation() {

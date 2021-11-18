@@ -19,7 +19,7 @@ class WebdavCloud : public CloudImpl {
         return "";
     }
 
-    virtual std::shared_ptr<Directory> root() const override {
+    std::shared_ptr<Directory> root() const override {
         return std::make_shared<WebdavDirectory>(this->baseUrl, "", "/", this->request, "");
     }
 

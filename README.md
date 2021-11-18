@@ -43,7 +43,7 @@ conan install --remote jothepro-conan-public libcloudsync/0.1.8@jothepro/beta
 
 ### Build Requirements
 
-- Conan >= 1.30
+- Conan >= 1.40
 - CMake >= 3.15
 - Doxygen 1.9.2 (optional)
 

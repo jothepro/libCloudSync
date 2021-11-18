@@ -27,7 +27,7 @@ static std::vector<RequestRecording> requestRecording;
     requestRecording.clear();                                                                                          \
     SHARED_PTR_MOCK(request, request::Request);
 
-#define WHEN_REQUEST() When(Method((*requestMock), request))
+#define WHEN_REQUEST() When(Method((requestMock), request))
 
 #define RESPOND(returnvalue)                                                                                           \
     Do([](const std::string &verb,                                                                                     \
@@ -43,4 +43,4 @@ static std::vector<RequestRecording> requestRecording;
 
 #define REQUIRE_REQUEST(number, condition) REQUIRE(requestRecording.at(number).condition)
 
-#define REQUIRE_REQUEST_CALLED() Verify(Method((*requestMock), request))
+#define REQUIRE_REQUEST_CALLED() Verify(Method((requestMock), request))
