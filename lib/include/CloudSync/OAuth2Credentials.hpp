@@ -5,6 +5,9 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <utility>
+
+using namespace std::chrono_literals;
 
 namespace CloudSync {
 namespace request {
@@ -14,13 +17,15 @@ class OAuth2Credentials : public Credentials {
     friend class Cloud;
 
   public:
-    OAuth2Credentials(
-        const std::string &accessToken, const std::string &refreshToken = "",
-        std::chrono::seconds expiresIn = std::chrono::seconds(0))
-        : accessToken(accessToken), refreshToken(refreshToken),
-          expires(
-              expiresIn != std::chrono::seconds(0) ? std::chrono::system_clock::now() + expiresIn
-                                                   : std::chrono::system_clock::time_point(std::chrono::seconds(0))){};
+    explicit OAuth2Credentials(
+        std::string accessToken,
+        std::string refreshToken = "",
+        std::chrono::seconds expiresIn = 0s)
+        : accessToken(std::move(accessToken))
+        , refreshToken(std::move(refreshToken))
+        , expires(expiresIn != 0s
+            ? std::chrono::system_clock::now() + expiresIn
+            : std::chrono::system_clock::time_point(0s)){};
 
   protected:
     void apply(const std::shared_ptr<request::Request> &request) const override;

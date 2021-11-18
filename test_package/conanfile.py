@@ -1,6 +1,7 @@
 from conans import ConanFile, CMake, tools
 import os
 
+
 class CloudSyncTestConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake_find_package", "cmake_paths"

@@ -4,8 +4,6 @@
 #include <string>
 #include <utility>
 
-class CloudImpl;
-
 namespace CloudSync {
 namespace request {
 class Request;
@@ -15,8 +13,10 @@ class Proxy {
 
   public:
     const static Proxy NOPROXY;
-    Proxy(const std::string &url, const std::string &username = "", const std::string &password = "")
-        : url(url), username(username), password(password){};
+    explicit Proxy(std::string url, std::string username = "", std::string password = "")
+        : url(std::move(url))
+        , username(std::move(username))
+        , password(std::move(password)){};
 
   protected:
     virtual void apply(const std::shared_ptr<request::Request> &request) const;

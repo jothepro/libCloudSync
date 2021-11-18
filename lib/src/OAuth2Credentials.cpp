@@ -1,7 +1,5 @@
 #include "CloudSync/OAuth2Credentials.hpp"
-#include "CloudSync/Exceptions.hpp"
 #include "request/Request.hpp"
-#include <chrono>
 #include <nlohmann/json.hpp>
 
 using namespace std::chrono;

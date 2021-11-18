@@ -9,13 +9,14 @@
 using json = nlohmann::json;
 using namespace CloudSync::request;
 using P = Request::ParameterType;
+namespace fs = std::filesystem;
 
 namespace CloudSync::onedrive {
 std::vector<std::shared_ptr<Resource>> OneDriveDirectory::ls() const {
     std::vector<std::shared_ptr<Resource>> resourceList;
     try {
         json responseJson = this->request->GET(this->apiResourcePath(this->path, true)).json();
-        for (const auto value : responseJson.at("value")) {
+        for (const auto& value : responseJson.at("value")) {
             resourceList.push_back(this->parseDriveItem(value));
         }
     } catch (...) {
@@ -29,7 +30,7 @@ std::shared_ptr<Directory> OneDriveDirectory::cd(const std::string &path) const 
     const auto resourcePath = this->newResourcePath(path);
     try {
         if (resourcePath == "/") {
-            // if its the root we dont need to run a query
+            // if it's the root we don't need to run a query
             directory = std::make_shared<OneDriveDirectory>(this->_baseUrl, "/", this->request, "");
         } else {
             json responseJson = this->request->GET(this->apiResourcePath(resourcePath, false)).json();
@@ -56,7 +57,7 @@ void OneDriveDirectory::rmdir() const {
 
 std::shared_ptr<Directory> OneDriveDirectory::mkdir(const std::string &path) const {
     std::shared_ptr<OneDriveDirectory> newDirectory;
-    const auto resourcePath = std::filesystem::path(this->newResourcePath(path));
+    const auto resourcePath = fs::path(this->newResourcePath(path));
     const std::string newResourceBasePath = resourcePath.parent_path().generic_string();
     const std::string newDirectoryName = resourcePath.filename().string();
     try {
@@ -113,10 +114,10 @@ std::shared_ptr<Resource> OneDriveDirectory::parseDriveItem(const json &value, c
         const auto splitPosition = rawResourcePath.find_first_of(':') + 1;
         const std::string resourcePath =
             rawResourcePath.substr(splitPosition, rawResourcePath.size() - splitPosition) + "/";
-        if (value.find("file") != value.end() && (expectedType == "" || expectedType == "file")) {
+        if (value.find("file") != value.end() && (expectedType.empty() || expectedType == "file")) {
             const std::string etag = value["eTag"];
             resource = std::make_shared<OneDriveFile>(this->_baseUrl, resourcePath + name, this->request, name, etag);
-        } else if (value.find("folder") != value.end() && (expectedType == "" || expectedType == "folder")) {
+        } else if (value.find("folder") != value.end() && (expectedType.empty() || expectedType == "folder")) {
             resource = std::make_shared<OneDriveDirectory>(this->_baseUrl, resourcePath + name, this->request, name);
         } else {
             throw Cloud::CommunicationError("unexpected resource type");
@@ -141,7 +142,7 @@ std::string OneDriveDirectory::apiResourcePath(const std::string &path, bool chi
 }
 
 std::string OneDriveDirectory::newResourcePath(const std::string &path) const {
-    std::string normalizedPath = (std::filesystem::path(this->path) / path).lexically_normal().generic_string();
+    std::string normalizedPath = (fs::path(this->path) / path).lexically_normal().generic_string();
     // remove trailing slashes because onedrive won't accept them
     while (normalizedPath.size() > 1 && normalizedPath.back() == '/') {
         normalizedPath = normalizedPath.erase(normalizedPath.size() - 1);

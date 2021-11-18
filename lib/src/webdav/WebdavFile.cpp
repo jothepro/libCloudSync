@@ -50,7 +50,7 @@ bool WebdavFile::pollChange(bool longPoll) {
                                                               "/*[local-name()='getetag']")
                                                 .node()
                                                 .child_value();
-            if (newRevision != "") {
+            if (!newRevision.empty()) {
                 if (this->revision() != newRevision) {
                     hasChanged = true;
                     this->_revision = newRevision;

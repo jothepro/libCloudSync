@@ -12,7 +12,7 @@ class Credentials {
     friend class CloudImpl;
 
   public:
-    virtual ~Credentials(){};
+    virtual ~Credentials() = default;;
 
   protected:
     /**

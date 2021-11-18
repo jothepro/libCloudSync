@@ -9,6 +9,7 @@
 using json = nlohmann::json;
 using namespace CloudSync::request;
 using P = Request::ParameterType;
+namespace fs = std::filesystem;
 
 namespace CloudSync::dropbox {
 std::vector<std::shared_ptr<Resource>> DropboxDirectory::ls() const {
@@ -34,7 +35,7 @@ std::shared_ptr<Directory> DropboxDirectory::cd(const std::string &path) const {
     const auto resourcePath = DropboxDirectory::parsePath(this->path, path);
     std::shared_ptr<DropboxDirectory> directory;
     // get_metadata is not supported for the root folder
-    if (resourcePath != "") {
+    if (!resourcePath.empty()) {
         try {
             json responseJson = this->request
                                     ->POST(
@@ -55,7 +56,7 @@ std::shared_ptr<Directory> DropboxDirectory::cd(const std::string &path) const {
 
 void DropboxDirectory::rmdir() const {
     const auto resourcePath = DropboxDirectory::parsePath(this->path);
-    if (resourcePath == "") {
+    if (resourcePath.empty()) {
         throw PermissionDenied("deleting the root folder is not allowed");
     }
     try {
@@ -128,13 +129,13 @@ DropboxDirectory::parseEntry(const json &entry, const std::string &resourceTypeF
     if (entry.find(".tag") != entry.end()) {
         resourceType = entry[".tag"];
     } else {
-        if (resourceTypeFallback != "") {
+        if (!resourceTypeFallback.empty()) {
             resourceType = resourceTypeFallback;
         } else {
             throw Cloud::CommunicationError("unknown resource type");
         }
     }
-    if (resourceTypeFallback != "" && resourceType != resourceTypeFallback) {
+    if (!resourceTypeFallback.empty() && resourceType != resourceTypeFallback) {
         throw NoSuchFileOrDirectory(path);
     }
     if (resourceType == "folder") {
@@ -146,7 +147,7 @@ DropboxDirectory::parseEntry(const json &entry, const std::string &resourceTypeF
 }
 
 std::string DropboxDirectory::parsePath(const std::string &path, const std::string &path2) {
-    std::string parsedPath = (std::filesystem::path(path) / path2).lexically_normal().generic_string();
+    std::string parsedPath = (fs::path(path) / path2).lexically_normal().generic_string();
     // remove trailing slashes because dropbox won't accept them
     while (!parsedPath.empty() && parsedPath.back() == '/') {
         parsedPath = parsedPath.erase(parsedPath.size() - 1);

@@ -3,6 +3,7 @@
 #include "Resource.hpp"
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 namespace CloudSync {
 namespace request {
@@ -65,9 +66,12 @@ class File : public Resource {
 
   protected:
     File(
-        const std::string &baseUrl, const std::string &dir, const std::shared_ptr<request::Request> &request,
-        const std::string &name, const std::string &revision)
-        : Resource(baseUrl, dir, request, name), _revision(revision){};
+        const std::string &baseUrl, 
+        const std::string &dir,
+        const std::shared_ptr<request::Request> &request,
+        const std::string &name, std::string revision)
+        : Resource(baseUrl, dir, request, name)
+        , _revision(std::move(revision)){};
     virtual std::string describe() const override {
         std::ostringstream output;
         std::string str = this->revision();

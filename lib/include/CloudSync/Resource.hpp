@@ -3,6 +3,7 @@
 #include "Exceptions.hpp"
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace CloudSync {
 namespace request {
@@ -12,26 +13,26 @@ class Resource {
   public:
     class ResourceException : public BaseException {
       public:
-        ResourceException(const std::string &what) : BaseException(what){};
+        explicit ResourceException(const std::string &what) : BaseException(what){};
     };
 
     class NoSuchFileOrDirectory : public ResourceException {
       public:
-        NoSuchFileOrDirectory(const std::string &path) : ResourceException("No such file or directory: " + path){};
+        explicit NoSuchFileOrDirectory(const std::string &path) : ResourceException("No such file or directory: " + path){};
     };
 
     class PermissionDenied : public ResourceException {
       public:
-        PermissionDenied(const std::string &path)
+        explicit PermissionDenied(const std::string &path)
             : ResourceException("Forbidden action on file or directory: " + path){};
     };
 
     class ResourceHasChanged : public ResourceException {
       public:
-        ResourceHasChanged(const std::string &path) : ResourceException("Resource has changed: " + path){};
+        explicit ResourceHasChanged(const std::string &path) : ResourceException("Resource has changed: " + path){};
     };
 
-    virtual ~Resource(){};
+    virtual ~Resource() = default;;
     const std::string name;
     const std::string path;
 
@@ -51,9 +52,14 @@ class Resource {
 
   protected:
     Resource(
-        const std::string &baseUrl, const std::string &workingDir, const std::shared_ptr<request::Request> request,
-        const std::string &name)
-        : name(name), path(workingDir), _baseUrl(baseUrl), request(request){};
+        std::string baseUrl,
+        std::string workingDir,
+        std::shared_ptr<request::Request> request,
+        std::string name)
+        : name(std::move(name))
+        , path(std::move(workingDir))
+        , _baseUrl(std::move(baseUrl))
+        , request(std::move(request)){};
 
     virtual std::string describe() const = 0;
 

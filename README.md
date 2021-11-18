@@ -13,8 +13,7 @@ A simple to use C++ interface to interact with cloud storage providers.
   - Dropbox
   - Box
   - Onedrive
-  - Gdrive
-  
+  - GDrive
 
 ## Installation
 
@@ -23,21 +22,18 @@ To use this library in you project, you can install it in the following ways:
 ### Conan
 ```sh
 # Add artifactory repository as remote:
-conan remote add jothepro-conan-public https://jothepro.jfrog.io/artifactory/api/conan/conan-public
-# Install  a release of `libcloudsync`
-conan install --remote jothepro-conan-public libcloudsync/0.1.7@jothepro/stable
+conan remote add gitlab-cloudsync https://gitlab.com/api/v4/projects/15425736/packages/conan
+```
+
+```ini
+[requires]
+libcloudsync/0.0.1@jothepro/stable
 ```
 
 If you don't want to build & run tests when building from source, set the [CONAN_RUN_TESTS](https://docs.conan.io/en/latest/reference/env_vars.html#conan-run-tests) variable:
 ```sh
-install --remote jothepro-conan-public libcloudsync/0.1.7@jothepro/stable -e CONAN_RUN_TESTS=0
+conan install -if build --build missing . -e CONAN_RUN_TESTS=0
 ```
-
-Pre-Releases are available in the `beta` channel:
-```sh
-conan install --remote jothepro-conan-public libcloudsync/0.1.8@jothepro/beta
-```
-   
 
 ## Development
 
@@ -45,7 +41,7 @@ conan install --remote jothepro-conan-public libcloudsync/0.1.8@jothepro/beta
 
 - Conan >= 1.40
 - CMake >= 3.15
-- Doxygen 1.9.2 (optional)
+- Doxygen >= 1.9.1 (optional)
 
 ### Build
 
@@ -73,7 +69,7 @@ This library uses [Catch2](https://github.com/catchorg/Catch2) for testing. The 
 
 A small CLI example implementation is provided, to show the capabilities of the library.
 
-```bash
+```sh
 # build the example 
 cmake --build build --target CloudSyncExample
 # execute the program
@@ -85,7 +81,7 @@ cd build/example
 
 ### Documentation
 
-This project uses [Doxygen](https://www.doxygen.nl/index.html) for documenation.
+This project uses [Doxygen](https://www.doxygen.nl/index.html) for documentation.
 
 To generate the docs, run `doxygen Doxyfile` or execute the `doxygen` target defined in the `CMakeLists.txt`.
 
@@ -94,7 +90,7 @@ To generate the docs, run `doxygen Doxyfile` or execute the `doxygen` target def
 This template uses [Github Actions](https://github.com/features/actions) for automating the release of a new library version.
 
 - The workflow `configureBuildTestCreateAndUpload.yaml` configures, builds, tests the library automatically on each push.
-  When a new release is created in Github, the resulting artifact is automatically uploaded to [a public  artifactory repository](https://jothepro.jfrog.io/ui/repos/tree/General/conan-public%2F_%2Flibcloudsync)
+  When a new release is created in Github, the resulting artifact is automatically uploaded to [a public  artifactory repository](https://gitlab.com/jothepro/libcloudsync/-/packages)
 - The workflow `publish-pages.yaml` automatically builds and publishes the documentation to [Github Pages](https://jothepro.github.io/libcloudsync/) when a new release is created in Github.
 
 

@@ -95,7 +95,7 @@ Response CurlRequest::request(
     // set headers
     const auto headerParams = parameters.find(HEADERS);
     if (headerParams != parameters.end()) {
-        for (const auto header : headerParams->second) {
+        for (const auto& header : headerParams->second) {
             headers = curl_slist_append(headers, (header.first + ": " + header.second).c_str());
         }
     }
@@ -165,7 +165,7 @@ Response CurlRequest::request(
         // when the response has no body, responseContentType is a nullptr. This needs to be checked when
         // transforming the char* to a string.
         const std::string responseContentTypeString = responseContentType ? std::string(responseContentType) : "";
-        const auto response = Response(responseCode, responseReadBuffer, responseContentTypeString, responseHeaders);
+        auto response = Response(responseCode, responseReadBuffer, responseContentTypeString, responseHeaders);
         curl_easy_reset(this->curl);
         return response;
     } else {
@@ -178,7 +178,7 @@ Response CurlRequest::request(
 std::string CurlRequest::urlEncodeParams(const std::unordered_map<std::string, std::string> &params) const {
     std::string result;
     bool firstLoopIteration = true;
-    for (const auto param : params) {
+    for (const auto& param : params) {
         if (firstLoopIteration)
             firstLoopIteration = false;
         else

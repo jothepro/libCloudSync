@@ -9,7 +9,8 @@ get_version(PROJECT_VERSION)
 
 project(CloudSync
     LANGUAGES CXX
-    VERSION ${PROJECT_VERSION})
+    VERSION ${PROJECT_VERSION}
+)
 
 
 find_package(Doxygen)
@@ -23,10 +24,7 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 add_subdirectory(lib)
-
-if(EXISTS example)
-    add_subdirectory(example)
-endif()
+add_subdirectory(example)
 
 include(CTest)
 if(BUILD_TESTING)

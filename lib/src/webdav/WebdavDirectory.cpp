@@ -11,6 +11,7 @@
 using namespace pugi;
 using namespace CloudSync::request;
 using P = Request::ParameterType;
+namespace fs = std::filesystem;
 
 namespace CloudSync::webdav {
 std::string WebdavDirectory::xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
@@ -154,7 +155,7 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
         if (resourceHref != this->path) {
             // parse the href as path so the filename/foldername can be
             // extracted
-            const auto resourcePath = std::filesystem::path(resourceHref);
+            const auto resourcePath = fs::path(resourceHref);
             std::shared_ptr<Resource> resource;
             // if the collection node exists, we can be sure this is a
             // directory, else it must be a file
@@ -192,7 +193,7 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
 
 std::string WebdavDirectory::requestUrl(const std::string &path) const {
     // normalize path
-    std::string normalizedPath = (std::filesystem::path(this->path) / path).lexically_normal().generic_string();
+    std::string normalizedPath = (fs::path(this->path) / path).lexically_normal().generic_string();
     // remove any trailing slashes, because we cannot be sure if the user adds
     // them or not
     WebdavDirectory::removeTrailingSlashes(normalizedPath);

@@ -86,7 +86,7 @@ class Request {
 
   protected:
     /**
-     * attemts to get a new OAuth2-Token
+     * attempts to get a new OAuth2-Token
      */
     void refreshOAuth2TokenIfNeeded();
 

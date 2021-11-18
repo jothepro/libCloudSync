@@ -11,6 +11,6 @@ namespace CloudSync {
  */
 class BaseException : public std::runtime_error {
   public:
-    BaseException(const std::string &what) : std::runtime_error(what){};
+    explicit BaseException(const std::string &what) : std::runtime_error(what){};
 };
 } // namespace CloudSync

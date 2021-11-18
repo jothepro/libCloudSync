@@ -19,14 +19,14 @@ class Cloud {
      */
     class MethodNotSupportedError : public std::logic_error {
       public:
-        MethodNotSupportedError(const std::string &what = "")
+        explicit MethodNotSupportedError(const std::string &what = "")
             : std::logic_error("This method is not supported by this cloud provider. " + what){};
     };
 
     /// Base Exception for all Cloud-related errors.
     class CloudException : public BaseException {
       public:
-        CloudException(const std::string &what) : BaseException(what){};
+        explicit CloudException(const std::string &what) : BaseException(what){};
     };
 
     /**
@@ -55,7 +55,7 @@ class Cloud {
      */
     class CommunicationError : public CloudException {
       public:
-        CommunicationError(const std::string &what = "")
+        explicit CommunicationError(const std::string &what = "")
             : CloudException("The communication with the server has failed. " + what){};
     };
 
@@ -71,7 +71,7 @@ class Cloud {
      */
     class InvalidResponse : public CommunicationError {
       public:
-        InvalidResponse(const std::string &what = "") : CommunicationError("Invalid Response: " + what){};
+        explicit InvalidResponse(const std::string &what = "") : CommunicationError("Invalid Response: " + what){};
     };
 
     // checks if the cloud storage is available

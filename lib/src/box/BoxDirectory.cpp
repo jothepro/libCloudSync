@@ -8,6 +8,7 @@
 using namespace CloudSync::request;
 using P = CloudSync::request::Request::ParameterType;
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 namespace CloudSync::box {
 std::vector<std::shared_ptr<Resource>> BoxDirectory::ls() const {
@@ -28,7 +29,7 @@ std::shared_ptr<Directory> BoxDirectory::cd(const std::string &path) const {
     // calculate "diff" between current position & wanted path. What do we need
     // to do to get there?
     const auto relativePath =
-        (std::filesystem::path(this->path) / path).lexically_normal().lexically_relative(this->path);
+        (fs::path(this->path) / path).lexically_normal().lexically_relative(this->path);
     try {
         if (relativePath == ".") {
             // no path change required, return current instance
@@ -141,12 +142,12 @@ std::shared_ptr<BoxDirectory> BoxDirectory::parent() const {
     std::shared_ptr<BoxDirectory> parentDir;
     json responseJson = this->request->GET("https://api.box.com/2.0/folders/" + this->parentResourceId).json();
     return std::dynamic_pointer_cast<BoxDirectory>(
-        this->parseEntry(responseJson, "folder", std::filesystem::path(this->path).parent_path().generic_string()));
+        this->parseEntry(responseJson, "folder", fs::path(this->path).parent_path().generic_string()));
 }
 
 std::shared_ptr<BoxDirectory> BoxDirectory::parent(const std::string &path, std::string &folderName) const {
     const auto relativePath =
-        (std::filesystem::path(this->path) / path).lexically_normal().lexically_relative(this->path);
+        (fs::path(this->path) / path).lexically_normal().lexically_relative(this->path);
     const auto relativeParentPath = relativePath.parent_path();
     folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
     return std::static_pointer_cast<BoxDirectory>(this->cd(relativeParentPath.generic_string()));
@@ -163,7 +164,7 @@ std::shared_ptr<BoxDirectory> BoxDirectory::child(const std::string &name) const
         }
     }
     if (childDir == nullptr) {
-        throw NoSuchFileOrDirectory((std::filesystem::path(this->path) / name).lexically_normal().generic_string());
+        throw NoSuchFileOrDirectory((fs::path(this->path) / name).lexically_normal().generic_string());
     }
     return childDir;
 }
@@ -178,14 +179,14 @@ BoxDirectory::parseEntry(const json &entry, const std::string &expectedType, con
         const std::string resourceType = entry.at("type");
         const std::string name = entry.at("name");
 
-        if (expectedType != "" && expectedType != resourceType) {
+        if (!expectedType.empty() && expectedType != resourceType) {
             throw NoSuchFileOrDirectory("expected resource type does not match real resource type");
         }
-        const auto newResourcePath = (std::filesystem::path(this->path) / name).lexically_normal().generic_string();
+        const auto newResourcePath = (fs::path(this->path) / name).lexically_normal().generic_string();
         if (resourceType == "file") {
             resource = std::make_shared<BoxFile>(
                 resourceId,
-                customPath != "" ? customPath : newResourcePath,
+                !customPath.empty() ? customPath : newResourcePath,
                 this->request,
                 name,
                 etag);
@@ -202,7 +203,7 @@ BoxDirectory::parseEntry(const json &entry, const std::string &expectedType, con
             resource = std::make_shared<BoxDirectory>(
                 resourceId,
                 parentResourceId,
-                customPath != "" ? customPath : newResourcePath,
+                !customPath.empty() ? customPath : newResourcePath,
                 this->request,
                 name);
         } else {
