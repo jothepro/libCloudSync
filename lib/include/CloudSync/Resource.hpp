@@ -32,19 +32,17 @@ namespace CloudSync {
                     "Resource has changed: " + path) {};
         };
 
-        virtual ~Resource() = default;
+        [[nodiscard]] virtual std::string name() const = 0;
 
-        virtual std::string name() const = 0;
-
-        virtual std::string path() const = 0;
+        [[nodiscard]] virtual std::string path() const = 0;
 
         /**
          * Wether the Resource is a file or a directory.
          * @return true if resource is a file, false if it is a directory.
          * @note Use this if you need to cast a resource to it's special type to do perform some type-specific action on it.
-         *       A resource can not be of any other type than `File` or `Folder`, so you can safely determine it's type with
+         *       A resource can not be of any other type than `File` or `Directory`, so you can safely determine it's type with
          * just this method.
          */
-        virtual bool isFile() const = 0;
+        [[nodiscard]] virtual bool isFile() const = 0;
     };
 } // namespace CloudSync

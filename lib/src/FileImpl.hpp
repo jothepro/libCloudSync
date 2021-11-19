@@ -7,13 +7,13 @@
 namespace CloudSync {
     class FileImpl : public File {
     public:
-        std::string name() const override;
+        [[nodiscard]] std::string name() const override;
 
-        std::string path() const override;
+        [[nodiscard]] std::string path() const override;
 
-        std::string revision() const override;
+        [[nodiscard]] std::string revision() const override;
 
-        bool isFile() const override;
+        [[nodiscard]] bool isFile() const override;
 
     protected:
         FileImpl(

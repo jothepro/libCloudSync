@@ -2,6 +2,7 @@
 
 #include "DirectoryImpl.hpp"
 #include <nlohmann/json.hpp>
+#include <utility>
 
 using json = nlohmann::json;
 
@@ -9,17 +10,18 @@ namespace CloudSync::gdrive {
     class GDriveDirectory : public DirectoryImpl {
     public:
         GDriveDirectory(
-                const std::string &baseUrl, const std::string &rootName, const std::string &resourceId,
-                const std::string &parentResourceId, const std::string &dir,
+                const std::string &baseUrl, std::string rootName, std::string resourceId,
+                std::string parentResourceId, const std::string &dir,
                 const std::shared_ptr<request::Request> &request,
                 const std::string &name)
-                : DirectoryImpl(baseUrl, dir, request, name), resourceId(resourceId),
-                  parentResourceId(parentResourceId),
-                  rootName(rootName) {};
+                : DirectoryImpl(baseUrl, dir, request, name)
+                , resourceId(std::move(resourceId))
+                , parentResourceId(std::move(parentResourceId))
+                , rootName(std::move(rootName)) {};
 
-        std::vector<std::shared_ptr<Resource>> ls() const override;
+        [[nodiscard]] std::vector<std::shared_ptr<Resource>> ls() const override;
 
-        std::shared_ptr<Directory> cd(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> cd(const std::string &path) const override;
 
         void rmdir() const override;
 

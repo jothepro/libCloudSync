@@ -25,7 +25,7 @@ namespace CloudSync {
          *       It's a unique identifier for the current file version that changes with every change of the file.
          * @return the revision/etag of the file.
          */
-        virtual std::string revision() const = 0;
+        [[nodiscard]] virtual std::string revision() const = 0;
 
         /**
          * @warning Don't be fooled by the return type of `std::string`. This may also be binary data and it is up to you to
@@ -33,7 +33,7 @@ namespace CloudSync {
          * exposed in this API as mimetypes are not supported by all providers.
          * @return the file content as a string.
          */
-        virtual std::string read() const = 0;
+        [[nodiscard]] virtual std::string read() const = 0;
 
         /**
          * @throws Resource::ResourceHasChanged if the file has changed on the server. Check for a new file version with
@@ -61,6 +61,6 @@ namespace CloudSync {
          * file->pollChange(file->supportsLongPoll());
          * @endcode
          */
-        virtual bool supportsLongPoll() const = 0;
+        [[nodiscard]] virtual bool supportsLongPoll() const = 0;
     };
 } // namespace CloudSync

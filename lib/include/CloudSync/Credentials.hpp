@@ -11,9 +11,6 @@ namespace CloudSync {
     class Credentials {
         friend class CloudImpl;
 
-    public:
-        virtual ~Credentials() = default;;
-
     protected:
         /**
          * @exception CloudSync::Credentials::InvalidCredentials

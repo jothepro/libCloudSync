@@ -13,9 +13,9 @@ namespace CloudSync::onedrive {
                 const std::string &name)
                 : DirectoryImpl(baseUrl, dir, request, name) {};
 
-        std::vector<std::shared_ptr<Resource>> ls() const override;
+        [[nodiscard]] std::vector<std::shared_ptr<Resource>> ls() const override;
 
-        std::shared_ptr<Directory> cd(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> cd(const std::string &path) const override;
 
         void rmdir() const override;
 

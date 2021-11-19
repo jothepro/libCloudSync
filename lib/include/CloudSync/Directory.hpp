@@ -52,7 +52,7 @@ namespace CloudSync {
          * print working directory. alias for `folder->path`.
          * @return the absolute path of the folder without trailing slash.
          */
-        virtual std::string pwd() const = 0;
+        [[nodiscard]] virtual std::string pwd() const = 0;
 
         /**
          * create a new directory

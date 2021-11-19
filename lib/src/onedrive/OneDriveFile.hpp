@@ -14,11 +14,11 @@ namespace CloudSync::onedrive {
 
         bool pollChange(bool longPoll = false) override;
 
-        bool supportsLongPoll() const override {
+        [[nodiscard]] bool supportsLongPoll() const override {
             return false;
         }
 
-        std::string read() const override;
+        [[nodiscard]] std::string read() const override;
 
         void write(const std::string &content) override;
     };

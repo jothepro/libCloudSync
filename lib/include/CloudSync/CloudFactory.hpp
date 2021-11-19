@@ -16,7 +16,7 @@ namespace CloudSync {
          * @param url address of the webdav endpoint
          * @param request custom Request interface implementation to be used for networking
          */
-        std::shared_ptr<Cloud> webdav(const std::string &url);
+        [[nodiscard]] std::shared_ptr<Cloud> webdav(const std::string &url);
 
         /**
          * Creates a nextcloud cloud instance.
@@ -29,7 +29,7 @@ namespace CloudSync {
          * @warning do **not** include the path to the webdav endpoint (`/remote.php/webdav`) in the address. The library
          * will handle this detail for you!
          */
-        std::shared_ptr<Cloud> nextcloud(const std::string &url);
+        [[nodiscard]] std::shared_ptr<Cloud> nextcloud(const std::string &url);
 
         /**
          * Create a dropbox cloud instance.
@@ -39,7 +39,7 @@ namespace CloudSync {
          * @endcode
          * @param request custom Request interface implementation to be used for networking
          */
-        std::shared_ptr<Cloud> dropbox();
+        [[nodiscard]] std::shared_ptr<Cloud> dropbox();
 
         /**
          * Create a box cloud instance.
@@ -49,7 +49,7 @@ namespace CloudSync {
          * @endcode
          * @param request custom Request interface implementation to be used for networking
          */
-        std::shared_ptr<Cloud> box();
+        [[nodiscard]] std::shared_ptr<Cloud> box();
 
         /**
          * Creates a OneDrive cloud instance
@@ -63,7 +63,7 @@ namespace CloudSync {
          *          * `drives/{drive-id}/root`
          * @param request custom Request interface implementation to be used for networking
          */
-        std::shared_ptr<Cloud> onedrive(const std::string &drive = "me/drive/root");
+        [[nodiscard]] std::shared_ptr<Cloud> onedrive(const std::string &drive = "me/drive/root");
 
         /**
          * Creates a Google Drive cloud instance
@@ -74,9 +74,7 @@ namespace CloudSync {
          * @param rootName the type of root. Possible values: `root`, `appDataFolder`.
          * @param request custom Request interface implementation to be used for networking
          */
-        std::shared_ptr<Cloud> gdrive(const std::string &rootName = "root");
-
-        virtual ~CloudFactory() = default;
+        [[nodiscard]] std::shared_ptr<Cloud> gdrive(const std::string &rootName = "root");
 
     private:
         std::shared_ptr<request::Request> requestImplementation;

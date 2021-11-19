@@ -10,8 +10,6 @@ namespace CloudSync {
 
     class Cloud {
     public:
-        // MARK: - errors
-
         /**
          * @brief Thrown if a provided interface/functionality is not implemented by the used cloud provider.
          *
@@ -74,8 +72,6 @@ namespace CloudSync {
             explicit InvalidResponse(const std::string &what = "") : CommunicationError("Invalid Response: " + what) {};
         };
 
-        // checks if the cloud storage is available
-        // MARK: - interface
         /**
          * Use this to check if the connection to the cloud is working. This currently is just a shorthand for
          * `cloud->root()->ls();`.
@@ -96,7 +92,7 @@ namespace CloudSync {
          * current refresh token right before the cloud instance gets destroyed. You can then use it to start a new session
          * at a later time.
          */
-        virtual std::string getCurrentRefreshToken() const = 0;
+        [[nodiscard]] virtual std::string getCurrentRefreshToken() const = 0;
 
         virtual std::shared_ptr<Cloud> proxy(const Proxy &proxy) = 0;
 
@@ -108,22 +104,22 @@ namespace CloudSync {
          * [Login-Flow](https://docs.nextcloud.com/server/18/developer_manual/client_apis/LoginFlow/index.html) endpoint.
          *          * **Dropbox, Box, Onedrive**: Url to the OAuth2 `/authorize` endpoint
          */
-        virtual std::string getAuthorizeUrl() const = 0;
+        [[nodiscard]] virtual std::string getAuthorizeUrl() const = 0;
 
         /**
          * @return the URL to the OAuth2 `/token` endpoint if the cloud supports OAuth2-Login. Otherwise just returns an
          * empty string.
          */
-        virtual std::string getTokenUrl() const = 0;
+        [[nodiscard]] virtual std::string getTokenUrl() const = 0;
 
-        virtual std::string getBaseUrl() const = 0;
+        [[nodiscard]] virtual std::string getBaseUrl() const = 0;
 
         /**
          * Fetches the users display name (!= username, usually its first- & lastname)
          * @warning this makes a network call every time it is called.
          * @return the users display name.
          */
-        virtual std::string getUserDisplayName() const = 0;
+        [[nodiscard]] virtual std::string getUserDisplayName() const = 0;
 
         /**
          * @return root directory. This is the entrypoint for all file operations.
@@ -131,7 +127,7 @@ namespace CloudSync {
          * auto file = cloud->root()->file("path/to/file.txt");
          * @endcode
          */
-        virtual std::shared_ptr<Directory> root() const = 0;
+        [[nodiscard]] virtual std::shared_ptr<Directory> root() const = 0;
     };
 
 } // namespace CloudSync
