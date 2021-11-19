@@ -8,11 +8,6 @@
 #include <iostream>
 #include <vector>
 
-std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::Cloud>& cloud) {
-    output << "[Cloud url: " << cloud->getBaseUrl() << "]" << std::endl;
-    return output;
-}
-
 std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::Resource>& resource) {
     if(resource->isFile()) {
         std::string revision = std::dynamic_pointer_cast<CloudSync::File>(resource)->revision();
@@ -126,11 +121,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "\e[1A" << std::setfill(' ') << std::left << std::setw(80) << cloud << std::endl;
+    std::cout << "\e[1A" << std::setfill(' ') << std::left << std::setw(80) << "[Cloud url: " << cloud->getBaseUrl() << "]" << std::endl;
     std::cout << "Logged in as: " << cloud->getUserDisplayName() << std::endl;
     dir = cloud->root();
-
-    std::cout << dir->pwd() << std::endl;
 
     // cli loop waiting for commands
     while (true) {
@@ -193,7 +186,7 @@ int main(int argc, char *argv[]) {
                 std::string filename;
                 std::cin >> filename;
                 auto file = dir->file(filename);
-                std::cout << "Write file content. To input multiline text, add \" at the beginning and end of the input.\n"
+                std::cout << "Write file content in quotation marks.\n"
                              "This will override the current file content!!!!!"
                           << std::endl;
                 std::string inputline;

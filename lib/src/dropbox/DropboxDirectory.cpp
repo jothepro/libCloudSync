@@ -45,7 +45,7 @@ namespace CloudSync::dropbox {
                                 {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
                                 json{{"path", resourcePath}}.dump())
                         .json();
-                directory = std::dynamic_pointer_cast<DropboxDirectory>(this->parseEntry(responseJson));
+                directory = std::dynamic_pointer_cast<DropboxDirectory>(this->parseEntry(responseJson, "folder"));
 
             } catch (...) {
                 DropboxCloud::handleExceptions(std::current_exception(), resourcePath);

@@ -107,8 +107,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
             WHEN("calling file(test)") {
-                THEN("a NoSuchFileOrDirectory Exception should be thrown "
-                     "because a folder description is returned") {
+                THEN("a NoSuchFileOrDirectory Exception should be thrown because a folder description is returned") {
                     REQUIRE_THROWS_AS(directory->file("test"), CloudSync::Resource::NoSuchFileOrDirectory);
                 }
             }
@@ -165,11 +164,12 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/upload");
                     REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("arg") == "{\"path\":\"/test.txt\"}");
-                    REQUIRE_REQUEST(0, body == "");
+                    REQUIRE_REQUEST(0, body.empty());
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_BINARY);
                 }
                 THEN("a new file called 'test.txt' should be returned") {
                     REQUIRE(newFile->name() == "test.txt");
+                    REQUIRE(newFile->revision() == "0159d4da2a6fc2100000001a2504350");
                 }
             }
         }
@@ -202,6 +202,12 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
                 THEN("a file called 'test.txt' should be returned") {
                     REQUIRE(file->name() == "test.txt");
+                    REQUIRE(file->revision() == "0159d4da2a6fc2100000001a2504350");
+                }
+            }
+            WHEN("calling cd(test.txt)") {
+                THEN("a NoSuchFileOrDirectory Exception should be thrown because a file description is returned") {
+                    REQUIRE_THROWS_AS(directory->cd("test.txt"), CloudSync::Resource::NoSuchFileOrDirectory);
                 }
             }
         }
