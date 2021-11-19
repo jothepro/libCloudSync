@@ -33,7 +33,7 @@ namespace CloudSync::request::curl {
         return size * nmemb;
     }
 
-    const std::string CurlRequest::WHITESPACE = " \n\r";
+    const std::string CurlRequest::WHITESPACE(" \n\r");
 
     Response CurlRequest::request(
             const std::string &verb, const std::string &url,

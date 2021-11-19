@@ -50,4 +50,9 @@ namespace CloudSync {
         return std::make_shared<gdrive::GDriveCloud>(rootName, this->getRequestImplementation());
     }
 
+    std::shared_ptr<CloudFactory> CloudFactory::proxy(const std::string& url, const std::string& username, const std::string& password) {
+        requestImplementation->setProxy(url, username, password);
+        return shared_from_this();
+    }
+
 } // namespace CloudSync

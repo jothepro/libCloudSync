@@ -1,5 +1,4 @@
 #include "nextcloud/NextcloudCloud.hpp"
-#include "CloudSync/Proxy.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
 #include "macros/shared_ptr_mock.hpp"

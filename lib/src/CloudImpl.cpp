@@ -2,7 +2,6 @@
 
 #include <utility>
 #include "CloudSync/Credentials.hpp"
-#include "CloudSync/Proxy.hpp"
 #include "request/Request.hpp"
 #include "request/curl/CurlRequest.hpp"
 
@@ -24,11 +23,6 @@ namespace CloudSync {
 
     std::string CloudImpl::getCurrentRefreshToken() const {
         return this->request->getCurrentRefreshToken();
-    }
-
-    std::shared_ptr<Cloud> CloudImpl::proxy(const Proxy &proxy) {
-        proxy.apply(this->request);
-        return this->shared_from_this();
     }
 
     void CloudImpl::ping() const {

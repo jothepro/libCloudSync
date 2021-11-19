@@ -3,7 +3,6 @@
 #include "Credentials.hpp"
 #include "Directory.hpp"
 #include "Exceptions.hpp"
-#include "Proxy.hpp"
 #include <string>
 
 namespace CloudSync {
@@ -93,8 +92,6 @@ namespace CloudSync {
          * at a later time.
          */
         [[nodiscard]] virtual std::string getCurrentRefreshToken() const = 0;
-
-        virtual std::shared_ptr<Cloud> proxy(const Proxy &proxy) = 0;
 
         /**
          * @throws MethodNotSupportedError if no authorize-URL can be provided.

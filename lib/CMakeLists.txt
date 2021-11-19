@@ -17,7 +17,6 @@ set(INCLUDE
     include/CloudSync/Credentials.hpp
     include/CloudSync/OAuth2Credentials.hpp
     include/CloudSync/UsernamePasswordCredentials.hpp
-    include/CloudSync/Proxy.hpp
 )
 
 set(SRC
@@ -26,7 +25,6 @@ set(SRC
     src/CloudImpl.cpp
     src/OAuth2Credentials.cpp
     src/UsernamePasswordCredentials.cpp
-    src/Proxy.cpp
     src/DirectoryImpl.hpp
     src/DirectoryImpl.cpp
     src/FileImpl.cpp

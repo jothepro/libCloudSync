@@ -2,7 +2,6 @@
 #include "CloudSync/Cloud.hpp"
 #include "CloudSync/Exceptions.hpp"
 #include "request/Request.hpp"
-#include "macros/access_protected.hpp"
 #include "macros/request_mock.hpp"
 #include "macros/shared_ptr_mock.hpp"
 #include <catch2/catch.hpp>
@@ -24,9 +23,7 @@ std::string xmlResponseContent(const std::string &eTag) {
            "        <d:href>/file.txt</d:href>"
            "        <d:propstat>"
            "            <d:prop>"
-           "                <d:getetag>&quot;" +
-           eTag +
-           "&quot;</d:getetag>"
+           "                <d:getetag>&quot;" + eTag + "&quot;</d:getetag>"
            "            </d:prop>"
            "            <d:status>HTTP/1.1 200 OK</d:status>"
            "        </d:propstat>"

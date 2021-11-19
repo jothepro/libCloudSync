@@ -1,6 +1,5 @@
 #include "webdav/WebdavCloud.hpp"
 #include "CloudSync/Credentials.hpp"
-#include "CloudSync/Proxy.hpp"
 #include "macros/access_protected.hpp"
 #include "macros/request_mock.hpp"
 #include "macros/shared_ptr_mock.hpp"
@@ -31,16 +30,6 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
             const std::string result = cloud->getAuthorizeUrl();
             THEN("an empty string should be returned") {
                 REQUIRE(result.empty());
-            }
-        }
-        WHEN("setting the proxy") {
-            When(Method((requestMock), setProxy)).Return();
-            ACCESS_PROTECTED((CloudSync::Proxy), apply);
-            auto proxyMock = Mock<apply_struct>();
-            When(Method(proxyMock, apply)).Return();
-            const auto returnedProxy = cloud->proxy(proxyMock.get());
-            THEN("apply should be called on the proxyMock") {
-                Verify(Method(proxyMock, apply)).Once();
             }
         }
         WHEN("setting the credentials") {

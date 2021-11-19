@@ -11,8 +11,6 @@ namespace CloudSync {
 
         std::string getCurrentRefreshToken() const override;
 
-        std::shared_ptr<Cloud> proxy(const Proxy &proxy) override;
-
         std::string getBaseUrl() const override;
 
         virtual ~CloudImpl() = default;

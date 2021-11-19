@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Cloud.hpp"
+#include <memory>
 
 namespace CloudSync {
 
-    class CloudFactory {
+    class CloudFactory : public std::enable_shared_from_this<CloudFactory> {
     public:
         CloudFactory();
 
@@ -76,6 +77,17 @@ namespace CloudSync {
          */
         [[nodiscard]] std::shared_ptr<Cloud> gdrive(const std::string &rootName = "root");
 
+        /**
+         * By default the library respects the proxy environment variable `http_proxy`.
+         *
+         * This method overrides the environment variable with a custom proxy for all network calls.
+         * @code
+         * // all network calls to onedrive will be made through the applied proxy
+         * auto cloud = CloudFactory().proxy("http://proxy:80").onedrive();
+         * @endcode
+         * @param proxy
+         */
+        std::shared_ptr<CloudFactory> proxy(const std::string& url, const std::string& username = "", const std::string& password = "");
     private:
         std::shared_ptr<request::Request> requestImplementation;
 

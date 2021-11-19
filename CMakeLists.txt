@@ -12,7 +12,6 @@ project(CloudSync
     VERSION ${PROJECT_VERSION}
 )
 
-
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     add_custom_target( doxygen
