@@ -4,6 +4,5 @@
 using namespace CloudSync;
 
 int main() {
-    auto factory = std::make_shared<CloudFactory>();
-    factory->dropbox();
+    auto cloud = CloudFactory().dropbox();
 }

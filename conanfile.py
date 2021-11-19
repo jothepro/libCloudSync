@@ -43,12 +43,14 @@ class LibCloudSyncConan(ConanFile):
         "nlohmann_json/3.9.1",
         "pugixml/1.11",
         "libcurl/7.79.1",
-        "cxxopts/2.2.1"
+        ("cxxopts/2.2.1", "private"),
+        ("catch2/2.13.4", "private"),
+        ("fakeit/2.0.7", "private")
     )
-    build_requires = (
-        "catch2/2.13.4",
-        "fakeit/2.0.7"
-    )
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
 
     def build(self):
         cmake = CMake(self)
