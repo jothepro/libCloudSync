@@ -49,11 +49,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                         "a59943f6fe5e4cbc25366a1c412b4278bc74984353265c2160"
                         "607a073c9cb540"}}}},
                     {"cursor",
-                     "AAEunngK5i6uSxwrSlvTngxpzli3qKoVouhB8LtojjN9gA-"
-                     "NVeH6gNRP0wE2rMRCjkS-h7b9Ryqoqv8PFg5LXhFGVUIMyWQWokb_"
-                     "dc5v8UbzqsULaX-"
-                     "QSg6TgwPVSRl2Alv8tMPzLBWdrjIG3XJdmuzeFx7mp9kcA-"
-                     "3qBm0QDswM1g"},
+                     "AAEunngK5i6uSxwrSlvTngxpzli3qKoVouhB8LtojjN9gA"},
                     {"has_more", false}}
                     .dump(),
                 "application/json"));
@@ -75,6 +71,89 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE(list[0]->path() == "/test");
                     REQUIRE(list[1]->name() == "test.txt");
                     REQUIRE(list[1]->path() == "/test.txt");
+                }
+            }
+        }
+        AND_GIVEN("2 requests that return a valid dropbox directory listing with `has_more: true` and 1 returning `has_more: false`") {
+            WHEN_REQUEST()
+                .RESPOND(request::Response(
+                    200,
+                    json{
+                        {"entries",
+                            {
+                                {
+                                    {".tag", "folder"},
+                                    {"name", "entry1"},
+                                    {"path_lower", "/entry1"},
+                                    {"path_display", "/entry1"},
+                                    {"id", "id:O4T7biRqN_EAAAAAAAANRg"}
+                                }
+                            }
+                        },
+                        {"cursor", "AAEunngK5i6uSxwrSlvTngxpzli3qKoVouhB8LtojjN9gA"},
+                        {"has_more", true}
+                    }.dump(),
+                    "application/json"))
+                .RESPOND(request::Response(
+                    200,
+                    json{
+                        {"entries",
+                            {
+                                {
+                                    {".tag", "folder"},
+                                    {"name", "entry2"},
+                                    {"path_lower", "/entry2"},
+                                    {"path_display", "/entry2"},
+                                    {"id", "id:14T7biRqN_EniaesuAAANR6"}
+                                }
+                            }
+                        },
+                        {"cursor", "BBEunngK5i6uSxwrSleliccAlcqKoVouhB8LtojjN9gB"},
+                        {"has_more", true}
+                    }.dump(),
+                    "application/json"))
+                .RESPOND(request::Response(
+                    200,
+                    json{
+                        {"entries",
+                            {
+                                {
+                                    {".tag", "folder"},
+                                    {"name", "entry3"},
+                                    {"path_lower", "/entry3"},
+                                    {"path_display", "/entry3"},
+                                    {"id", "id:24T7bi5aeoWNEniaesuAAANRf"}
+                                }
+                            }
+                        },
+                        {"cursor", "CCEunngK5Wos5PwrSleliccAlcqKoVouhoeitojjN9gc"},
+                        {"has_more", false}
+                    }.dump(),
+                    "application/json"));
+            WHEN("calling ls()") {
+                auto list = directory->ls();
+                THEN("a list of all resources contained in the 3 request responses should be returned") {
+                    REQUIRE(list.size() == 3);
+                    REQUIRE(list[0]->name() == "entry1");
+                    REQUIRE(list[1]->name() == "entry2");
+                    REQUIRE(list[2]->name() == "entry3");
+                }
+                THEN("the list_folder endpoint should have been called 3 times") {
+                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    REQUIRE_REQUEST(0, verb == "POST");
+                    REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/list_folder");
+                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, body == "{\"path\":\"\",\"recursive\":false}");
+
+                    REQUIRE_REQUEST(1, verb == "POST");
+                    REQUIRE_REQUEST(1, url == "https://api.dropboxapi.com/2/files/list_folder/continue");
+                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(1, body == "{\"cursor\":\"AAEunngK5i6uSxwrSlvTngxpzli3qKoVouhB8LtojjN9gA\"}");
+
+                    REQUIRE_REQUEST(2, verb == "POST");
+                    REQUIRE_REQUEST(2, url == "https://api.dropboxapi.com/2/files/list_folder/continue");
+                    REQUIRE_REQUEST(2, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(2, body == "{\"cursor\":\"BBEunngK5i6uSxwrSleliccAlcqKoVouhB8LtojjN9gB\"}");
                 }
             }
         }

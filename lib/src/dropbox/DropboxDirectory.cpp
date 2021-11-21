@@ -13,7 +13,6 @@ namespace fs = std::filesystem;
 
 namespace CloudSync::dropbox {
     std::vector<std::shared_ptr<Resource>> DropboxDirectory::ls() const {
-        // TODO implement paging logic when list is split in multiple responses
         const auto resourcePath = DropboxDirectory::parsePath(this->path());
         std::vector<std::shared_ptr<Resource>> resources;
         try {
@@ -33,6 +32,29 @@ namespace CloudSync::dropbox {
             ).json();
             for (const auto &entry: responseJson.at("entries")) {
                 resources.push_back(this->parseEntry(entry));
+            }
+            // the following code takes care of paging
+            bool hasMore = responseJson.at("has_more");
+            std::string cursor = responseJson.at("cursor");
+            while(hasMore) {
+                json responseJson = this->request->POST(
+                    "https://api.dropboxapi.com/2/files/list_folder/continue",
+                    {
+                        {
+                            P::HEADERS, {
+                                {"Content-Type", Request::MIMETYPE_JSON}
+                            }
+                        }
+                    },
+                    json{
+                        {"cursor", cursor}
+                    }.dump()
+                ).json();
+                hasMore = responseJson.at("has_more");
+                cursor = responseJson.at("cursor");
+                for (const auto &entry: responseJson.at("entries")) {
+                    resources.push_back(this->parseEntry(entry));
+                }
             }
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), resourcePath);

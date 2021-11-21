@@ -69,8 +69,6 @@ int main(int argc, char *argv[]) {
         cloud = CloudSync::CloudFactory().webdav(providerUrl);
     } else if (result.count("nextcloud")) {
         cloud = CloudSync::CloudFactory().nextcloud(providerUrl);
-    } else if (result.count("owncloud")) {
-        // TODO
     } else if (result.count("dropbox")) {
         cloud = CloudSync::CloudFactory().dropbox();
     } else if (result.count("box")) {

@@ -95,12 +95,10 @@ cd build/example
 ##### Nextcloud
 
 1. Create an app-password for your session.
-2. Call `CloudSyncExample` with the domain, the username and the app-password provided:
+2. Call `CloudSyncExample` with the domain, username and the app-password:
    ```
-   ./CloudSyncExample --nextcloud --domain=https://<your_domain> --username=<username>
+   ./CloudSyncExample --nextcloud --domain=https://<your_domain> --username=<username> --password=<app-password>
    ```
-3. The CLI will ask for the app-password. Alternatively you can also use your account password, but this
-   is discouraged.
 
 ### Documentation
 
