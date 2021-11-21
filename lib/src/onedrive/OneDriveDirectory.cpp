@@ -79,12 +79,17 @@ namespace CloudSync::onedrive {
         std::shared_ptr<OneDriveFile> newFile;
         const std::string resourcePath = this->newResourcePath(path);
         try {
-            json responseJson = this->request
-                    ->PUT(
-                            this->_baseUrl + ":" + resourcePath + ":/content",
-                            {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_BINARY}}}},
-                            "")
-                    .json();
+            json responseJson = this->request->PUT(
+                this->_baseUrl + ":" + resourcePath + ":/content",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_BINARY}
+                        }
+                    }
+                },
+                ""
+            ).json();
             newFile = std::dynamic_pointer_cast<OneDriveFile>(this->parseDriveItem(responseJson, "file"));
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), resourcePath);

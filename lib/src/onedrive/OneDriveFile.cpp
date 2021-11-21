@@ -46,14 +46,18 @@ namespace CloudSync::onedrive {
 
     void OneDriveFile::write(const std::string &content) {
         try {
-            const auto responseJson =
-                    this->request
-                            ->PUT(
-                                    this->_baseUrl + ":" + this->path() + ":/content",
-                                    {{P::HEADERS,
-                                      {{"Content-Type", Request::MIMETYPE_BINARY}, {"If-Match", this->revision()}}}},
-                                    content)
-                            .json();
+            const auto responseJson = this->request->PUT(
+                this->_baseUrl + ":" + this->path() + ":/content",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_BINARY},
+                            {"If-Match", this->revision()}
+                        }
+                    }
+                },
+                content
+            ).json();
             this->_revision = responseJson.at("eTag");
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), this->path());
