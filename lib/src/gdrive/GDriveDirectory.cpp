@@ -13,13 +13,15 @@ namespace CloudSync::gdrive {
     std::vector<std::shared_ptr<Resource>> GDriveDirectory::ls() const {
         std::vector<std::shared_ptr<Resource>> resourceList;
         try {
-            const auto responseJson = this->request
-                    ->GET(
-                            this->_baseUrl + "/files",
-                            {{P::QUERY_PARAMS,
-                              {{"q", "'" + this->resourceId + "' in parents and trashed = false"},
-                               {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}}}})
-                    .json();
+            const auto responseJson = this->request->GET(
+                this->_baseUrl + "/files",
+                {
+                    {P::QUERY_PARAMS, {
+                            {"q", "'" + this->resourceId + "' in parents and trashed = false"},
+                            {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}
+                        }
+                    }
+                }).json();
             for (const auto &file: responseJson.at("items")) {
                 resourceList.push_back(this->parseFile(file));
             }

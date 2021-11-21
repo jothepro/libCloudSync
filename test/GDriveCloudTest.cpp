@@ -8,6 +8,8 @@
 using namespace fakeit;
 using namespace Catch;
 using namespace CloudSync;
+using namespace CloudSync::request;
+using P = Request::ParameterType;
 
 SCENARIO("GDriveCloud", "[cloud][gdrive]") {
     INIT_REQUEST();
@@ -33,6 +35,21 @@ SCENARIO("GDriveCloud", "[cloud][gdrive]") {
             THEN("the root directory is returned") {
                 REQUIRE(directory->name() == "");
                 REQUIRE(directory->path() == "/");
+            }
+        }
+        AND_GIVEN("the currently used access-token being 'mytoken'") {
+            When(Method((requestMock), getCurrentAccessToken)).Return("mytoken");
+            AND_GIVEN("a request that returns 200") {
+                WHEN_REQUEST().RESPOND(request::Response(200));
+                WHEN("calling logout()") {
+                    cloud->logout();
+                    THEN("the OAuth-token should be invalidated") {
+                        REQUIRE_REQUEST_CALLED().Once();
+                        REQUIRE_REQUEST(0, verb == "POST");
+                        REQUIRE_REQUEST(0, url == "https://oauth2.googleapis.com/revoke");
+                        REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFIELDS).at("token") == "mytoken");
+                    }
+                }
             }
         }
     }

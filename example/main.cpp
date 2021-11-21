@@ -204,6 +204,14 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 file->write(filecontent);
+            } else if (action == "logout") {
+                std::cout << "Logging out will revoke your access-token / app password, if possible.\n"
+                             "Do you want to proceed? (y/n)" << std::endl;
+                std::string confirmation;
+                std::cin >> confirmation;
+                if (confirmation == "y") {
+                    cloud->logout();
+                }
             } else if (action == "exit") {
                 exit(0);
             } else {

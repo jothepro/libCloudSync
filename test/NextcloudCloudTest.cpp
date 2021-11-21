@@ -59,5 +59,28 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 REQUIRE(rootDir->path() == "/");
             }
         }
+        AND_GIVEN("a request that returns an OCS success response") {
+            WHEN_REQUEST().RESPOND(request::Response(
+                200,
+                "<?xml version=\"1.0\"?>\n"
+                "<ocs>\n"
+                "    <meta>\n"
+                "        <status>ok</status>\n"
+                "        <statuscode>200</statuscode>\n"
+                "        <message>OK</message>\n"
+                "    </meta>\n"
+                "    <data/>\n"
+                "</ocs>",
+                "application/xml"));
+            WHEN("calling logout()") {
+                cloud->logout();
+                THEN("the app-password should be invalidated") {
+                    REQUIRE_REQUEST_CALLED().Once();
+                    REQUIRE_REQUEST(0, verb == "DELETE");
+                    REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v2.php/core/apppassword");
+                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("OCS-APIRequest") == "true");
+                }
+            }
+        }
     }
 }

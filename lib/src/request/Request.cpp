@@ -92,4 +92,15 @@ namespace CloudSync::request {
         return this->refreshToken;
     }
 
+    std::string Request::getCurrentAccessToken() const {
+        return this->accessToken;
+    }
+
+    void Request::resetAuth() {
+        this->accessToken = "";
+        this->refreshToken = "";
+        this->username = "";
+        this->password = "";
+    }
+
 } // namespace CloudSync::request

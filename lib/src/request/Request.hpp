@@ -80,6 +80,11 @@ namespace CloudSync::request {
 
         void setBasicAuth(const std::string &username, const std::string &password);
 
+        /**
+         * resets any kind of authentication, basicAuth or Token
+         */
+        void resetAuth();
+
         std::string getUsername();
 
         virtual void setTokenRequestUrl(const std::string &tokenRequestUrl);
@@ -93,6 +98,7 @@ namespace CloudSync::request {
                         std::chrono::seconds(0)));
 
         std::string getCurrentRefreshToken() const;
+        [[nodiscard]] virtual std::string getCurrentAccessToken() const;
 
         void setOption(ConfigurationOption option, bool value);
 

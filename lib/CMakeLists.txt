@@ -32,6 +32,7 @@ set(SRC
 )
 
 set(SRC_WEBDAV
+    src/webdav/WebdavCloud.cpp
     src/webdav/WebdavCloud.hpp
     src/webdav/WebdavDirectory.hpp
     src/webdav/WebdavDirectory.cpp
@@ -40,10 +41,12 @@ set(SRC_WEBDAV
 )
 
 set(SRC_NEXTCLOUD
+    src/nextcloud/NextcloudCloud.cpp
     src/nextcloud/NextcloudCloud.hpp
 )
 
 set(SRC_DROPBOX
+    src/dropbox/DropboxCloud.cpp
     src/dropbox/DropboxCloud.hpp
     src/dropbox/DropboxDirectory.hpp
     src/dropbox/DropboxDirectory.cpp
@@ -52,6 +55,7 @@ set(SRC_DROPBOX
 )
 
 set(SRC_BOX
+    src/box/BoxCloud.cpp
     src/box/BoxCloud.hpp
     src/box/BoxDirectory.hpp
     src/box/BoxDirectory.cpp
@@ -60,6 +64,7 @@ set(SRC_BOX
 )
 
 set(SRC_ONEDRIVE
+    src/onedrive/OneDriveCloud.cpp
     src/onedrive/OneDriveCloud.hpp
     src/onedrive/OneDriveDirectory.hpp
     src/onedrive/OneDriveDirectory.cpp
@@ -68,6 +73,7 @@ set(SRC_ONEDRIVE
 )
 
 set(SRC_GDRIVE
+    src/gdrive/GDriveCloud.cpp
     src/gdrive/GDriveCloud.hpp
     src/gdrive/GDriveDirectory.hpp
     src/gdrive/GDriveDirectory.cpp

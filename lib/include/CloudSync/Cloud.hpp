@@ -125,6 +125,28 @@ namespace CloudSync {
          * @endcode
          */
         [[nodiscard]] virtual std::shared_ptr<Directory> root() const = 0;
+
+
+        /**
+         * Invalidates the login credentials to the currently used cloud, if possible.
+         * Resets the credentials after revoking them.
+         *
+         * - For Dropbox & GDrive the OAuth-token will be revoked.
+         * - For Box & OneDrive the token will not be revoked, because this is not supported.
+         * - For Nextcloud the app-password will be revoked, if an app password was used.
+         * - For Webdav or a Nextcloud-session with a normal password it will do nothing.
+         *
+         * After a logout you can login again with different credentials.
+         *
+         * @warning Don't use this Cloud instance after the logout, if you haven't logged in again
+         * with different credentials.
+         * Any request will fail with a AuthorizationFailed exception.
+         *
+         * @throws CommunicationError if the request has failed.
+         *  You may retry to logout or just proceed to delete the credentials in your application and
+         *  ignore the error.
+         */
+        virtual void logout() = 0;
     };
 
 } // namespace CloudSync

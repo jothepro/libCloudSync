@@ -85,13 +85,24 @@ namespace CloudSync::box {
         std::string folderName;
         try {
             const auto baseDir = this->parent(path, folderName);
-            json responseJson = this->request
-                    ->POST(
-                            "https://api.box.com/2.0/folders",
-                            {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                            json{{"name",   folderName},
-                                 {"parent", {{"id", baseDir->resourceId}}}}.dump())
-                    .json();
+            json responseJson = this->request->POST(
+                "https://api.box.com/2.0/folders",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_JSON}
+                        }
+                    }
+                },
+                json{
+                    {"name",   folderName},
+                    {"parent",
+                        {
+                            {"id", baseDir->resourceId}
+                        }
+                    }
+                }.dump()
+            ).json();
             newDir = std::dynamic_pointer_cast<BoxDirectory>(baseDir->parseEntry(responseJson, "folder"));
         } catch (...) {
             BoxCloud::handleExceptions(std::current_exception(), path);
@@ -106,15 +117,29 @@ namespace CloudSync::box {
             const auto baseDir = this->parent(path, fileName);
             json attributesJson = {{"name",   fileName},
                                    {"parent", {{"id", baseDir->resourceId}}}};
-            const auto responseJson =
-                    this->request
-                            ->POST(
-                                    "https://upload.box.com/api/2.0/files/content",
-                                    {{P::MIME_POSTFIELDS,
-                                             {{"attributes", json{{"name",   fileName},
-                                                                  {"parent", {{"id", baseDir->resourceId}}}}.dump()}}},
-                                     {P::MIME_POSTFILES, {{"file",       ""}}}})
-                            .json();
+            const auto responseJson = this->request->POST(
+                "https://upload.box.com/api/2.0/files/content",
+                {
+                    {
+                        P::MIME_POSTFIELDS, {
+                            {"attributes", json{
+                                {"name",   fileName},
+                                {
+                                    "parent", {
+                                        {"id", baseDir->resourceId}
+                                    }
+                                }
+                            }.dump()
+                            }
+                        }
+                    },
+                    {
+                        P::MIME_POSTFILES, {
+                            {"file", ""}
+                        }
+                    }
+                }
+            ).json();
             newFile = std::dynamic_pointer_cast<BoxFile>(baseDir->parseEntry(responseJson.at("entries").at(0), "file"));
         } catch (...) {
             BoxCloud::handleExceptions(std::current_exception(), path);

@@ -20,24 +20,12 @@ namespace CloudSync::nextcloud {
         }
 
         std::shared_ptr<Directory> root() const override {
-            return std::make_shared<webdav::WebdavDirectory>(this->baseUrl, "/remote.php/webdav", "/", this->request,
-                                                             "");
+            return std::make_shared<webdav::WebdavDirectory>(
+                this->baseUrl, "/remote.php/webdav", "/", this->request, "");
         }
 
-        std::string getUserDisplayName() const override {
-            std::string userDisplayName;
-            try {
-                const auto responseXml =
-                        this->request
-                                ->GET(
-                                        this->baseUrl + "/ocs/v1.php/cloud/user",
-                                        {{P::HEADERS, {{"OCS-APIRequest", "true"}, {"Accept", Request::MIMETYPE_XML}}}})
-                                .xml();
-                userDisplayName = responseXml->select_node("/ocs/data/display-name").node().child_value();
-            } catch (...) {
-                NextcloudCloud::handleExceptions(std::current_exception(), "");
-            }
-            return userDisplayName;
-        };
+        std::string getUserDisplayName() const override;
+
+        void logout() override;
     };
 } // namespace CloudSync::nextcloud

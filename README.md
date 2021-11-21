@@ -9,7 +9,6 @@ A simple to use C++ interface to interact with cloud storage providers.
 
 - ☁️ Supported Cloud Providers:
   - Nextcloud
-  - Owncloud
   - Dropbox
   - Box
   - Onedrive
@@ -79,6 +78,30 @@ cd build/example
 ./CloudSyncExample --dropbox --token <your-access-token>
 ```
 
+#### Using the example CLI
+
+##### GDrive
+
+1. Get an access token from the [OAuth 2.0 Playground](https://developers.google.com/oauthplayground) with the following
+   permissions:
+  - `https://www.googleapis.com/auth/userinfo.profile` for loading the user profile.
+  - `https://www.googleapis.com/auth/drive` if you want access to your whole gdrive space.
+  - or `https://www.googleapis.com/auth/drive.appdata` if you want access an the OAuth 2.0 Playground appfolder.
+2. When calling the `CloudSyncExample`, provide which root you want to access. Must match the permissions you requested:
+   ```sh
+   ./CloudSyncExample --gdrive --root=<root/appDataFolder> --token=<access_token>
+   ```
+
+##### Nextcloud
+
+1. Create an app-password for your session.
+2. Call `CloudSyncExample` with the domain, the username and the app-password provided:
+   ```
+   ./CloudSyncExample --nextcloud --domain=https://<your_domain> --username=<username>
+   ```
+3. The CLI will ask for the app-password. Alternatively you can also use your account password, but this
+   is discouraged.
+
 ### Documentation
 
 This project uses [Doxygen](https://www.doxygen.nl/index.html) for documentation.
@@ -101,7 +124,7 @@ This template uses [Github Actions](https://github.com/features/actions) for aut
 - [Box](https://developer.box.com/reference/)
 - [Dropbox](https://www.dropbox.com/developers/documentation/http/documentation)
 - [OneDrive](https://docs.microsoft.com/en-us/onedrive/developer/rest-api/)
-- [GDrive](https://developers.google.com/drive/api/v3/reference)
+- [GDrive](https://developers.google.com/drive/api/v2/about-sdk)
 - [Nextcloud](https://docs.nextcloud.com/server/18/developer_manual/client_apis/WebDAV/index.html)
 
 ### Getting developer tokens
@@ -112,7 +135,9 @@ Go to [`https://app.box.com/developers/console`](https://app.box.com/developers/
 
 #### Dropbox
 
-Visit [`https://www.dropbox.com/developers/apps`](https://www.dropbox.com/developers/apps) and create a new app. In the tab `Settings` under the section `OAuth 2` there is a button to create an access token. It seems to be valid infinitely.
+Visit [`https://www.dropbox.com/developers/apps`](https://www.dropbox.com/developers/apps) and create a new app. 
+In the tab `Settings` under the section `OAuth 2` there is a button to create an access token. 
+It seems to be valid infinitely.
 
 #### OneDrive
 
@@ -121,7 +146,8 @@ Follow [these](https://docs.microsoft.com/en-us/onedrive/developer/rest-api/gett
 
 #### GDrive
 
-Go to `https://developers.google.com/oauthplayground`, select the required scope, e.g. `https://www.googleapis.com/auth/drive.appdata` and let the tool do its job.
+Go to `https://developers.google.com/oauthplayground`, select the required scope, e.g. `https://www.googleapis.com/auth/drive.appdata` 
+and let the tool do its job.
 
 #### Nextcloud
 
