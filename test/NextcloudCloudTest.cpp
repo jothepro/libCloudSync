@@ -73,12 +73,16 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 "</ocs>",
                 "application/xml"));
             WHEN("calling logout()") {
+                When(Method((requestMock), resetAuth)).Return();
                 cloud->logout();
                 THEN("the app-password should be invalidated") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v2.php/core/apppassword");
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("OCS-APIRequest") == "true");
+                }
+                THEN("the request credentials should be reset") {
+                    Verify(Method(requestMock,resetAuth)).Once();
                 }
             }
         }

@@ -83,7 +83,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a request that returns 201 and a requset that returns a PROPFIND result") {
+        AND_GIVEN("a request that returns 201 and a request that returns a PROPFIND result") {
             WHEN_REQUEST()
                 .RESPOND(request::Response(201))
                 .RESPOND(request::Response(
@@ -300,7 +300,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "</d:multistatus>",
                 "application/xml"));
 
-            WHEN("calling file(/some/path/somefile.txt)") {
+            WHEN("calling file(some/path/somefile.txt)") {
                 const auto file = directory->file("some/path/somefile.txt");
                 THEN("a PROPFIND request should be made to the requested file") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -313,6 +313,13 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE(file->name() == "somefile.txt");
                     REQUIRE(file->path() == "/some/path/somefile.txt");
                     REQUIRE(file->revision() == "\"5e18e1bede073\"");
+                }
+            }
+            WHEN("calling cd(some/path/somefile.txt") {
+                THEN("a NoSuchFileOrDirectory exception should be thrown") {
+                    REQUIRE_THROWS_AS(
+                        directory->cd("some/path/somefile.txt"),
+                        CloudSync::Resource::NoSuchFileOrDirectory);
                 }
             }
         }

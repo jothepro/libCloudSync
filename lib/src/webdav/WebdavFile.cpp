@@ -9,13 +9,13 @@ using namespace pugi;
 using P = Request::ParameterType;
 
 namespace CloudSync::webdav {
-
-    std::string WebdavFile::xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
-                                       "<d:propfind xmlns:d=\"DAV:\">\n"
-                                       "   <d:prop>\n"
-                                       "       <d:getetag />\n"
-                                       "   </d:prop>\n"
-                                       "</d:propfind>";
+    std::string WebdavFile::xmlQuery =
+        "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
+        "<d:propfind xmlns:d=\"DAV:\">\n"
+        "   <d:prop>\n"
+        "       <d:getetag />\n"
+        "   </d:prop>\n"
+        "</d:propfind>";
 
     void WebdavFile::rm() {
         const std::string resourcePath = this->_baseUrl + this->path();

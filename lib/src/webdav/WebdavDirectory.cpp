@@ -14,30 +14,35 @@ using P = Request::ParameterType;
 namespace fs = std::filesystem;
 
 namespace CloudSync::webdav {
-    std::string WebdavDirectory::xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
-                                            "<d:propfind  xmlns:d=\"DAV:\">\n"
-                                            "   <d:prop>\n"
-                                            "       <d:getlastmodified />\n"
-                                            "       <d:getetag />\n"
-                                            "       <d:getcontenttype />\n"
-                                            "       <d:resourcetype />\n"
-                                            "       <d:getcontentlength />\n"
-                                            "   </d:prop>\n"
-                                            "</d:propfind>";
+    std::string WebdavDirectory::xmlQuery =
+        "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
+        "<d:propfind  xmlns:d=\"DAV:\">\n"
+        "   <d:prop>\n"
+        "       <d:getlastmodified />\n"
+        "       <d:getetag />\n"
+        "       <d:getcontenttype />\n"
+        "       <d:resourcetype />\n"
+        "       <d:getcontentlength />\n"
+        "   </d:prop>\n"
+        "</d:propfind>";
 
     std::vector<std::shared_ptr<Resource>> WebdavDirectory::ls() const {
         std::vector<std::shared_ptr<Resource>> resources;
         const auto resourcePath = this->requestUrl("");
         try {
-            const auto propfindResult =
-                    this->request
-                            ->PROPFIND(
-                                    resourcePath,
-                                    {{P::HEADERS,
-                                      {{"Depth", "1"}, {"Accept", Request::MIMETYPE_XML},
-                                       {"Content-Type", Request::MIMETYPE_XML}}}},
-                                    xmlQuery)
-                            .xml();
+            const auto propfindResult = this->request->PROPFIND(
+                resourcePath,
+                {
+                    {
+                        P::HEADERS, {
+                            {"Depth", "1"},
+                            {"Accept", Request::MIMETYPE_XML},
+                            {"Content-Type", Request::MIMETYPE_XML}
+                        }
+                    }
+                },
+                xmlQuery
+            ).xml();
             resources = this->parseXmlResponse(propfindResult->root());
         } catch (...) {
             WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
@@ -49,18 +54,24 @@ namespace CloudSync::webdav {
         const auto resourcePath = this->requestUrl(path);
         std::shared_ptr<WebdavDirectory> directory;
         try {
-            const auto propfindResponse =
-                    this->request
-                            ->PROPFIND(
-                                    resourcePath,
-                                    {{P::HEADERS,
-                                      {{"Depth", "0"}, {"Accept", Request::MIMETYPE_XML},
-                                       {"Content-Type", Request::MIMETYPE_XML}}}},
-                                    WebdavDirectory::xmlQuery)
-                            .xml();
+            const auto propfindResponse = this->request->PROPFIND(
+                resourcePath,
+                {
+                    {
+                        P::HEADERS, {
+                            {"Depth", "0"},
+                            {"Accept", Request::MIMETYPE_XML},
+                            {"Content-Type", Request::MIMETYPE_XML}
+                        }
+                    }
+                }, WebdavDirectory::xmlQuery
+            ).xml();
             const auto resourceList = this->parseXmlResponse(propfindResponse->root());
             if (resourceList.size() == 1) {
                 directory = std::dynamic_pointer_cast<WebdavDirectory>(resourceList[0]);
+                if(!directory) { // if the dynamic cast has failed, the returned resource is a file, not a directory
+                    throw Resource::NoSuchFileOrDirectory(resourcePath);
+                }
             } else {
                 throw Cloud::CommunicationError("cannot get resource description");
             }
@@ -84,15 +95,19 @@ namespace CloudSync::webdav {
         std::shared_ptr<WebdavDirectory> directory;
         try {
             this->request->MKCOL(resourcePath);
-            const auto propfindResponse =
-                    this->request
-                            ->PROPFIND(
-                                    resourcePath,
-                                    {{P::HEADERS,
-                                      {{"Depth", "0"}, {"Accept", Request::MIMETYPE_XML},
-                                       {"Content-Type", Request::MIMETYPE_XML}}}},
-                                    WebdavDirectory::xmlQuery)
-                            .xml();
+            const auto propfindResponse = this->request->PROPFIND(
+                resourcePath,
+                {
+                    {
+                        P::HEADERS, {
+                            {"Depth", "0"},
+                            {"Accept", Request::MIMETYPE_XML},
+                            {"Content-Type", Request::MIMETYPE_XML}
+                        }
+                    }
+                },
+                WebdavDirectory::xmlQuery
+            ).xml();
             const auto resourceList = this->parseXmlResponse(propfindResponse->root());
             if (resourceList.size() == 1) {
                 directory = std::dynamic_pointer_cast<WebdavDirectory>(resourceList[0]);
@@ -112,7 +127,16 @@ namespace CloudSync::webdav {
         const auto resourcePath = this->requestUrl(name);
         std::shared_ptr<File> file;
         try {
-            this->request->PUT(resourcePath, {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_BINARY}}}}, "");
+            this->request->PUT(
+                resourcePath,
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_BINARY}
+                        }
+                    }
+                },
+                "");
             file = this->file(name);
         } catch (...) {
             WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
@@ -124,18 +148,25 @@ namespace CloudSync::webdav {
         const auto resourcePath = this->requestUrl(name);
         std::shared_ptr<WebdavFile> file;
         try {
-            const auto propfindResponse =
-                    this->request
-                            ->PROPFIND(
-                                    resourcePath,
-                                    {{P::HEADERS,
-                                      {{"Depth", "0"}, {"Accept", Request::MIMETYPE_XML},
-                                       {"Content-Type", Request::MIMETYPE_XML}}}},
-                                    WebdavDirectory::xmlQuery)
-                            .xml();
+            const auto propfindResponse = this->request->PROPFIND(
+                resourcePath,
+                {
+                    {
+                        P::HEADERS, {
+                            {"Depth", "0"},
+                            {"Accept", Request::MIMETYPE_XML},
+                            {"Content-Type", Request::MIMETYPE_XML}
+                        }
+                    }
+                },
+                WebdavDirectory::xmlQuery
+            ).xml();
             const auto resourceList = this->parseXmlResponse(propfindResponse->root());
             if (resourceList.size() == 1) {
                 file = std::dynamic_pointer_cast<WebdavFile>(resourceList[0]);
+                if(!file) { // if the dynamic cast has failed, the returned resource is a not a file
+                    throw Resource::NoSuchFileOrDirectory(resourcePath);
+                }
             } else {
                 throw Cloud::CommunicationError("cannot get metadata for file");
             }
@@ -167,30 +198,29 @@ namespace CloudSync::webdav {
                 // if the collection node exists, we can be sure this is a
                 // directory, else it must be a file
                 const auto filename = resourcePath.filename().string();
-                if (responseNode.select_node("./*[local-name()='propstat']"
-                                             "/*[local-name()='prop']"
-                                             "/*[local-name()='resourcetype']"
-                                             "/*[local-name()='collection']")) {
-
+                if (responseNode.select_node(
+                    "./*[local-name()='propstat']"
+                    "/*[local-name()='prop']"
+                    "/*[local-name()='resourcetype']"
+                    "/*[local-name()='collection']")
+                ) {
                     resource = std::make_shared<WebdavDirectory>(
-                            this->_baseUrl,
-                            this->dirOffset,
-                            resourceHref,
-                            this->request,
-                            filename);
-                } else if (
-                        const auto revision = responseNode
-                                .select_node("./*[local-name()='propstat']"
-                                             "/*[local-name()='prop']"
-                                             "/*[local-name()='getetag']")
-                                .node()
-                                .child_value()) {
+                        this->_baseUrl,
+                        this->dirOffset,
+                        resourceHref,
+                        this->request,
+                        filename);
+                } else if (const auto revision = responseNode.select_node(
+                    "./*[local-name()='propstat']"
+                    "/*[local-name()='prop']"
+                    "/*[local-name()='getetag']").node().child_value()
+                ) {
                     resource = std::make_shared<WebdavFile>(
-                            this->_baseUrl + this->dirOffset,
-                            resourceHref,
-                            this->request,
-                            filename,
-                            revision);
+                        this->_baseUrl + this->dirOffset,
+                        resourceHref,
+                        this->request,
+                        filename,
+                        revision);
                 }
                 resources.push_back(resource);
             }

@@ -17,13 +17,20 @@ namespace CloudSync::dropbox {
         const auto resourcePath = DropboxDirectory::parsePath(this->path());
         std::vector<std::shared_ptr<Resource>> resources;
         try {
-            json responseJson = this->request
-                    ->POST(
-                            "https://api.dropboxapi.com/2/files/list_folder",
-                            {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                            json{{"path",      resourcePath},
-                                 {"recursive", false}}.dump())
-                    .json();
+            json responseJson = this->request->POST(
+                "https://api.dropboxapi.com/2/files/list_folder",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_JSON}
+                        }
+                    }
+                },
+                json{
+                    {"path", resourcePath},
+                    {"recursive", false}
+                }.dump()
+            ).json();
             for (const auto &entry: responseJson.at("entries")) {
                 resources.push_back(this->parseEntry(entry));
             }
@@ -39,12 +46,19 @@ namespace CloudSync::dropbox {
         // get_metadata is not supported for the root folder
         if (!resourcePath.empty()) {
             try {
-                json responseJson = this->request
-                        ->POST(
-                                "https://api.dropboxapi.com/2/files/get_metadata",
-                                {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                                json{{"path", resourcePath}}.dump())
-                        .json();
+                json responseJson = this->request->POST(
+                    "https://api.dropboxapi.com/2/files/get_metadata",
+                    {
+                        {
+                            P::HEADERS, {
+                                {"Content-Type", Request::MIMETYPE_JSON}
+                            }
+                        }
+                    },
+                    json{
+                        {"path", resourcePath}
+                    }.dump()
+                ).json();
                 directory = std::dynamic_pointer_cast<DropboxDirectory>(this->parseEntry(responseJson, "folder"));
 
             } catch (...) {
@@ -63,9 +77,15 @@ namespace CloudSync::dropbox {
         }
         try {
             this->request->POST(
-                    "https://api.dropboxapi.com/2/files/delete_v2",
-                    {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                    json{{"path", resourcePath}}.dump());
+                "https://api.dropboxapi.com/2/files/delete_v2",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_JSON}
+                        }
+                    }
+                },
+                json{{"path", resourcePath}}.dump());
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
         }
@@ -75,12 +95,19 @@ namespace CloudSync::dropbox {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
         std::shared_ptr<DropboxDirectory> directory;
         try {
-            json responseJson = this->request
-                    ->POST(
-                            "https://api.dropboxapi.com/2/files/create_folder_v2",
-                            {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                            json{{"path", resourcePath}}.dump())
-                    .json();
+            json responseJson = this->request->POST(
+                "https://api.dropboxapi.com/2/files/create_folder_v2",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_JSON}
+                        }
+                    }
+                },
+                json{
+                    {"path", resourcePath}
+                }.dump()
+            ).json();
             directory =
                     std::dynamic_pointer_cast<DropboxDirectory>(
                             this->parseEntry(responseJson.at("metadata"), "folder"));
@@ -94,13 +121,26 @@ namespace CloudSync::dropbox {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
         std::shared_ptr<DropboxFile> file;
         try {
-            const auto responseJson = this->request
-                    ->POST(
-                            "https://content.dropboxapi.com/2/files/upload",
-                            {{P::HEADERS,      {{"Content-Type", Request::MIMETYPE_BINARY}}},
-                             {P::QUERY_PARAMS, {{"arg",          json{{"path", resourcePath}}.dump()}}}},
-                            "")
-                    .json();
+            const auto responseJson = this->request->POST(
+                "https://content.dropboxapi.com/2/files/upload",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_BINARY}
+                        }
+                    },
+                    {
+                        P::QUERY_PARAMS, {
+                            {
+                                "arg", json{
+                                    {"path", resourcePath}
+                                }.dump()
+                            }
+                        }
+                    }
+                },
+                ""
+            ).json();
             file = std::dynamic_pointer_cast<DropboxFile>(this->parseEntry(responseJson, "file"));
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
@@ -112,12 +152,19 @@ namespace CloudSync::dropbox {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
         std::shared_ptr<DropboxFile> file;
         try {
-            json responseJson = this->request
-                    ->POST(
-                            "https://api.dropboxapi.com/2/files/get_metadata",
-                            {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                            json{{"path", resourcePath}}.dump())
-                    .json();
+            json responseJson = this->request->POST(
+                "https://api.dropboxapi.com/2/files/get_metadata",
+                {
+                    {
+                        P::HEADERS, {
+                            {"Content-Type", Request::MIMETYPE_JSON}
+                        }
+                    }
+                },
+                json{
+                    {"path", resourcePath}
+                }.dump()
+            ).json();
             file = std::dynamic_pointer_cast<DropboxFile>(this->parseEntry(responseJson, "file"));
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), resourcePath);

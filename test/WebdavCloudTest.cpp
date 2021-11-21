@@ -49,5 +49,12 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
                 REQUIRE(directory->path() == "/");
             }
         }
+        WHEN("calling logout()") {
+            When(Method((requestMock), resetAuth)).Return();
+            cloud->logout();
+            THEN("the request credentials should be reset") {
+                Verify(Method(requestMock,resetAuth)).Once();
+            }
+        }
     }
 }

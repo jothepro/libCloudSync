@@ -83,7 +83,7 @@ namespace CloudSync::request {
         /**
          * resets any kind of authentication, basicAuth or Token
          */
-        void resetAuth();
+        virtual void resetAuth();
 
         std::string getUsername();
 

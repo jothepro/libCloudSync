@@ -42,12 +42,16 @@ SCENARIO("GDriveCloud", "[cloud][gdrive]") {
             AND_GIVEN("a request that returns 200") {
                 WHEN_REQUEST().RESPOND(request::Response(200));
                 WHEN("calling logout()") {
+                    When(Method((requestMock), resetAuth)).Return();
                     cloud->logout();
                     THEN("the OAuth-token should be invalidated") {
                         REQUIRE_REQUEST_CALLED().Once();
                         REQUIRE_REQUEST(0, verb == "POST");
                         REQUIRE_REQUEST(0, url == "https://oauth2.googleapis.com/revoke");
                         REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFIELDS).at("token") == "mytoken");
+                    }
+                    THEN("the request credentials should be reset") {
+                        Verify(Method(requestMock,resetAuth)).Once();
                     }
                 }
             }
