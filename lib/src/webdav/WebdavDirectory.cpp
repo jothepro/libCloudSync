@@ -100,8 +100,8 @@ namespace CloudSync::webdav {
         std::shared_ptr<WebdavDirectory> directory;
         auto normalizedPath = fs::path( WebdavDirectory::remove_trailing_slashes(path));
         if(normalizedPath.has_parent_path()) {
-            if(!resource_exists(normalizedPath.parent_path())) {
-                create_directory(normalizedPath.parent_path());
+            if(!resource_exists(normalizedPath.parent_path().generic_string())) {
+                create_directory(normalizedPath.parent_path().generic_string());
             }
         }
         try {
@@ -126,9 +126,9 @@ namespace CloudSync::webdav {
                 throw Cloud::CommunicationError("cannot get resource description");
             }
         } catch(request::Response::MethodNotAllowed &e) {
-            throw Resource::ResourceConflict(fs::path(this->path()) / path);
+            throw Resource::ResourceConflict((fs::path(this->path()) / path).generic_string());
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), fs::path(this->path()) / path);
+            WebdavCloud::handleExceptions(std::current_exception(), (fs::path(this->path()) / path).generic_string());
         }
         return directory;
     }
@@ -137,13 +137,13 @@ namespace CloudSync::webdav {
         const auto resourcePath = this->requestUrl(path);
         std::shared_ptr<File> file;
         if(fs::path(path).has_parent_path()) {
-            if(!resource_exists(fs::path(resourcePath).parent_path())) {
-                create_directory(fs::path(path).parent_path());
+            if(!resource_exists(fs::path(resourcePath).parent_path().generic_string())) {
+                create_directory(fs::path(path).parent_path().generic_string());
             }
         }
         try {
             if(resource_exists(resourcePath)) {
-                throw Resource::ResourceConflict(fs::path(this->path()) / path);
+                throw Resource::ResourceConflict(fs::path(fs::path(this->path()) / path).generic_string());
             } else {
                 this->request->PUT(
                     resourcePath,
@@ -158,7 +158,7 @@ namespace CloudSync::webdav {
                 file = this->get_file(path);
             }
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), fs::path(this->path()) / path);
+            WebdavCloud::handleExceptions(std::current_exception(), (fs::path(this->path()) / path).generic_string());
         }
         return file;
     }
@@ -190,7 +190,7 @@ namespace CloudSync::webdav {
                 throw Cloud::CommunicationError("cannot get metadata for file");
             }
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), fs::path(this->path()) / path);
+            WebdavCloud::handleExceptions(std::current_exception(), (fs::path(this->path()) / path).generic_string());
         }
         return file;
     }
