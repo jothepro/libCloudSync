@@ -40,8 +40,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling ls") {
-                const auto dirList = directory->ls();
+            WHEN("calling list_resources") {
+                const auto dirList = directory->list_resources();
 
                 THEN("the /children graph endpoint should have been called") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -68,10 +68,10 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling cd(somefolder), cd(/somefolder), cd(/somefolder/), cd(/somefolder/some/..)") {
+            WHEN("calling get_directory(somefolder), get_directory(/somefolder), get_directory(/somefolder/), get_directory(/somefolder/some/..)") {
                 std::string path =
                     GENERATE(as<std::string>{}, "somefolder", "/somefolder", "/somefolder/", "/somefolder/some/..");
-                const auto newDirectory = directory->cd(path);
+                const auto newDirectory = directory->get_directory(path);
                 THEN("the graph resource endpoint should have been called") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -108,8 +108,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling ls()") {
-                const auto dirList = directory->ls();
+            WHEN("calling list_resources()") {
+                const auto dirList = directory->list_resources();
 
                 THEN("the /childern grap endpoint should be called on the resource") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -131,9 +131,9 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             WHEN_REQUEST().Throw(request::Response::NotFound(
                 json{{"error", {{"code", "itemNotFound"}, {"message", "The resource could not be found."}}}}.dump()));
 
-            WHEN("calling ls()") {
+            WHEN("calling list_resources()") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->list_resources(), Resource::NoSuchResource);
                 }
             }
         }
@@ -148,8 +148,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling cd(somefolder)") {
-                const auto newDirectory = directory->cd("somefolder");
+            WHEN("calling get_directory(somefolder)") {
+                const auto newDirectory = directory->get_directory("somefolder");
                 THEN("the graph resource endpoint should have been called") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -174,8 +174,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling file(somefile.txt)") {
-                const auto file = directory->file("somefile.txt");
+            WHEN("calling get_file(somefile.txt)") {
+                const auto file = directory->get_file("somefile.txt");
 
                 THEN("the item endpoint should be called on the file path") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -196,9 +196,9 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         AND_GIVEN("a request that throws 404 Resource Not Found") {
             WHEN_REQUEST().Throw(request::Response::NotFound(""));
 
-            WHEN("calling file(somefile.txt)") {
+            WHEN("calling get_file(somefile.txt)") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->file("somefile.txt"), Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->get_file("somefile.txt"), Resource::NoSuchResource);
                 }
             }
         }
@@ -215,8 +215,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling touch(somefile.txt)") {
-                const auto newFile = directory->touch("somefile.txt");
+            WHEN("calling create_file(somefile.txt)") {
+                const auto newFile = directory->create_file("somefile.txt");
                 THEN("the content endpoint should be called with no file content on the desired resource path") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
@@ -234,7 +234,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             }
         }
 
-        AND_GIVEN("a request that returns a valid folder description") {
+        AND_GIVEN("a request sequence that returns 200 and a valid folder description") {
             WHEN_REQUEST().RESPOND(request::Response(
                 200,
                 json{
@@ -244,8 +244,8 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling mkdir(somefolder)") {
-                const auto newFolder = directory->mkdir("somefolder");
+            WHEN("calling create_directory(somefolder)") {
+                const auto newFolder = directory->create_directory("somefolder");
                 THEN("the children endpoint should have been called with a json payload telling the new folder name") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
@@ -253,7 +253,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                         0,
                         url == "https://graph.microsoft.com/v1.0/me/"
                                "drive/root:/some/folder:/children");
-                    REQUIRE_REQUEST(0, body == "{\"folder\":{},\"name\":\"somefolder\"}");
+                    REQUIRE_REQUEST(0, body == "{\"@microsoft.graph.conflictBehavior\":\"fail\",\"folder\":{},\"name\":\"somefolder\"}");
                     REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
 

@@ -2,7 +2,7 @@
 
 using namespace CloudSync;
 
-std::string nextcloud::NextcloudCloud::getUserDisplayName() const {
+std::string nextcloud::NextcloudCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
         const auto responseXml = this->request->GET(

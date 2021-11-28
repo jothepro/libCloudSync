@@ -17,7 +17,7 @@ namespace CloudSync::webdav {
         "   </d:prop>\n"
         "</d:propfind>";
 
-    void WebdavFile::rm() {
+    void WebdavFile::remove() {
         const std::string resourcePath = this->_baseUrl + this->path();
         try {
             this->request->DELETE(resourcePath);
@@ -26,7 +26,7 @@ namespace CloudSync::webdav {
         }
     }
 
-    bool WebdavFile::pollChange(bool longPoll) {
+    bool WebdavFile::poll_change(bool longPoll) {
         bool hasChanged = false;
         const std::string resourcePath = this->_baseUrl + this->path();
         try {
@@ -65,7 +65,7 @@ namespace CloudSync::webdav {
         return hasChanged;
     }
 
-    std::string WebdavFile::read() const {
+    std::string WebdavFile::read_as_string() const {
         std::string data;
         const std::string resourcePath = this->_baseUrl + this->path();
         try {
@@ -76,7 +76,7 @@ namespace CloudSync::webdav {
         return data;
     }
 
-    void WebdavFile::write(const std::string &input) {
+    void WebdavFile::write_string(const std::string &input) {
         const std::string resourcePath = this->_baseUrl + this->path();
         try {
             const auto putResult = this->request->PUT(

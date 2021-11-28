@@ -13,17 +13,17 @@ namespace CloudSync::onedrive {
                 const std::string &name)
                 : DirectoryImpl(baseUrl, dir, request, name) {};
 
-        [[nodiscard]] std::vector<std::shared_ptr<Resource>> ls() const override;
+        [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> cd(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
 
-        void rmdir() const override;
+        void remove() override;
 
-        std::shared_ptr<Directory> mkdir(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
 
-        std::shared_ptr<File> touch(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::string &path) const override;
 
-        std::shared_ptr<File> file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::string &path) const override;
 
     private:
         std::shared_ptr<Resource> parseDriveItem(const json &value, const std::string &expectedType = "") const;

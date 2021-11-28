@@ -67,9 +67,9 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "</d:multistatus>",
                 "application/xml"));
 
-            WHEN("calling cd(folder), cd(folder/), cd(/folder/), cd(/folder/test/..)") {
+            WHEN("calling get_directory(folder), get_directory(folder/), get_directory(/folder/), get_directory(/folder/test/..)") {
                 std::string path = GENERATE(as<std::string>{}, "folder", "folder/", "/folder/", "/folder/test/..");
-                const auto newDirectory = directory->cd(path);
+                const auto newDirectory = directory->get_directory(path);
                 THEN("a PROPFIND request on the desired folder should be made") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
@@ -110,9 +110,9 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     "</d:multistatus>",
                     "application/xml"));
 
-            WHEN("calling mkdir(newDirectory), mkdir(newDirectory/)") {
+            WHEN("calling create_directory(newDirectory), create_directory(newDirectory/)") {
                 std::string path = GENERATE(as<std::string>{}, "newDirectory", "newDirectory/");
-                const auto newDirectory = directory->mkdir(path);
+                const auto newDirectory = directory->create_directory(path);
                 THEN("a MKCOL request should be made on the path of the new folder") {
                     REQUIRE_REQUEST_CALLED().Twice();
                     REQUIRE_REQUEST(0, verb == "MKCOL");
@@ -132,20 +132,14 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a DELETE request that returns 204") {
-            WHEN_REQUEST().RESPOND(request::Response(204));
-
-            WHEN("deleting the directory") {
-                directory->rmdir();
-                THEN("a DELETE request should be made on the current folder") {
-                    REQUIRE_REQUEST_CALLED().Once();
-                    REQUIRE_REQUEST(0, verb == "DELETE");
-                    REQUIRE_REQUEST(0, url == BASE_URL + "/");
-                }
+        WHEN("deleting the directory") {
+            THEN("a PermissionDenied exeception shoudl be thrown, because the root dir cannot be deleted") {
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::PermissionDenied);
             }
         }
-        AND_GIVEN("a request that returns 201 and then a request that returns a description of the a new file") {
+        AND_GIVEN("a request series  that returns 404,  201 and then a request that returns a description of the a new file") {
             WHEN_REQUEST()
+                .RESPOND(request::Response(404))
                 .RESPOND(request::Response(201))
                 .RESPOND(request::Response(
                     200,
@@ -169,20 +163,25 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     "</d:multistatus>",
                     "application/xml"));
 
-            WHEN("calling touch(newfile.txt)") {
-                const auto newFile = directory->touch("newfile.txt");
-                THEN("a PUT request should be made on path of the file to be created") {
-                    REQUIRE_REQUEST_CALLED().Twice();
-                    REQUIRE_REQUEST(0, verb == "PUT");
+            WHEN("calling create_file(newfile.txt)") {
+                const auto newFile = directory->create_file("newfile.txt");
+                THEN("a HEAD request should be made to find out if the resource already exists") {
+                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    REQUIRE_REQUEST(0, verb == "HEAD");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/newfile.txt");
-                    REQUIRE_REQUEST(0, body == "");
+                }
+                THEN("a PUT request should be made on path of the file to be created") {
+                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    REQUIRE_REQUEST(1, verb == "PUT");
+                    REQUIRE_REQUEST(1, url == BASE_URL + "/newfile.txt");
+                    REQUIRE_REQUEST(1, body == "");
                 }
                 THEN("a PROPFIND request should be made on the new file") {
-                    REQUIRE_REQUEST_CALLED().Twice();
-                    REQUIRE_REQUEST(1, verb == "PROPFIND");
-                    REQUIRE_REQUEST(1, url == BASE_URL + "/newfile.txt");
-                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Depth") == "0");
-                    REQUIRE_REQUEST(1, body == xmlQuery);
+                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    REQUIRE_REQUEST(2, verb == "PROPFIND");
+                    REQUIRE_REQUEST(2, url == BASE_URL + "/newfile.txt");
+                    REQUIRE_REQUEST(2, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(2, body == xmlQuery);
                 }
                 THEN("an object representing the file should be returned") {
                     REQUIRE(newFile->name() == "newfile.txt");
@@ -255,8 +254,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "</d:multistatus>",
                 "application/xml"));
 
-            WHEN("calling ls()") {
-                const auto dirlist = directory->ls();
+            WHEN("calling list_resources()") {
+                const auto dirlist = directory->list_resources();
                 THEN("a PROPFIND request should be made on the current directory") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
@@ -300,8 +299,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "</d:multistatus>",
                 "application/xml"));
 
-            WHEN("calling file(some/path/somefile.txt)") {
-                const auto file = directory->file("some/path/somefile.txt");
+            WHEN("calling get_file(some/path/somefile.txt)") {
+                const auto file = directory->get_file("some/path/somefile.txt");
                 THEN("a PROPFIND request should be made to the requested file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
@@ -315,11 +314,11 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE(file->revision() == "\"5e18e1bede073\"");
                 }
             }
-            WHEN("calling cd(some/path/somefile.txt") {
+            WHEN("calling get_directory(some/path/somefile.txt") {
                 THEN("a NoSuchFileOrDirectory exception should be thrown") {
                     REQUIRE_THROWS_AS(
-                        directory->cd("some/path/somefile.txt"),
-                        CloudSync::Resource::NoSuchFileOrDirectory);
+                            directory->get_directory("some/path/somefile.txt"),
+                        CloudSync::Resource::NoSuchResource);
                 }
             }
         }
@@ -330,14 +329,14 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "<notwhatweexpect />",
                 "application/xml"));
 
-            WHEN("calling ls()") {
+            WHEN("calling list_resources()") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling cd(test)") {
+            WHEN("calling get_directory(test)") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->cd("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }
@@ -346,12 +345,12 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
             WHEN("getting the current dir content") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling cd(test)") {
+            WHEN("calling get_directory(test)") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->cd("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }
@@ -392,13 +391,13 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "</d:multistatus>",
                 "application/xml"));
 
-            WHEN("calling cd(somefolder), cd(somefolder/), cd(somefolder/morefolder/..), cd(/somefolder/)") {
+            WHEN("calling get_directory(somefolder), get_directory(somefolder/), get_directory(somefolder/morefolder/..), get_directory(/somefolder/)") {
                 std::string path = GENERATE(
                     as<std::string>{},
                     "somefolder",
                     "somefolder/",
                     "somefolder/morefolder/..");
-                const auto newDirectory = directory->cd(path);
+                const auto newDirectory = directory->get_directory(path);
                 THEN("a PROPFIND request on the desired folder should be made") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
@@ -418,7 +417,18 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
     GIVEN("a webdav directory with a nextcloud/owncloud dirOffset") {
         const auto nextcloudDir =
             std::make_shared<WebdavDirectory>(BASE_URL, "/remote.php/webdav", "/some/folder", request, "folder");
+        AND_GIVEN("a DELETE request that returns 204") {
+            WHEN_REQUEST().RESPOND(request::Response(204));
 
+            WHEN("deleting the directory") {
+                nextcloudDir->remove();
+                THEN("a DELETE request should be made on the current folder") {
+                    REQUIRE_REQUEST_CALLED().Once();
+                    REQUIRE_REQUEST(0, verb == "DELETE");
+                    REQUIRE_REQUEST(0, url == BASE_URL + "/remote.php/webdav/some/folder");
+                }
+            }
+        }
         AND_GIVEN("a PROPFIND request that returns a valid webdav directory description (Depth:0) including the "
                   "dirOffset of nextcloud") {
             WHEN_REQUEST().RESPOND(request::Response(
@@ -447,8 +457,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 "</d:multistatus>",
                 "application/xml"));
 
-            WHEN("calling cd(somefolder)") {
-                const auto newNextcloudDir = nextcloudDir->cd("somefolder");
+            WHEN("calling get_directory(somefolder)") {
+                const auto newNextcloudDir = nextcloudDir->get_directory("somefolder");
                 THEN("a PROPFIND request should be made on the correct resource Path") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");

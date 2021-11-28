@@ -8,7 +8,7 @@ using namespace CloudSync::request;
 using P = Request::ParameterType;
 
 namespace CloudSync::onedrive {
-    void OneDriveFile::rm() {
+    void OneDriveFile::remove() {
         try {
             this->request->DELETE(this->_baseUrl + ":" + this->path());
         } catch (...) {
@@ -16,7 +16,7 @@ namespace CloudSync::onedrive {
         }
     }
 
-    bool OneDriveFile::pollChange(bool longPoll) {
+    bool OneDriveFile::poll_change(bool longPoll) {
         bool hasChanged = false;
         try {
             if (longPoll) {
@@ -33,7 +33,7 @@ namespace CloudSync::onedrive {
         return hasChanged;
     }
 
-    std::string OneDriveFile::read() const {
+    std::string OneDriveFile::read_as_string() const {
         std::string fileContent;
         try {
             const auto getResult = this->request->GET(this->_baseUrl + ":" + this->path() + ":/content");
@@ -44,7 +44,7 @@ namespace CloudSync::onedrive {
         return fileContent;
     }
 
-    void OneDriveFile::write(const std::string &content) {
+    void OneDriveFile::write_string(const std::string &content) {
         try {
             const auto responseJson = this->request->PUT(
                 this->_baseUrl + ":" + this->path() + ":/content",

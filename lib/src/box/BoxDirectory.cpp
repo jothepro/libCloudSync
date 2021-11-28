@@ -11,7 +11,7 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 namespace CloudSync::box {
-    std::vector<std::shared_ptr<Resource>> BoxDirectory::ls() const {
+    std::vector<std::shared_ptr<Resource>> BoxDirectory::list_resources() const {
         std::vector<std::shared_ptr<Resource>> resources;
         try {
             json responseJson = this->request->GET(
@@ -25,7 +25,7 @@ namespace CloudSync::box {
         return resources;
     }
 
-    std::shared_ptr<Directory> BoxDirectory::cd(const std::string &path) const {
+    std::shared_ptr<Directory> BoxDirectory::get_directory(const std::string &path) const {
         std::shared_ptr<BoxDirectory> newDir;
         // calculate "diff" between current position & wanted path. What do we need
         // to do to get there?
@@ -57,7 +57,8 @@ namespace CloudSync::box {
                     if (pathComponent == "..") {
                         currentDir = currentDir->parent();
                     } else {
-                        currentDir = std::static_pointer_cast<BoxDirectory>(currentDir->cd(pathComponent.string()));
+                        currentDir = std::static_pointer_cast<BoxDirectory>(
+                                currentDir->get_directory(pathComponent.string()));
                     }
                 }
                 newDir = currentDir;
@@ -68,7 +69,7 @@ namespace CloudSync::box {
         return newDir;
     }
 
-    void BoxDirectory::rmdir() const {
+    void BoxDirectory::remove() {
         try {
             if (this->path() != "/") {
                 this->request->DELETE("https://api.box.com/2.0/folders/" + this->resourceId);
@@ -80,11 +81,11 @@ namespace CloudSync::box {
         }
     }
 
-    std::shared_ptr<Directory> BoxDirectory::mkdir(const std::string &path) const {
-        std::shared_ptr<BoxDirectory> newDir;
+    std::shared_ptr<Directory> BoxDirectory::create_directory(const std::string &path) const {
+        std::shared_ptr<Directory> newDir;
         std::string folderName;
         try {
-            const auto baseDir = this->parent(path, folderName);
+            const auto baseDir = this->parent(path, folderName, true);
             json responseJson = this->request->POST(
                 "https://api.box.com/2.0/folders",
                 {
@@ -110,13 +111,11 @@ namespace CloudSync::box {
         return newDir;
     }
 
-    std::shared_ptr<File> BoxDirectory::touch(const std::string &path) const {
-        std::shared_ptr<BoxFile> newFile;
+    std::shared_ptr<File> BoxDirectory::create_file(const std::string &path) const {
+        std::shared_ptr<File> newFile;
         std::string fileName;
         try {
-            const auto baseDir = this->parent(path, fileName);
-            json attributesJson = {{"name",   fileName},
-                                   {"parent", {{"id", baseDir->resourceId}}}};
+            const auto baseDir = this->parent(path, fileName, true);
             const auto responseJson = this->request->POST(
                 "https://upload.box.com/api/2.0/files/content",
                 {
@@ -147,7 +146,7 @@ namespace CloudSync::box {
         return newFile;
     }
 
-    std::shared_ptr<File> BoxDirectory::file(const std::string &path) const {
+    std::shared_ptr<File> BoxDirectory::get_file(const std::string &path) const {
         std::shared_ptr<BoxFile> file;
         std::string fileName;
         try {
@@ -174,12 +173,20 @@ namespace CloudSync::box {
                 this->parseEntry(responseJson, "folder", fs::path(this->path()).parent_path().generic_string()));
     }
 
-    std::shared_ptr<BoxDirectory> BoxDirectory::parent(const std::string &path, std::string &folderName) const {
+    std::shared_ptr<BoxDirectory> BoxDirectory::parent(const std::string &path, std::string &folderName, bool createIfMissing) const {
         const auto relativePath =
                 (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
         const auto relativeParentPath = relativePath.parent_path();
         folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
-        return std::static_pointer_cast<BoxDirectory>(this->cd(relativeParentPath.generic_string()));
+        try {
+            return std::static_pointer_cast<BoxDirectory>(this->get_directory(relativeParentPath.generic_string()));
+        } catch (const NoSuchResource &e) {
+            if(createIfMissing && relativeParentPath != "") {
+                return std::static_pointer_cast<BoxDirectory>(this->create_directory(relativeParentPath.generic_string()));
+            } else {
+                throw e;
+            }
+        }
     }
 
     std::shared_ptr<BoxDirectory> BoxDirectory::child(const std::string &name) const {
@@ -193,7 +200,7 @@ namespace CloudSync::box {
             }
         }
         if (childDir == nullptr) {
-            throw NoSuchFileOrDirectory((fs::path(this->path()) / name).lexically_normal().generic_string());
+            throw NoSuchResource((fs::path(this->path()) / name).lexically_normal().generic_string());
         }
         return childDir;
     }
@@ -209,7 +216,7 @@ namespace CloudSync::box {
             const std::string name = entry.at("name");
 
             if (!expectedType.empty() && expectedType != resourceType) {
-                throw NoSuchFileOrDirectory("expected resource type does not match real resource type");
+                throw NoSuchResource("expected resource type does not match real resource type");
             }
             const auto newResourcePath = (fs::path(this->path()) / name).lexically_normal().generic_string();
             if (resourceType == "file") {
@@ -220,18 +227,17 @@ namespace CloudSync::box {
                         name,
                         etag);
             } else if (resourceType == "folder") {
-
                 // extract parent resourceId from json payload if possible.
                 // Otherwise fallback to pointing to current dir.
-                std::string parentResourceId;
-                if (entry.find("path_collection") != entry.end() && entry["path_collection"]["total_count"] > 0) {
-                    parentResourceId = entry["path_collection"]["entries"][0]["id"];
+                std::string parent_resource_id;
+                if (entry.contains("parent")) {
+                    parent_resource_id = entry["parent"]["id"];
                 } else {
-                    parentResourceId = this->resourceId;
+                    parent_resource_id = this->resourceId;
                 }
                 resource = std::make_shared<BoxDirectory>(
                         resourceId,
-                        parentResourceId,
+                        parent_resource_id,
                         !customPath.empty() ? customPath : newResourcePath,
                         this->request,
                         name);

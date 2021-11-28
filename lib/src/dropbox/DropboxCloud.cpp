@@ -11,7 +11,7 @@ void dropbox::DropboxCloud::logout() {
     }
 }
 
-std::string dropbox::DropboxCloud::getUserDisplayName() const {
+std::string dropbox::DropboxCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
         const auto getResponse =
@@ -33,9 +33,9 @@ void dropbox::DropboxCloud::handleExceptions(const std::exception_ptr &e, const 
             if ((errorJson["error"][".tag"] == "path" && errorJson["error"]["path"][".tag"] == "not_found") ||
                 (errorJson["error"][".tag"] == "path_lookup" &&
                  errorJson["error"]["path_lookup"][".tag"] == "not_found")) {
-                throw Resource::NoSuchFileOrDirectory(resourcePath);
+                throw Resource::NoSuchResource(resourcePath);
             } else {
-                throw Cloud::CommunicationError(e.what());
+                throw Resource::ResourceConflict(e.what());
             }
         } catch (json::exception &e) {
             throw Cloud::InvalidResponse(e.what());

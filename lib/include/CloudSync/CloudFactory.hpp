@@ -87,7 +87,7 @@ namespace CloudSync {
          * @endcode
          * @param proxy
          */
-        std::shared_ptr<CloudFactory> proxy(const std::string& url, const std::string& username = "", const std::string& password = "");
+        std::shared_ptr<CloudFactory> set_proxy(const std::string& url, const std::string& username = "", const std::string& password = "");
     private:
         std::shared_ptr<request::Request> requestImplementation;
 

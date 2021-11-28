@@ -9,16 +9,16 @@ namespace CloudSync::dropbox {
                 const std::string &revision)
                 : FileImpl("", dir, request, name, revision) {};
 
-        void rm() override;
+        void remove() override;
 
-        bool pollChange(bool longPoll = false) override;
+        bool poll_change(bool longPoll = false) override;
 
-        [[nodiscard]] bool supportsLongPoll() const override {
+        [[nodiscard]] bool supports_long_poll() const override {
             return true;
         }
 
-        [[nodiscard]] std::string read() const override;
+        [[nodiscard]] std::string read_as_string() const override;
 
-        void write(const std::string &content) override;
+        void write_string(const std::string &content) override;
     };
 } // namespace CloudSync::dropbox

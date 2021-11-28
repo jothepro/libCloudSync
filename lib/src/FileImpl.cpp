@@ -14,6 +14,6 @@ std::string CloudSync::FileImpl::revision() const {
     return _revision;
 }
 
-bool FileImpl::isFile() const {
+bool FileImpl::is_file() const {
     return true;
 }

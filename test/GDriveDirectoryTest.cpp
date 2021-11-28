@@ -23,7 +23,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         const auto directory = std::make_shared<GDriveDirectory>(BASE_URL, "root", "root", "root", "/", request, "");
 
         THEN("the working dir should be '/'") {
-            REQUIRE(directory->pwd() == "/");
+            REQUIRE(directory->path() == "/");
         }
 
         AND_GIVEN("a request that returns a valid folder listing") {
@@ -47,8 +47,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling ls()") {
-                const auto resourceList = directory->ls();
+            WHEN("calling list_resources()") {
+                const auto resourceList = directory->list_resources();
                 THEN("the google drive files endpoint should be called with the correct query") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -75,29 +75,42 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         AND_GIVEN("a GET request that throws 401 unauthorized") {
             WHEN_REQUEST().Throw(request::Response::Unauthorized(""));
 
-            WHEN("calling ls()") {
+            WHEN("calling list_resources()") {
                 THEN("an Cloud::AuthorizationFailed exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), Cloud::AuthorizationFailed);
+                    REQUIRE_THROWS_AS(directory->list_resources(), Cloud::AuthorizationFailed);
                 }
             }
         }
         AND_GIVEN("a GET request that a folder description") {
             WHEN_REQUEST().RESPOND(request::Response(
                 200,
-                json{{"items",
-                      {{{"kind", "drive#file"},
-                        {"id", "1dInfWIELU8Hc1sP_bsGnVa44DgBpNybI"},
-                        {"title", "testfolder"},
-                        {"mimeType", "application/vnd.google-apps.folder"},
-                        {"etag", "2"},
-                        {"parents", {{{"id", "0ANREbljg-Vs3Uk9PVA"}, {"isRoot", true}}}}}}}}
-                    .dump(),
+                json{
+                    {
+                        "items", {
+                            {
+                                {"kind", "drive#file"},
+                                {"id", "1dInfWIELU8Hc1sP_bsGnVa44DgBpNybI"},
+                                {"title", "testfolder"},
+                                {"mimeType", "application/vnd.google-apps.folder"},
+                                {"etag", "2"},
+                                {
+                                    "parents", {
+                                        {
+                                            {"id", "0ANREbljg-Vs3Uk9PVA"},
+                                            {"isRoot", true}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }.dump(),
                 "application/json"));
 
-            WHEN("calling cd(testfolder), cd(/testfolder/), cd(/subfolder/../testfolder)") {
+            WHEN("calling get_directory(testfolder), get_directory(/testfolder/), get_directory(/subfolder/../testfolder)") {
                 const std::string path =
                     GENERATE(as<std::string>{}, "testfolder", "/testfolder/", "/subfolder/../testfolder");
-                const auto newDir = directory->cd(path);
+                const auto newDir = directory->get_directory(path);
                 THEN("the google drive files endpoint should be called with the correct query") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -120,18 +133,31 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         AND_GIVEN("a request that returns a file description") {
             WHEN_REQUEST().RESPOND(request::Response(
                 200,
-                json{{"items",
-                      {{{"kind", "drive#file"},
-                        {"id", "52InfWIELUrHc1sPlbstnVa44DgBpNyb5"},
-                        {"title", "test.txt"},
-                        {"mimeType", "text/plain"},
-                        {"etag", "2"},
-                        {"parents", {{{"id", "0ANREbljg-Vs3Uk9PVA"}, {"isRoot", true}}}}}}}}
-                    .dump(),
+                json{
+                    {
+                        "items", {
+                            {
+                                {"kind", "drive#file"},
+                                {"id", "52InfWIELUrHc1sPlbstnVa44DgBpNyb5"},
+                                {"title", "test.txt"},
+                                {"mimeType", "text/plain"},
+                                {"etag", "2"},
+                                {
+                                    "parents", {
+                                        {
+                                            {"id", "0ANREbljg-Vs3Uk9PVA"},
+                                            {"isRoot", true}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }.dump(),
                 "application/json"));
 
-            WHEN("calling file(test.txt)") {
-                const auto file = directory->file("test.txt");
+            WHEN("calling get_file(test.txt)") {
+                const auto file = directory->get_file("test.txt");
                 THEN("the google drive files endpoint should be called with the correct query parameters") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -152,34 +178,45 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that returns a new folder resource description") {
-            WHEN_REQUEST().RESPOND(request::Response(
-                200,
-                json{
-                    {"kind", "drive#file"},
-                    {"id", "folderId"},
-                    {"title", "newfolder"},
-                    {"mimeType", "application/vnd.google-apps.folder"},
-                    {"etag", "1"},
-                    {"parents", {{{"id", "0ANREbljg-Vs3Uk9PVA"}, {"isRoot", true}}}}}
-                    .dump(),
-                "application/json"));
-
-            WHEN("calling mkdir(newfolder)") {
-                const auto newDir = directory->mkdir("newfolder");
+        AND_GIVEN("a request series that returns an empty query result and then returns a new folder resource description") {
+            WHEN_REQUEST()
+                .RESPOND(request::Response(
+                    200,
+                    json{{"items",{}}}.dump(),
+                "application/json"))
+                .RESPOND(request::Response(
+                    200,
+                    json{
+                        {"kind", "drive#file"},
+                        {"id", "folderId"},
+                        {"title", "newfolder"},
+                        {"mimeType", "application/vnd.google-apps.folder"},
+                        {"etag", "1"},
+                        {
+                            "parents", {
+                                {
+                                    {"id", "0ANREbljg-Vs3Uk9PVA"},
+                                    {"isRoot", true}
+                                }
+                            }
+                        }
+                    }.dump(),
+                    "application/json"));
+            WHEN("calling create_directory(newfolder)") {
+                const auto newDir = directory->create_directory("newfolder");
                 THEN("the endpoint for creating a new resource should be called") {
-                    REQUIRE_REQUEST_CALLED().Once();
-                    REQUIRE_REQUEST(0, verb == "POST");
-                    REQUIRE_REQUEST(0, url == BASE_URL + "/files");
+                    REQUIRE_REQUEST_CALLED().Exactly(2);
+                    REQUIRE_REQUEST(1, verb == "POST");
+                    REQUIRE_REQUEST(1, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
-                        0,
+                        1,
                         parameters.at(P::QUERY_PARAMS).at("fields") ==
                             "kind,id,title,mimeType,etag,parents(id,isRoot)");
                     REQUIRE_REQUEST(
-                        0,
+                        1,
                         body == "{\"mimeType\":\"application/vnd.google-apps.folder\","
                                 "\"parents\":[{\"id\":\"root\"}],\"title\":\"newfolder\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the new folder should be returned") {
                     REQUIRE(newDir->name() == "newfolder");
@@ -187,44 +224,56 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 }
             }
         }
-        AND_GIVEN("a request that returns a new file resource description") {
-            WHEN_REQUEST().RESPOND(request::Response(
-                200,
-                json{
-                    {"kind", "drive#file"},
-                    {"id", "folderId"},
-                    {"title", "newfile.txt"},
-                    {"mimeType", "text/plain"},
-                    {"etag", "1"},
-                    {"parents", {{{"id", "0ANREbljg-Vs3Uk9PVA"}, {"isRoot", true}}}}}
-                    .dump(),
-                "application/json"));
+        AND_GIVEN("a request series that returns an empty query result and then a new file resource description") {
+            WHEN_REQUEST()
+                .RESPOND(request::Response(
+                    200,
+                    json{{"items",{}}}.dump(),
+                "application/json"))
+                .RESPOND(request::Response(
+                    200,
+                    json{
+                        {"kind", "drive#file"},
+                        {"id", "folderId"},
+                        {"title", "newfile.txt"},
+                        {"mimeType", "text/plain"},
+                        {"etag", "1"},
+                        {
+                            "parents", {
+                                {
+                                    {"id", "0ANREbljg-Vs3Uk9PVA"},
+                                    {"isRoot", true}
+                                }
+                            }
+                        }
+                    }
+                        .dump(),
+                    "application/json"));
 
-            WHEN("calling touch(newfile.txt)") {
-                const auto newFile = directory->touch("newfile.txt");
+            WHEN("calling create_file(newfile.txt)") {
+                const auto new_file = directory->create_file("newfile.txt");
                 THEN("the endpoint for creating a new resource should be called") {
-                    REQUIRE_REQUEST_CALLED().Once();
-                    REQUIRE_REQUEST(0, verb == "POST");
-                    REQUIRE_REQUEST(0, url == BASE_URL + "/files");
+                    REQUIRE_REQUEST_CALLED().Exactly(2);
+                    REQUIRE_REQUEST(1, verb == "POST");
+                    REQUIRE_REQUEST(1, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
-                        0,
-                        parameters.at(P::QUERY_PARAMS).at("fields") ==
-                            "kind,id,title,mimeType,etag,parents(id,isRoot)");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                        1,
+                        parameters.at(P::QUERY_PARAMS).at("fields") == "kind,id,title,mimeType,etag,parents(id,isRoot)");
+                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
                     REQUIRE_REQUEST(
-                        0,
+                        1,
                         body == "{\"mimeType\":\"text/plain\","
                                 "\"parents\":[{\"id\":\"root\"}],\"title\":\"newfile.txt\"}");
                 }
                 THEN("the new file resource should be returned") {
-                    REQUIRE(newFile->name() == "newfile.txt");
-                    REQUIRE(newFile->path() == "/newfile.txt");
+                    REQUIRE(new_file->name() == "newfile.txt");
+                    REQUIRE(new_file->path() == "/newfile.txt");
                 }
             }
         }
-        WHEN("calling rmdir()") {
-            THEN("a PermissionDenied should be called (deleting root is not allowed") {
-                REQUIRE_THROWS_AS(directory->rmdir(), CloudSync::Resource::PermissionDenied);
+        WHEN("calling remove()") {
+            THEN("a PermissionDenied exception should be thrown (deleting root is not allowed") {
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::PermissionDenied);
             }
         }
     }
@@ -251,8 +300,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling cd(..)") {
-                const auto parentDir = directory->cd("..");
+            WHEN("calling get_directory(..)") {
+                const auto parentDir = directory->get_directory("..");
                 THEN("a google drive lists request should be done with a query for the parent folder id") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -268,8 +317,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE(parentDir->path() == "/test");
                 }
             }
-            WHEN("calling cd(../../") {
-                const auto rootDir = directory->cd("../../");
+            WHEN("calling get_directory(../../") {
+                const auto rootDir = directory->get_directory("../../");
                 THEN("only one request should be made. The root cannot be queried") {
                     REQUIRE_REQUEST_CALLED().Once();
                 }
@@ -282,8 +331,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         AND_GIVEN("a request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 
-            WHEN("calling rmdir()") {
-                directory->rmdir();
+            WHEN("calling remove()") {
+                directory->remove();
                 THEN("a google drive delete call should be made") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
@@ -294,9 +343,9 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         AND_GIVEN("a request that throws 404 Not Found") {
             WHEN_REQUEST().Throw(request::Response::NotFound(
                 json{{"error", {{"errors", {{{"domain", "global"}, {"reason", "notFound"}}}}}}}.dump()));
-            WHEN("calling rmdir()") {
+            WHEN("calling remove()") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->rmdir(), Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->remove(), Resource::NoSuchResource);
                 }
             }
         }

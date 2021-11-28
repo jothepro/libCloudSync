@@ -23,8 +23,8 @@ SCENARIO("BoxFile", "[file][box]") {
         AND_GIVEN("a DELETE request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 
-            WHEN("calling rm()") {
-                file->rm();
+            WHEN("calling remove()") {
+                file->remove();
                 THEN("the box file-delete endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
@@ -36,17 +36,17 @@ SCENARIO("BoxFile", "[file][box]") {
         AND_GIVEN("a request that returns 404") {
             WHEN_REQUEST().Throw(request::Response::NotFound(""));
 
-            WHEN("calling rm()") {
+            WHEN("calling remove()") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->rm(), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(file->remove(), CloudSync::Resource::NoSuchResource);
                 }
             }
         }
 
         AND_GIVEN("a request that returns the file content") {
             WHEN_REQUEST().RESPOND(request::Response(200, "filecontent", "text/plain"));
-            WHEN("calling read()") {
-                const auto fileContent = file->read();
+            WHEN("calling read_as_string()") {
+                const auto fileContent = file->read_as_string();
 
                 THEN("the box download endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -74,8 +74,8 @@ SCENARIO("BoxFile", "[file][box]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling write(newcontent)") {
-                file->write("newcontent");
+            WHEN("calling write_string(newcontent)") {
+                file->write_string("newcontent");
 
                 THEN("the box file update endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -83,6 +83,7 @@ SCENARIO("BoxFile", "[file][box]") {
                     REQUIRE_REQUEST(0, url == "https://upload.box.com/api/2.0/files/1234/content");
                     REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFIELDS).at("attributes") == "{}");
                     REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFILES).at("file") == "newcontent");
+                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("if-match") == "abcd");
                 }
 
                 THEN("the revision should be updated") {
@@ -90,11 +91,19 @@ SCENARIO("BoxFile", "[file][box]") {
                 }
             }
         }
+        AND_GIVEN("a request that returns 412 Precondition failed") {
+            WHEN_REQUEST().Throw(request::Response::PreconditionFailed(""));
+            WHEN("calling write_string(newcontent)") {
+                THEN("A ResoureHasChanged exeception should be thrown") {
+                    REQUIRE_THROWS_AS(file->write_string("newcontent"), Resource::ResourceHasChanged);
+                }
+            }
+        }
         AND_GIVEN("a request that returns a changed file description") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "newetag"}}.dump(), "application/json"));
 
-            WHEN("calling pollChange()") {
-                const bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                const bool hasChanged = file->poll_change();
                 THEN("a GET request should be made to ask for the file metadata") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -108,8 +117,8 @@ SCENARIO("BoxFile", "[file][box]") {
         }
         AND_GIVEN("a POST request that returns the same file revision") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "abcd"}}.dump(), "application/json"));
-            WHEN("calling pollChange()") {
-                const bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                const bool hasChanged = file->poll_change();
                 THEN("false should be returned") {
                     REQUIRE(hasChanged == false);
                 }

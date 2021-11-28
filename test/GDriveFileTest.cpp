@@ -24,8 +24,8 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
         AND_GIVEN("a request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 
-            WHEN("calling rm()") {
-                file->rm();
+            WHEN("calling remove()") {
+                file->remove();
                 THEN("the file endpoint should be called for deletion") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
@@ -38,8 +38,8 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
                 .RESPOND(request::Response(200, json{{"downloadUrl", "downloadlink"}}.dump(), "application/json"))
                 .RESPOND(request::Response(200, "file content", "text/plain"));
 
-            WHEN("calling read()") {
-                const auto content = file->read();
+            WHEN("calling read_as_string()") {
+                const auto content = file->read_as_string();
                 THEN("a request to get the download link and a request to download the actual content should be made") {
                     REQUIRE_REQUEST_CALLED().Twice();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -56,8 +56,8 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
         AND_GIVEN("a request that returns a new etag") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "newetag"}}.dump(), "application/json"));
 
-            WHEN("calling write(somenewcontent)") {
-                file->write("somenewcontent");
+            WHEN("calling write_string(somenewcontent)") {
+                file->write_string("somenewcontent");
                 THEN("a PUT request should be made on the file upload endpoint") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
@@ -75,8 +75,8 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
         AND_GIVEN("a request that returns the current etag (no change)") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "2"}}.dump(), "application/json"));
 
-            WHEN("calling pollChange()") {
-                bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                bool hasChanged = file->poll_change();
                 THEN("the etag field should be requested for the file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -94,8 +94,8 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
         AND_GIVEN("a request that returns a new etag (new revision)") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "thisisanewetag"}}.dump(), "application/json"));
 
-            WHEN("calling pollChange()") {
-                bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                bool hasChanged = file->poll_change();
                 THEN("true should be returned") {
                     REQUIRE(hasChanged == true);
                 }

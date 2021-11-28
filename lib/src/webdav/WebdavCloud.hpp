@@ -26,7 +26,7 @@ namespace CloudSync::webdav {
 
         static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);
 
-        std::string getUserDisplayName() const override {
+        std::string get_user_display_name() const override {
             return this->request->getUsername();
         };
 

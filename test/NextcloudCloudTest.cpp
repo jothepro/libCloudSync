@@ -26,8 +26,8 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 "</ocs>",
                 "application/xml"));
 
-            WHEN("calling getUserDisplayName()") {
-                std::string name = cloud->getUserDisplayName();
+            WHEN("calling get_user_display_name()") {
+                std::string name = cloud->get_user_display_name();
                 THEN("the display name should be set to 'John Doe'") {
                     REQUIRE(name == "John Doe");
                 }

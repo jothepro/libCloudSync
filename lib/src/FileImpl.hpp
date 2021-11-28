@@ -13,7 +13,7 @@ namespace CloudSync {
 
         [[nodiscard]] std::string revision() const override;
 
-        [[nodiscard]] bool isFile() const override;
+        [[nodiscard]] bool is_file() const override;
 
     protected:
         FileImpl(

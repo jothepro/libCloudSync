@@ -20,11 +20,7 @@ namespace CloudSync {
         return _path;
     }
 
-    std::string DirectoryImpl::pwd() const {
-        return this->path();
-    }
-
-    bool DirectoryImpl::isFile() const {
+    bool DirectoryImpl::is_file() const {
         return false;
     }
 } // namespace CloudSync

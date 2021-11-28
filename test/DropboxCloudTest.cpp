@@ -16,8 +16,8 @@ SCENARIO("DropboxCloud", "[cloud][dropbox]") {
         AND_GIVEN("a request that returns the users account information") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, json{{"name", {{"display_name", "John Doe"}}}}.dump(), "application/json"));
-            WHEN("calling getUserDisplayName()") {
-                const auto name = cloud->getUserDisplayName();
+            WHEN("calling get_user_display_name()") {
+                const auto name = cloud->get_user_display_name();
                 THEN("John Doe should be returned") {
                     REQUIRE(name == "John Doe");
                 }

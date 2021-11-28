@@ -24,6 +24,7 @@ endif(DOXYGEN_FOUND)
 
 add_subdirectory(lib)
 add_subdirectory(example)
+add_subdirectory(it)
 
 include(CTest)
 if(BUILD_TESTING)

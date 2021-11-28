@@ -18,8 +18,8 @@ SCENARIO("GDriveCloud", "[cloud][gdrive]") {
         AND_GIVEN("a request that returns a user description") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"name", "john doe"}}.dump(), "application/json"));
 
-            WHEN("calling getUserDisplayName()") {
-                const auto name = cloud->getUserDisplayName();
+            WHEN("calling get_user_display_name()") {
+                const auto name = cloud->get_user_display_name();
                 THEN("john doe should be returned") {
                     REQUIRE(name == "john doe");
                 }

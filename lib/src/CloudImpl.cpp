@@ -26,7 +26,7 @@ namespace CloudSync {
     }
 
     void CloudImpl::ping() const {
-        this->root()->ls();
+        this->root()->list_resources();
     }
 
     std::string CloudImpl::getBaseUrl() const {

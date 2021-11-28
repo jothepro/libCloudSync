@@ -9,17 +9,17 @@ namespace CloudSync::box {
                 const std::string &name, const std::string &revision)
                 : FileImpl("", dir, request, name, revision), resourceId(resourceId) {};
 
-        void rm() override;
+        void remove() override;
 
-        bool pollChange(bool longPoll = false) override;
+        bool poll_change(bool longPoll = false) override;
 
-        bool supportsLongPoll() const override {
+        bool supports_long_poll() const override {
             return true;
         }
 
-        std::string read() const override;
+        std::string read_as_string() const override;
 
-        void write(const std::string &content) override;
+        void write_string(const std::string &content) override;
 
     private:
         const std::string resourceId;

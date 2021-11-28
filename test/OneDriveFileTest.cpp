@@ -26,8 +26,8 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
         AND_GIVEN("a request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 
-            WHEN("calling rm()") {
-                file->rm();
+            WHEN("calling remove()") {
+                file->remove();
                 THEN("the onedrive file endpoint should be called with DELETE") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
@@ -38,8 +38,8 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
         AND_GIVEN("a request that returns the files content") {
             WHEN_REQUEST().RESPOND(request::Response(200, "file content"));
 
-            WHEN("calling read()") {
-                const auto fileContent = file->read();
+            WHEN("calling read_as_string()") {
+                const auto fileContent = file->read_as_string();
 
                 THEN("the content get endpoint should be called with GET") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -60,8 +60,8 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, json{{"eTag", "new_file_revision"}}.dump(), "application/json"));
 
-            WHEN("calling write(new file content)") {
-                file->write("new file content");
+            WHEN("calling write_string(new file content)") {
+                file->write_string("new file content");
                 THEN("the resource endpoint should be called with PUT & If-Match Header") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
@@ -84,9 +84,9 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
                 json{{"error", {{"code", "notAllowed"}, {"message", "ETag does not match current item's value"}}}}
                     .dump()));
 
-            WHEN("calling write(new content)") {
+            WHEN("calling write_string(new content)") {
                 THEN("a ResourceHasChanged Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->write("new content"), Resource::ResourceHasChanged);
+                    REQUIRE_THROWS_AS(file->write_string("new content"), Resource::ResourceHasChanged);
                 }
             }
         }
@@ -95,8 +95,8 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, json{{"eTag", "new_file_revision"}}.dump(), "application/json"));
 
-            WHEN("calling pollChange()") {
-                bool fileChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                bool fileChanged = file->poll_change();
                 THEN("the file item endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -113,8 +113,8 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
         AND_GIVEN("a GET request that returns a file description (with the same old revision)") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"eTag", "file_revision"}}.dump(), "application/json"));
 
-            WHEN("calling pollChange()") {
-                bool fileChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                bool fileChanged = file->poll_change();
                 THEN("the file item endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");

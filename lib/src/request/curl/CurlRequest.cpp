@@ -107,37 +107,35 @@ namespace CloudSync::request::curl {
             } else {
                 curl_easy_setopt(this->curl, CURLOPT_CUSTOMREQUEST, verb.c_str());
             }
-            if (!body.empty()) {
-                curl_easy_setopt(this->curl, CURLOPT_POSTFIELDS, body.c_str());
-            } else {
-                const auto postfields = parameters.find(POSTFIELDS);
-                const auto mimePostfields = parameters.find(MIME_POSTFIELDS);
-                const auto mimePostfiles = parameters.find(MIME_POSTFILES);
-                if (postfields != parameters.end()) {
-                    curl_easy_setopt(
-                            this->curl,
-                            CURLOPT_POSTFIELDS,
-                            CurlRequest::urlEncodeParams(postfields->second).c_str());
-                } else if (mimePostfields != parameters.end() || mimePostfiles != parameters.end()) {
-                    form = curl_mime_init(this->curl);
+            const auto postfields = parameters.find(POSTFIELDS);
+            const auto mimePostfields = parameters.find(MIME_POSTFIELDS);
+            const auto mimePostfiles = parameters.find(MIME_POSTFILES);
+            if (postfields != parameters.end()) {
+                curl_easy_setopt(
+                        this->curl,
+                        CURLOPT_POSTFIELDS,
+                        CurlRequest::urlEncodeParams(postfields->second).c_str());
+            } else if (mimePostfields != parameters.end() || mimePostfiles != parameters.end()) {
+                form = curl_mime_init(this->curl);
 
-                    if (mimePostfields != parameters.end()) {
-                        for (const auto &field: mimePostfields->second) {
-                            curl_mimepart *mimePart = curl_mime_addpart(form);
-                            curl_mime_name(mimePart, field.first.c_str());
-                            curl_mime_data(mimePart, field.second.c_str(), CURL_ZERO_TERMINATED);
-                        }
+                if (mimePostfields != parameters.end()) {
+                    for (const auto &field: mimePostfields->second) {
+                        curl_mimepart *mimePart = curl_mime_addpart(form);
+                        curl_mime_name(mimePart, field.first.c_str());
+                        curl_mime_data(mimePart, field.second.c_str(), CURL_ZERO_TERMINATED);
                     }
-                    if (mimePostfiles != parameters.end()) {
-                        for (const auto &file: mimePostfiles->second) {
-                            curl_mimepart *mimePart = curl_mime_addpart(form);
-                            curl_mime_filename(mimePart, "upload");
-                            curl_mime_name(mimePart, file.first.c_str());
-                            curl_mime_data(mimePart, file.second.c_str(), CURL_ZERO_TERMINATED);
-                        }
-                    }
-                    curl_easy_setopt(this->curl, CURLOPT_MIMEPOST, form);
                 }
+                if (mimePostfiles != parameters.end()) {
+                    for (const auto &file: mimePostfiles->second) {
+                        curl_mimepart *mimePart = curl_mime_addpart(form);
+                        curl_mime_filename(mimePart, "upload");
+                        curl_mime_name(mimePart, file.first.c_str());
+                        curl_mime_data(mimePart, file.second.c_str(), CURL_ZERO_TERMINATED);
+                    }
+                }
+                curl_easy_setopt(this->curl, CURLOPT_MIMEPOST, form);
+            } else {
+                curl_easy_setopt(this->curl, CURLOPT_POSTFIELDS, body.c_str());
             }
         }
         // perform request
@@ -165,8 +163,8 @@ namespace CloudSync::request::curl {
             // when the response has no body, responseContentType is a nullptr. This needs to be checked when
             // transforming the char* to a string.
             const std::string responseContentTypeString = responseContentType ? std::string(responseContentType) : "";
-            auto response = Response(responseCode, responseReadBuffer, responseContentTypeString, responseHeaders);
             curl_easy_reset(this->curl);
+            auto response = Response(responseCode, responseReadBuffer, responseContentTypeString, responseHeaders);
             return response;
         } else {
             const auto errorMessage = std::string(errorbuffer);

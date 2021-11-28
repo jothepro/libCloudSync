@@ -11,7 +11,7 @@ void gdrive::GDriveCloud::handleExceptions(const std::exception_ptr &e, const st
         try {
             const auto errorMessage = json::parse(e.data());
             if (errorMessage["error"]["errors"][0]["reason"] == "notFound") {
-                throw Resource::NoSuchFileOrDirectory(resourcePath);
+                throw Resource::NoSuchResource(resourcePath);
             } else {
                 throw Cloud::CommunicationError("unknown error response: " + e.data());
             }
@@ -31,7 +31,7 @@ void gdrive::GDriveCloud::handleExceptions(const std::exception_ptr &e, const st
     }
 }
 
-std::string gdrive::GDriveCloud::getUserDisplayName() const {
+std::string gdrive::GDriveCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
         const auto getResponse = this->request->GET("https://www.googleapis.com/userinfo/v2/me").json();

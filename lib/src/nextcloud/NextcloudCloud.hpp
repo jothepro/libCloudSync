@@ -24,7 +24,7 @@ namespace CloudSync::nextcloud {
                 this->baseUrl, "/remote.php/webdav", "/", this->request, "");
         }
 
-        std::string getUserDisplayName() const override;
+        std::string get_user_display_name() const override;
 
         void logout() override;
     };

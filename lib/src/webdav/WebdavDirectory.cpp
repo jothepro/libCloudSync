@@ -26,7 +26,7 @@ namespace CloudSync::webdav {
         "   </d:prop>\n"
         "</d:propfind>";
 
-    std::vector<std::shared_ptr<Resource>> WebdavDirectory::ls() const {
+    std::vector<std::shared_ptr<Resource>> WebdavDirectory::list_resources() const {
         std::vector<std::shared_ptr<Resource>> resources;
         const auto resourcePath = this->requestUrl("");
         try {
@@ -50,7 +50,7 @@ namespace CloudSync::webdav {
         return resources;
     }
 
-    std::shared_ptr<Directory> WebdavDirectory::cd(const std::string &path) const {
+    std::shared_ptr<Directory> WebdavDirectory::get_directory(const std::string &path) const {
         const auto resourcePath = this->requestUrl(path);
         std::shared_ptr<WebdavDirectory> directory;
         try {
@@ -70,7 +70,7 @@ namespace CloudSync::webdav {
             if (resourceList.size() == 1) {
                 directory = std::dynamic_pointer_cast<WebdavDirectory>(resourceList[0]);
                 if(!directory) { // if the dynamic cast has failed, the returned resource is a file, not a directory
-                    throw Resource::NoSuchFileOrDirectory(resourcePath);
+                    throw Resource::NoSuchResource(resourcePath);
                 }
             } else {
                 throw Cloud::CommunicationError("cannot get resource description");
@@ -81,18 +81,29 @@ namespace CloudSync::webdav {
         return directory;
     }
 
-    void WebdavDirectory::rmdir() const {
-        const std::string resourcePath = this->requestUrl("");
-        try {
-            this->request->DELETE(resourcePath);
-        } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+    void WebdavDirectory::remove() {
+        if(path() != "/") {
+            const std::string resourcePath = this->requestUrl("");
+            try {
+                this->request->DELETE(resourcePath);
+            } catch (...) {
+                WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+            }
+        } else {
+            throw PermissionDenied("deleting the root folder is not allowed");
         }
+
     }
 
-    std::shared_ptr<Directory> WebdavDirectory::mkdir(const std::string &name) const {
-        const auto resourcePath = this->requestUrl(name);
+    std::shared_ptr<Directory> WebdavDirectory::create_directory(const std::string &path) const {
+        const auto resourcePath = this->requestUrl(path);
         std::shared_ptr<WebdavDirectory> directory;
+        auto normalizedPath = fs::path( WebdavDirectory::remove_trailing_slashes(path));
+        if(normalizedPath.has_parent_path()) {
+            if(!resource_exists(normalizedPath.parent_path())) {
+                create_directory(normalizedPath.parent_path());
+            }
+        }
         try {
             this->request->MKCOL(resourcePath);
             const auto propfindResponse = this->request->PROPFIND(
@@ -114,38 +125,46 @@ namespace CloudSync::webdav {
             } else {
                 throw Cloud::CommunicationError("cannot get resource description");
             }
-
-        } catch (Response::Conflict &e) {
-            throw NoSuchFileOrDirectory(resourcePath);
+        } catch(request::Response::MethodNotAllowed &e) {
+            throw Resource::ResourceConflict(fs::path(this->path()) / path);
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+            WebdavCloud::handleExceptions(std::current_exception(), fs::path(this->path()) / path);
         }
         return directory;
     }
 
-    std::shared_ptr<File> WebdavDirectory::touch(const std::string &name) const {
-        const auto resourcePath = this->requestUrl(name);
+    std::shared_ptr<File> WebdavDirectory::create_file(const std::string &path) const {
+        const auto resourcePath = this->requestUrl(path);
         std::shared_ptr<File> file;
+        if(fs::path(path).has_parent_path()) {
+            if(!resource_exists(fs::path(resourcePath).parent_path())) {
+                create_directory(fs::path(path).parent_path());
+            }
+        }
         try {
-            this->request->PUT(
-                resourcePath,
-                {
+            if(resource_exists(resourcePath)) {
+                throw Resource::ResourceConflict(fs::path(this->path()) / path);
+            } else {
+                this->request->PUT(
+                    resourcePath,
                     {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_BINARY}
+                        {
+                            P::HEADERS, {
+                                {"Content-Type", Request::MIMETYPE_BINARY}
+                            }
                         }
-                    }
-                },
-                "");
-            file = this->file(name);
+                    },
+                    "");
+                file = this->get_file(path);
+            }
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+            WebdavCloud::handleExceptions(std::current_exception(), fs::path(this->path()) / path);
         }
         return file;
     }
 
-    std::shared_ptr<File> WebdavDirectory::file(const std::string &name) const {
-        const auto resourcePath = this->requestUrl(name);
+    std::shared_ptr<File> WebdavDirectory::get_file(const std::string &path) const {
+        const auto resourcePath = this->requestUrl(path);
         std::shared_ptr<WebdavFile> file;
         try {
             const auto propfindResponse = this->request->PROPFIND(
@@ -165,13 +184,13 @@ namespace CloudSync::webdav {
             if (resourceList.size() == 1) {
                 file = std::dynamic_pointer_cast<WebdavFile>(resourceList[0]);
                 if(!file) { // if the dynamic cast has failed, the returned resource is a not a file
-                    throw Resource::NoSuchFileOrDirectory(resourcePath);
+                    throw Resource::NoSuchResource(resourcePath);
                 }
             } else {
                 throw Cloud::CommunicationError("cannot get metadata for file");
             }
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+            WebdavCloud::handleExceptions(std::current_exception(), fs::path(this->path()) / path);
         }
         return file;
     }
@@ -189,7 +208,7 @@ namespace CloudSync::webdav {
             resourceHref.erase(0, this->dirOffset.size());
             // remove any trailing slashes because webdav returns folders with
             // trailing slashes.
-            WebdavDirectory::removeTrailingSlashes(resourceHref);
+            resourceHref = WebdavDirectory::remove_trailing_slashes(resourceHref);
             if (resourceHref != this->path()) {
                 // parse the href as path so the filename/foldername can be
                 // extracted
@@ -230,18 +249,30 @@ namespace CloudSync::webdav {
 
     std::string WebdavDirectory::requestUrl(const std::string &path) const {
         // normalize path
-        std::string normalizedPath = (fs::path(this->path()) / path).lexically_normal().generic_string();
+        std::string normalized_path = (fs::path(this->path()) / path).lexically_normal().generic_string();
         // remove any trailing slashes, because we cannot be sure if the user adds
         // them or not
-        WebdavDirectory::removeTrailingSlashes(normalizedPath);
+        normalized_path = WebdavDirectory::remove_trailing_slashes(normalized_path);
         std::stringstream result;
-        result << this->_baseUrl << this->dirOffset << normalizedPath;
+        result << this->_baseUrl << this->dirOffset << normalized_path;
         return result.str();
     }
 
-    void WebdavDirectory::removeTrailingSlashes(std::string &path) {
-        while (path.size() > 1 && path.back() == '/') {
-            path.erase(path.size() - 1);
+    std::string WebdavDirectory::remove_trailing_slashes(const std::string &path) {
+        auto result = path;
+        while (result.size() > 1 && result.back() == '/') {
+            result.erase(path.size() - 1);
         }
+        return result;
+    }
+
+    bool WebdavDirectory::resource_exists(const std::string &resource_path) const {
+        bool exists = true;
+        try {
+            this->request->HEAD(resource_path);
+        } catch (request::Response::NotFound &e) {
+            exists = false;
+        }
+        return exists;
     }
 } // namespace CloudSync::webdav

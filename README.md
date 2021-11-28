@@ -13,6 +13,7 @@ A simple to use C++ interface to interact with cloud storage providers.
   - Box
   - Onedrive
   - GDrive
+  - WebDav
 
 ## Installation
 
@@ -64,7 +65,14 @@ This library uses [Catch2](https://github.com/catchorg/Catch2) for testing. The 
 - **Commandline**: To run just the unit-tests, you can run `conan build -bf build --test .`.
 - **CLion**: Execute the `CloudSyncTest` target
 
-### Example
+### Integration Test
+
+To ensure that the library behaves consistently with all cloud providers, the integration test runs a series of 
+filesystem operations and checks for the correct results while being connected to the real cloud provider.
+
+To execute the tests you need to provide valid credentials to an account for each of the supported providers.
+
+### Example CLI
 
 A small CLI example implementation is provided, to show the capabilities of the library.
 
@@ -114,6 +122,25 @@ This template uses [Github Actions](https://github.com/features/actions) for aut
   When a new release is created in Github, the resulting artifact is automatically uploaded to [a public  artifactory repository](https://gitlab.com/jothepro/libcloudsync/-/packages)
 - The workflow `publish-pages.yaml` automatically builds and publishes the documentation to [Github Pages](https://jothepro.github.io/libcloudsync/) when a new release is created in Github.
 
+### Coding Conventions
+
+The C++ code should follow a derivation of [cppbestpractices code style](https://github.com/lefticus/cppbestpractices/blob/master/03-Style.md):
+
+- Types start with upper case and are CamelCase: `MyClass`
+- Functions and variables are snake_case: `my_method`
+- Constants are all upper case: `const double PI=3.14159265358979323;`
+- Name private data with a `m_` prefix to distinguish it from public data. `m_` stands for "member" data
+- Never use `using namespace` in a header get_file
+- `{}` are required for blocks.
+- Use `""` for including local files, `<>` is reserved for system includes
+- Initialize member variables with the member initializer list
+- Always use namespaces
+- Use `.hpp` and `.cpp` for your get_file extensions
+- mark single parameter constructors as `explicit`, which requires them to be explicitly called.
+- do not provide any of the functions that the compiler can provide (copy constructor, copy assignment operator, 
+  move constructor, move assignment operator, destructor) unless the class you are constructing does some novel form 
+  of ownership.
+- Indentation is 4 spaces
 
 ## Useful Links
 
@@ -152,3 +179,8 @@ and let the tool do its job.
 Does not support OAuth2, requires Username/Password login.
 
 In your Nextcloud installation go to `/settings/user/security` to create a specific app-password (recommended).
+
+## Roadmap / TODO
+
+- Implement equality operators for Cloud, Directory, File
+- Add tests for CURL wrapper (e.g. by going against a (mocked?) http server)

@@ -7,7 +7,7 @@
 using json = nlohmann::json;
 
 namespace CloudSync::gdrive {
-    class GDriveDirectory : public DirectoryImpl {
+class GDriveDirectory : public DirectoryImpl {
     public:
         GDriveDirectory(
                 const std::string &baseUrl, std::string rootName, std::string resourceId,
@@ -19,17 +19,17 @@ namespace CloudSync::gdrive {
                 , parentResourceId(std::move(parentResourceId))
                 , rootName(std::move(rootName)) {};
 
-        [[nodiscard]] std::vector<std::shared_ptr<Resource>> ls() const override;
+        [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> cd(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
 
-        void rmdir() const override;
+        void remove() override;
 
-        std::shared_ptr<Directory> mkdir(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
 
-        std::shared_ptr<File> touch(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::string &path) const override;
 
-        std::shared_ptr<File> file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::string &path) const override;
 
     private:
         enum ResourceType {
@@ -47,8 +47,12 @@ namespace CloudSync::gdrive {
         std::shared_ptr<GDriveDirectory> parent() const;
 
         /// @return parent of the given path
-        std::shared_ptr<GDriveDirectory> parent(const std::string &path, std::string &folderName) const;
+        std::shared_ptr<GDriveDirectory> parent(const std::string &path, std::string &folderName, bool createIfMissing = false) const;
 
         std::shared_ptr<GDriveDirectory> child(const std::string &name) const;
+
+        bool child_resource_exists(const std::string & resource_name) const;
+
+        std::shared_ptr<GDriveDirectory> get_or_create_parent_directory(const std::string& path) const;
     };
 } // namespace CloudSync::gdrive

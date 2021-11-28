@@ -5,8 +5,10 @@ using namespace CloudSync;
 void onedrive::OneDriveCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
         std::rethrow_exception(e);
+    } catch(request::Response::Conflict &e) {
+        throw Resource::ResourceConflict(resourcePath);
     } catch (request::Response::NotFound &e) {
-        throw Resource::NoSuchFileOrDirectory(resourcePath);
+        throw Resource::NoSuchResource(resourcePath);
     } catch (request::Response::Forbidden &e) {
         throw Resource::PermissionDenied(resourcePath);
     } catch (request::Response::Unauthorized &e) {
@@ -32,7 +34,7 @@ void onedrive::OneDriveCloud::handleExceptions(const std::exception_ptr &e, cons
     }
 }
 
-std::string onedrive::OneDriveCloud::getUserDisplayName() const {
+std::string onedrive::OneDriveCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
         const auto getResponse = this->request->GET("https://graph.microsoft.com/v1.0/me").json();

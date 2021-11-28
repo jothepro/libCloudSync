@@ -10,7 +10,7 @@ using P = Request::ParameterType;
 namespace fs = std::filesystem;
 
 namespace CloudSync::gdrive {
-    std::vector<std::shared_ptr<Resource>> GDriveDirectory::ls() const {
+    std::vector<std::shared_ptr<Resource>> GDriveDirectory::list_resources() const {
         std::vector<std::shared_ptr<Resource>> resourceList;
         try {
             const auto responseJson = this->request->GET(
@@ -31,12 +31,11 @@ namespace CloudSync::gdrive {
         return resourceList;
     }
 
-    std::shared_ptr<Directory> GDriveDirectory::cd(const std::string &path) const {
+    std::shared_ptr<Directory> GDriveDirectory::get_directory(const std::string &path) const {
         std::shared_ptr<Directory> newDir;
         // calculate "diff" between current position & wanted path. What do we need
         // to do to get there?
-        const auto relativePath =
-                (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
+        const auto relativePath = (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
         try {
             if (relativePath == ".") {
                 // no path change required, return current dir
@@ -67,7 +66,8 @@ namespace CloudSync::gdrive {
                     if (pathComponent == "..") {
                         currentDir = currentDir->parent();
                     } else {
-                        currentDir = std::static_pointer_cast<GDriveDirectory>(currentDir->cd(pathComponent.string()));
+                        currentDir = std::static_pointer_cast<GDriveDirectory>(
+                                currentDir->get_directory(pathComponent.string()));
                     }
                 }
                 newDir = currentDir;
@@ -79,7 +79,7 @@ namespace CloudSync::gdrive {
         return newDir;
     }
 
-    void GDriveDirectory::rmdir() const {
+    void GDriveDirectory::remove() {
         try {
             if (this->path() != "/") {
                 this->request->DELETE(this->_baseUrl + "/files/" + this->resourceId);
@@ -91,83 +91,91 @@ namespace CloudSync::gdrive {
         }
     }
 
-    std::shared_ptr<Directory> GDriveDirectory::mkdir(const std::string &path) const {
-        std::shared_ptr<GDriveDirectory> newDir;
+    std::shared_ptr<Directory> GDriveDirectory::create_directory(const std::string &path) const {
+        std::shared_ptr<Directory> newDir;
         std::string folderName;
         try {
-            const auto baseDir = this->parent(path, folderName);
-            const auto responseJson = this->request->POST(
-                this->_baseUrl + "/files",
-                {
+            const auto baseDir = this->parent(path, folderName, true);
+            if(baseDir->child_resource_exists(folderName)) {
+                throw Resource::ResourceConflict(path);
+            } else {
+                const auto responseJson = this->request->POST(
+                    this->_baseUrl + "/files",
                     {
-                        P::QUERY_PARAMS, {
-                            {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
-                        }
-                    },
-                    {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_JSON}
-                        }
-                    }
-                },
-                json{
-                    {"mimeType", "application/vnd.google-apps.folder"},
-                    {"title",    folderName},
-                    {
-                        "parents",  {
-                            {
-                                {"id", baseDir->resourceId}
+                        {
+                            P::QUERY_PARAMS, {
+                                {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
+                            }
+                        },
+                        {
+                            P::HEADERS, {
+                                {"Content-Type", Request::MIMETYPE_JSON}
                             }
                         }
-                    }
-                }.dump()
-            ).json();
-            newDir = std::dynamic_pointer_cast<GDriveDirectory>(baseDir->parseFile(responseJson, ResourceType::FOLDER));
+                    },
+                    json{
+                        {"mimeType", "application/vnd.google-apps.folder"},
+                        {"title",    folderName},
+                        {
+                            "parents",  {
+                                {
+                                    {"id", baseDir->resourceId}
+                                }
+                            }
+                        }
+                    }.dump()
+                ).json();
+                newDir = std::dynamic_pointer_cast<Directory>(baseDir->parseFile(responseJson, ResourceType::FOLDER));
+            }
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), path);
         }
         return newDir;
     }
 
-    std::shared_ptr<File> GDriveDirectory::touch(const std::string &path) const {
-        std::shared_ptr<GDriveFile> newFile;
+    std::shared_ptr<File> GDriveDirectory::create_file(const std::string &path) const {
         std::string fileName;
+        std::shared_ptr<File> newFile;
         try {
-            const auto baseDir = this->parent(path, fileName);
-            const auto responseJson = this->request->POST(
-                this->_baseUrl + "/files",
-                {
-                    {
-                        P::QUERY_PARAMS, {
-                            {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
-                        }
-                    },
-                    {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_JSON}
-                        }
-                    }
-                },
-                json{
-                    {"mimeType", "text/plain"},
-                    {"title",    fileName},
-                    {
-                        "parents",  {
+            const auto baseDir = this->parent(path, fileName, true);
+            if(baseDir->child_resource_exists(fileName)) {
+                throw Resource::ResourceConflict(path);
+            } else {
+                const auto responseJson = this->request->POST(
+                        this->_baseUrl + "/files",
+                        {
                             {
-                                {"id", baseDir->resourceId}
+                                P::QUERY_PARAMS, {
+                                     {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
+                                }
+                            },
+                            {
+                                P::HEADERS, {
+                                     {"Content-Type", Request::MIMETYPE_JSON}
+                                }
                             }
-                        }
-                    }
-                }.dump()
-            ).json();
-            newFile = std::dynamic_pointer_cast<GDriveFile>(baseDir->parseFile(responseJson, ResourceType::FILE));
+                        },
+                        json{
+                                {"mimeType", "text/plain"},
+                                {"title",    fileName},
+                                {
+                                    "parents",  {
+                                        {
+                                            {"id", baseDir->resourceId}
+                                        }
+                                    }
+                                }
+                        }.dump()
+                ).json();
+                newFile = std::dynamic_pointer_cast<GDriveFile>(baseDir->parseFile(responseJson, ResourceType::FILE));
+            }
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), path);
         }
         return newFile;
     }
 
-    std::shared_ptr<File> GDriveDirectory::file(const std::string &path) const {
+    std::shared_ptr<File> GDriveDirectory::get_file(const std::string &path) const {
         std::shared_ptr<GDriveFile> file;
         std::string fileName;
         try {
@@ -187,7 +195,7 @@ namespace CloudSync::gdrive {
                 file = std::dynamic_pointer_cast<GDriveFile>(
                         baseDir->parseFile(responseJson.at("items").at(0), ResourceType::FILE));
             } else {
-                throw NoSuchFileOrDirectory(fileName);
+                throw NoSuchResource(fileName);
             }
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), path);
@@ -213,7 +221,7 @@ namespace CloudSync::gdrive {
         }
         if (mimeType == "application/vnd.google-apps.folder") {
             if (expectedType != ResourceType::ANY && expectedType != ResourceType::FOLDER) {
-                throw NoSuchFileOrDirectory(resourcePath);
+                throw NoSuchResource(resourcePath);
             }
             resource = std::make_shared<GDriveDirectory>(
                     this->_baseUrl,
@@ -225,7 +233,7 @@ namespace CloudSync::gdrive {
                     name);
         } else {
             if (expectedType != ResourceType::ANY && expectedType != ResourceType::FILE) {
-                throw NoSuchFileOrDirectory(name);
+                throw NoSuchResource(name);
             }
             const std::string etag = file.at("etag");
             resource = std::make_shared<GDriveFile>(
@@ -276,11 +284,19 @@ namespace CloudSync::gdrive {
     }
 
     /// @return parent of the given path
-    std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path, std::string &folderName) const {
+    std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path, std::string &folderName, bool createIfMissing) const {
         const auto relativePath = (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
         const auto relativeParentPath = relativePath.parent_path();
         folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
-        return std::static_pointer_cast<GDriveDirectory>(this->cd(relativeParentPath.generic_string()));
+        try {
+            return std::static_pointer_cast<GDriveDirectory>(this->get_directory(relativeParentPath.generic_string()));
+        } catch (const NoSuchResource &e) {
+            if(createIfMissing && relativeParentPath != "") {
+                return std::static_pointer_cast<GDriveDirectory>(this->create_directory(relativeParentPath.generic_string()));
+            } else {
+                throw e;
+            }
+        }
     }
 
     std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name) const {
@@ -300,8 +316,23 @@ namespace CloudSync::gdrive {
             childDir = std::dynamic_pointer_cast<GDriveDirectory>(
                     this->parseFile(responseJson.at("items").at(0), ResourceType::FOLDER));
         } else {
-            throw NoSuchFileOrDirectory(fs::path(this->path() + "/" + name).lexically_normal().generic_string());
+            throw NoSuchResource(fs::path(this->path() + "/" + name).lexically_normal().generic_string());
         }
         return childDir;
+    }
+
+    bool GDriveDirectory::child_resource_exists(const std::string &resource_name) const {
+        const auto responseJson = this->request->GET(
+                this->_baseUrl + "/files",
+                {
+                        {
+                                P::QUERY_PARAMS, {
+                                {"q", "'" + this->resourceId + "' in parents and title = '" + resource_name + "' and trashed = false"},
+                                {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}
+                        }
+                        }
+                }
+        ).json();
+        return !responseJson.at("items").empty();
     }
 } // namespace CloudSync::gdrive

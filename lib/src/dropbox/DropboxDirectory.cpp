@@ -12,7 +12,7 @@ using P = Request::ParameterType;
 namespace fs = std::filesystem;
 
 namespace CloudSync::dropbox {
-    std::vector<std::shared_ptr<Resource>> DropboxDirectory::ls() const {
+    std::vector<std::shared_ptr<Resource>> DropboxDirectory::list_resources() const {
         const auto resourcePath = DropboxDirectory::parsePath(this->path());
         std::vector<std::shared_ptr<Resource>> resources;
         try {
@@ -62,7 +62,7 @@ namespace CloudSync::dropbox {
         return resources;
     }
 
-    std::shared_ptr<Directory> DropboxDirectory::cd(const std::string &path) const {
+    std::shared_ptr<Directory> DropboxDirectory::get_directory(const std::string &path) const {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
         std::shared_ptr<DropboxDirectory> directory;
         // get_metadata is not supported for the root folder
@@ -92,7 +92,7 @@ namespace CloudSync::dropbox {
         return directory;
     }
 
-    void DropboxDirectory::rmdir() const {
+    void DropboxDirectory::remove() {
         const auto resourcePath = DropboxDirectory::parsePath(this->path());
         if (resourcePath.empty()) {
             throw PermissionDenied("deleting the root folder is not allowed");
@@ -113,9 +113,9 @@ namespace CloudSync::dropbox {
         }
     }
 
-    std::shared_ptr<Directory> DropboxDirectory::mkdir(const std::string &path) const {
+    std::shared_ptr<Directory> DropboxDirectory::create_directory(const std::string &path) const {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
-        std::shared_ptr<DropboxDirectory> directory;
+        std::shared_ptr<Directory> directory;
         try {
             json responseJson = this->request->POST(
                 "https://api.dropboxapi.com/2/files/create_folder_v2",
@@ -130,8 +130,7 @@ namespace CloudSync::dropbox {
                     {"path", resourcePath}
                 }.dump()
             ).json();
-            directory =
-                    std::dynamic_pointer_cast<DropboxDirectory>(
+            directory = std::dynamic_pointer_cast<DropboxDirectory>(
                             this->parseEntry(responseJson.at("metadata"), "folder"));
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
@@ -139,9 +138,9 @@ namespace CloudSync::dropbox {
         return directory;
     }
 
-    std::shared_ptr<File> DropboxDirectory::touch(const std::string &path) const {
+    std::shared_ptr<File> DropboxDirectory::create_file(const std::string &path) const {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
-        std::shared_ptr<DropboxFile> file;
+        std::shared_ptr<File> file;
         try {
             const auto responseJson = this->request->POST(
                 "https://content.dropboxapi.com/2/files/upload",
@@ -170,7 +169,7 @@ namespace CloudSync::dropbox {
         return file;
     }
 
-    std::shared_ptr<File> DropboxDirectory::file(const std::string &path) const {
+    std::shared_ptr<File> DropboxDirectory::get_file(const std::string &path) const {
         const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
         std::shared_ptr<DropboxFile> file;
         try {
@@ -210,7 +209,7 @@ namespace CloudSync::dropbox {
             }
         }
         if (!resourceTypeFallback.empty() && resourceType != resourceTypeFallback) {
-            throw NoSuchFileOrDirectory(path);
+            throw NoSuchResource(path);
         }
         if (resourceType == "folder") {
             resource = std::make_shared<DropboxDirectory>(path, this->request, name);

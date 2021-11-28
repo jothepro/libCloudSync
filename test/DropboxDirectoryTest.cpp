@@ -22,7 +22,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
 
         const auto directory = std::make_shared<DropboxDirectory>("/", request, "");
         THEN("the working dir should be '/'") {
-            REQUIRE(directory->pwd() == "/");
+            REQUIRE(directory->path() == "/");
         }
 
         AND_GIVEN("a request that returns a valid dropbox directory listing") {
@@ -45,17 +45,15 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                        {"rev", "0159d4da2a6fc2100000001a2504350"},
                        {"size", 11048},
                        {"is_downloadable", true},
-                       {"content_hash",
-                        "a59943f6fe5e4cbc25366a1c412b4278bc74984353265c2160"
-                        "607a073c9cb540"}}}},
+                       {"content_hash", "a59943f6fe5e4cbc540"}}}},
                     {"cursor",
                      "AAEunngK5i6uSxwrSlvTngxpzli3qKoVouhB8LtojjN9gA"},
                     {"has_more", false}}
                     .dump(),
                 "application/json"));
 
-            WHEN("calling ls (list) on the directory") {
-                auto list = directory->ls();
+            WHEN("calling list_resources (list) on the directory") {
+                auto list = directory->list_resources();
 
                 THEN("the dropbox list_folder endpoint should be called with a json payload pointing to the root "
                      "folder") {
@@ -130,8 +128,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                         {"has_more", false}
                     }.dump(),
                     "application/json"));
-            WHEN("calling ls()") {
-                auto list = directory->ls();
+            WHEN("calling list_resources()") {
+                auto list = directory->list_resources();
                 THEN("a list of all resources contained in the 3 request responses should be returned") {
                     REQUIRE(list.size() == 3);
                     REQUIRE(list[0]->name() == "entry1");
@@ -169,9 +167,9 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling cd(test), cd(test/), cd(/test/), cd(/test/more/..)") {
+            WHEN("calling cd(test), cd(test/), cd(/test/), get_directory(/test/more/..)") {
                 std::string path = GENERATE(as<std::string>{}, "test", "test/", "/test/", "/test/more/..");
-                auto newDir = directory->cd(path);
+                auto newDir = directory->get_directory(path);
                 THEN("the dropbox metadata endpoint should be called with a "
                      "json payload pointing to the desired folder") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -182,12 +180,12 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
                 THEN("a dir called 'test' should be returned") {
                     REQUIRE(newDir->name() == "test");
-                    REQUIRE(newDir->pwd() == "/test");
+                    REQUIRE(newDir->path() == "/test");
                 }
             }
-            WHEN("calling file(test)") {
+            WHEN("calling get_file(test)") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown because a folder description is returned") {
-                    REQUIRE_THROWS_AS(directory->file("test"), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->get_file("test"), CloudSync::Resource::NoSuchResource);
                 }
             }
         }
@@ -202,8 +200,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling mkdir(test) on the current directory") {
-                auto newDir = directory->mkdir("test");
+            WHEN("calling create_directory(test) on the current directory") {
+                auto newDir = directory->create_directory("test");
                 THEN("the dropbox create_folder_v2 endpoint should be called "
                      "with a json payload describing the new folder name") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -234,8 +232,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling touch(test.txt)") {
-                auto newFile = directory->touch("test.txt");
+            WHEN("calling create_file(test.txt)") {
+                auto newFile = directory->create_file("test.txt");
 
                 THEN("the dropbox upload endpoint should be called with the arg param pointing to the new file and "
                      "with an empty request body") {
@@ -270,8 +268,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling file(test.txt)") {
-                auto file = directory->file("test.txt");
+            WHEN("calling get_file(test.txt)") {
+                auto file = directory->get_file("test.txt");
                 THEN("the dropbox metadata endpoint should be called with a json payload pointing to the file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
@@ -284,42 +282,42 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE(file->revision() == "0159d4da2a6fc2100000001a2504350");
                 }
             }
-            WHEN("calling cd(test.txt)") {
+            WHEN("calling get_directory(test.txt)") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown because a file description is returned") {
-                    REQUIRE_THROWS_AS(directory->cd("test.txt"), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->get_directory("test.txt"), CloudSync::Resource::NoSuchResource);
                 }
             }
         }
         WHEN("deleting the current directory") {
             THEN("a PermissionDenied exception should be thrown because the root dir cannot be deleted") {
-                REQUIRE_THROWS_AS(directory->rmdir(), CloudSync::Resource::PermissionDenied);
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::PermissionDenied);
             }
         }
         AND_GIVEN("a POST request that returns an invalid (non-json) response") {
             WHEN_REQUEST().RESPOND(request::Response(200, "un-parseable", "text/plain"));
-            WHEN("calling ls") {
+            WHEN("calling list_resources") {
                 THEN("an InvalidResponse exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling cd(test)") {
+            WHEN("calling get_directory(test)") {
                 THEN("an InvalidResponse exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->cd("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling mkdir(test)") {
+            WHEN("calling create_directory(test)") {
                 THEN("an InvalidResponse exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->mkdir("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->create_directory("test"), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling touch(test.txt)") {
+            WHEN("calling create_file(test.txt)") {
                 THEN("an InvalidResponse exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->touch("test.txt"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->create_file("test.txt"), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling file(test.txt)") {
+            WHEN("calling get_file(test.txt)") {
                 THEN("an InvalidResponse exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->file("test.txt"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_file("test.txt"), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }
@@ -328,37 +326,37 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 {"error_summary", "path/not_found/.."},
                 {"error", {{".tag", "path"}, {"path", {{".tag", "not_found"}}}}}}
                                                                  .dump()));
-            WHEN("calling ls") {
+            WHEN("calling list_resources") {
                 THEN("a NoSuchFileOrDirectory exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Resource::NoSuchResource);
                 }
             }
-            WHEN("calling cd(test)") {
+            WHEN("calling get_directory(test)") {
                 THEN("a NoSuchFileOrDirectory exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->cd("test"), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Resource::NoSuchResource);
                 }
             }
-            WHEN("calling file(test.txt)") {
+            WHEN("calling get_file(test.txt)") {
                 THEN("a NoSuchFileOrDirectory exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->file("test.txt"), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->get_file("test.txt"), CloudSync::Resource::NoSuchResource);
                 }
             }
         }
         AND_GIVEN("a POST request that fails with a 409 (Conflict) that cannot be parsed") {
             WHEN_REQUEST().Throw(request::Response::Conflict("un-parseable"));
-            WHEN("calling ls") {
+            WHEN("calling list_resources") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->ls(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling cd(test)") {
+            WHEN("calling get_directory(test)") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->cd("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Cloud::InvalidResponse);
                 }
             }
-            WHEN("calling file(test.txt)") {
+            WHEN("calling get_file(test.txt)") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->file("test.txt"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_file("test.txt"), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }
@@ -368,7 +366,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
         AND_GIVEN("a POST request that returns 200") {
             WHEN_REQUEST().RESPOND(request::Response(200, "", ""));
             WHEN("deleting the current directory") {
-                directory->rmdir();
+                directory->remove();
                 THEN("the dropbox delete_v2 endpoint should be called with a "
                      "json pointing to the to be deleted file") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -384,17 +382,17 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 {"error_summary", "path_lookup/not_found/.."},
                 {"error", {{".tag", "path_lookup"}, {"path_lookup", {{".tag", "not_found"}}}}}}
                                                                  .dump()));
-            WHEN("calling rmdir") {
+            WHEN("calling remove") {
                 THEN("a NoSuchFileOrDirectory exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->rmdir(), CloudSync::Resource::NoSuchFileOrDirectory);
+                    REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::NoSuchResource);
                 }
             }
         }
         AND_GIVEN("a request that fails with a 409 (Conflict) that cannot be parsed") {
             WHEN_REQUEST().Throw(request::Response::Conflict("un-parseable"));
-            WHEN("calling rmdir") {
+            WHEN("calling remove") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->rmdir(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->remove(), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }

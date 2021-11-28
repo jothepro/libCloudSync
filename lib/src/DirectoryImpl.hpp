@@ -9,9 +9,7 @@ namespace CloudSync {
 
         [[nodiscard]] std::string path() const override;
 
-        [[nodiscard]] std::string pwd() const override;
-
-        [[nodiscard]] bool isFile() const override;
+        [[nodiscard]] bool is_file() const override;
 
     protected:
         DirectoryImpl(

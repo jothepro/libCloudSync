@@ -23,7 +23,7 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
         AND_GIVEN("a request that returns 200") {
             WHEN_REQUEST().RESPOND(request::Response(200, "", ""));
             WHEN("the file is deleted") {
-                file->rm();
+                file->remove();
                 THEN("the dropbox delete endpoint should be called with a json payload pointing to the file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
@@ -36,8 +36,8 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
         AND_GIVEN("a request that returns binary data") {
             WHEN_REQUEST().RESPOND(request::Response(200, "binary-data-010101", "application/octet-stream"));
 
-            WHEN("the file is read") {
-                std::string content = file->read();
+            WHEN("the file is read_as_string") {
+                std::string content = file->read_as_string();
                 THEN("the dropbox download endpoint should be called with an arg parameter pointing to the file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
@@ -70,7 +70,7 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
 
             WHEN("writing to the file") {
                 const std::string newContent = "awesome new content";
-                file->write(newContent);
+                file->write_string(newContent);
                 THEN("the dropbox upload endpoint should have been called with an arg param pointing to the file and "
                      "requesting an update") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -87,8 +87,8 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                     REQUIRE(file->revision() == "newrevision");
                 }
             }
-            WHEN("calling pollChange()") {
-                const bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                const bool hasChanged = file->poll_change();
                 THEN("the dropbox get_metadata endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
@@ -102,10 +102,18 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                 }
             }
         }
+        AND_GIVEN("a request that returns 409 conflict") {
+            WHEN_REQUEST().Throw(request::Response::Conflict(""));
+            WHEN("writing to the file") {
+                THEN("a ResourceHasChanged exeception should be thrown") {
+                    REQUIRE_THROWS_AS(file->write_string("test"), Resource::ResourceHasChanged);
+                }
+            }
+        }
         AND_GIVEN("a POST request that returns a file description with the same revision") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"rev", "revision-id"}}.dump(), "application/json"));
-            WHEN("calling pollChange()") {
-                const bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                const bool hasChanged = file->poll_change();
                 THEN("false should be returned") {
                     REQUIRE(hasChanged == false);
                 }

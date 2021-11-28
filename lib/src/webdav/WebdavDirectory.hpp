@@ -13,17 +13,17 @@ namespace CloudSync::webdav {
                 const std::shared_ptr<request::Request> &request, const std::string &name)
                 : DirectoryImpl(baseUrl, dir, request, name), dirOffset(std::move(dirOffset)) {};
 
-        [[nodiscard]] std::vector<std::shared_ptr<Resource>> ls() const override;
+        [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> cd(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
 
-        void rmdir() const override;
+        void remove() override;
 
-        std::shared_ptr<Directory> mkdir(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
 
-        std::shared_ptr<File> touch(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::string &path) const override;
 
-        std::shared_ptr<File> file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::string &path) const override;
 
     private:
         static std::string xmlQuery;
@@ -31,9 +31,11 @@ namespace CloudSync::webdav {
 
         std::vector<std::shared_ptr<Resource>> parseXmlResponse(const pugi::xml_node &response) const;
 
+        bool resource_exists(const std::string& resource_path) const;
+
         /// Appends `path` to the current path and returns the result.
         std::string requestUrl(const std::string &path) const;
 
-        static void removeTrailingSlashes(std::string &path);
+        static std::string remove_trailing_slashes(const std::string &path);
     };
 } // namespace CloudSync::webdav

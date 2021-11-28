@@ -5,14 +5,15 @@
 #include <catch2/catch.hpp>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 struct RequestRecording {
     RequestRecording(
-        const std::string &verb, const std::string &url,
-        const std::unordered_map<
-            CloudSync::request::Request::ParameterType, const std::unordered_map<std::string, std::string>> &parameters,
-        const std::string &body)
-        : verb(verb), url(url), parameters(parameters), body(body){};
+        std::string verb, std::string url,
+        std::unordered_map<
+            CloudSync::request::Request::ParameterType, const std::unordered_map<std::string, std::string>> parameters,
+        std::string body)
+        : verb(std::move(verb)), url(std::move(url)), parameters(std::move(parameters)), body(std::move(body)){};
     const std::string verb;
     const std::string url;
     const std::unordered_map<

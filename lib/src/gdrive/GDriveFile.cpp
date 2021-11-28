@@ -6,7 +6,7 @@ using namespace CloudSync::request;
 using P = Request::ParameterType;
 
 namespace CloudSync::gdrive {
-    void GDriveFile::rm() {
+    void GDriveFile::remove() {
         try {
             this->request->DELETE(this->_baseUrl + "/files/" + this->resourceId);
         } catch (...) {
@@ -14,7 +14,7 @@ namespace CloudSync::gdrive {
         }
     }
 
-    bool GDriveFile::pollChange(bool longPoll) {
+    bool GDriveFile::poll_change(bool longPoll) {
         bool hasChanged = false;
         try {
             const auto responseJson = this->request->GET(
@@ -38,7 +38,7 @@ namespace CloudSync::gdrive {
         return hasChanged;
     }
 
-    std::string GDriveFile::read() const {
+    std::string GDriveFile::read_as_string() const {
         std::string content;
         try {
             const auto responseJson = this->request->GET(
@@ -59,7 +59,7 @@ namespace CloudSync::gdrive {
         return content;
     }
 
-    void GDriveFile::write(const std::string &content) {
+    void GDriveFile::write_string(const std::string &content) {
         try {
             const auto res = this->request->PUT(
                 "https://www.googleapis.com/upload/drive/v2/files/" + this->resourceId,

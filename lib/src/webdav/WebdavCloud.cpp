@@ -5,8 +5,10 @@ using namespace CloudSync;
 void webdav::WebdavCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
         std::rethrow_exception(e);
+    } catch(request::Response::PreconditionFailed &e) {
+        throw Resource::ResourceHasChanged(resourcePath);
     } catch (request::Response::NotFound &e) {
-        throw Resource::NoSuchFileOrDirectory(resourcePath);
+        throw Resource::NoSuchResource(resourcePath);
     } catch (request::Response::Forbidden &e) {
         throw Resource::PermissionDenied(resourcePath);
     } catch (request::Response::Unauthorized &e) {

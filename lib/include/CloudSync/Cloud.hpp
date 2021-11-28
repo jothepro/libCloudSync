@@ -73,7 +73,7 @@ namespace CloudSync {
 
         /**
          * Use this to check if the connection to the cloud is working. This currently is just a shorthand for
-         * `cloud->root()->ls();`.
+         * `cloud->root()->list_resources();`.
          * @throws AuthorizationFailed if your login-credentials are wrong.
          */
         virtual void ping() const = 0;
@@ -116,7 +116,7 @@ namespace CloudSync {
          * @warning this makes a network call every time it is called.
          * @return the users display name.
          */
-        [[nodiscard]] virtual std::string getUserDisplayName() const = 0;
+        [[nodiscard]] virtual std::string get_user_display_name() const = 0;
 
         /**
          * @return root directory. This is the entrypoint for all file operations.

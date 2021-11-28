@@ -9,7 +9,7 @@
 #include <vector>
 
 std::ostream &operator<<(std::ostream &output, const std::shared_ptr<CloudSync::Resource>& resource) {
-    if(resource->isFile()) {
+    if(resource->is_file()) {
         std::string revision = std::dynamic_pointer_cast<CloudSync::File>(resource)->revision();
         output << std::setw(10) << std::left << (revision.size() > 10 ? revision.substr(0, 10) : revision) << " " << resource->name();
     } else {
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     std::string providerUrl;
     std::shared_ptr<CloudSync::Cloud> cloud;
     std::shared_ptr<CloudSync::Directory> dir;
-    std::string root;
+    std::string root = "root";
 
     cxxopts::Options options("cloudsync", "A small commandline utility to access any cloud with libCloudSync");
     options.add_options()
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     if (result.count("domain")) {
         providerUrl = result["domain"].as<std::string>();
     } else {
-        if(result.count("webdav") || result.count("nextcloud") || result.count("owncloud")) {
+        if(result.count("webdav") || result.count("nextcloud")) {
             std::cerr << "no domain provided" << std::endl;
             std::cout << options.help({"2) configuration"}) << std::endl;
             exit(1);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "\e[1A" << std::setfill(' ') << std::left << std::setw(80) << "[Cloud url: " << cloud->getBaseUrl() << "]" << std::endl;
-    std::cout << "Logged in as: " << cloud->getUserDisplayName() << std::endl;
+    std::cout << "Logged in as: " << cloud->get_user_display_name() << std::endl;
     dir = cloud->root();
 
     // cli loop waiting for commands
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
             std::cin >> action;
 
             if (action == "ls") {
-                auto list = dir->ls();
+                auto list = dir->list_resources();
                 std::cout << "total: " << list.size() << std::endl;
                 for (const auto& res : list) {
                     std::cout << res << std::endl;
@@ -139,51 +139,51 @@ int main(int argc, char *argv[]) {
             } else if (action == "cd") {
                 std::string path;
                 std::cin >> path;
-                dir = dir->cd(path);
+                dir = dir->get_directory(path);
             } else if (action == "pwd") {
-                std::cout << dir->pwd() << std::endl;
+                std::cout << dir->path() << std::endl;
             } else if (action == "file") {
                 std::string filename;
                 std::cin >> filename;
-                auto file = dir->file(filename);
+                auto file = dir->get_file(filename);
                 std::cout << file << std::endl;
             } else if (action == "read") {
                 std::string filename;
                 std::cin >> filename;
-                auto file = dir->file(filename);
-                std::cout << file->read() << std::endl;
+                auto file = dir->get_file(filename);
+                std::cout << file->read_as_string() << std::endl;
             } else if (action == "mkdir") {
                 std::string dirname;
                 std::cin >> dirname;
-                dir->mkdir(dirname);
+                dir = dir->create_directory(dirname);
             } else if (action == "rmdir") {
                 std::string dirname;
                 std::cin >> dirname;
-                auto rmdir = dir->cd(dirname);
-                std::cout << "Are you sure you want to delete the folder '" << rmdir->pwd() << "'? (y/n) ";
+                auto rmdir = dir->get_directory(dirname);
+                std::cout << "Are you sure you want to delete the folder '" << rmdir->path() << "'? (y/n) ";
                 std::string confirmation;
                 std::cin >> confirmation;
                 if (confirmation == "y") {
-                    rmdir->rmdir();
+                    rmdir->remove();
                 }
             } else if (action == "touch") {
                 std::string filename;
                 std::cin >> filename;
-                dir->touch(filename);
+                dir->create_file(filename);
             } else if (action == "rm") {
                 std::string filename;
                 std::cin >> filename;
-                auto file = dir->file(filename);
+                auto file = dir->get_file(filename);
                 std::cout << "Are you sure you want to delete the file '" << file->path() << "'? (y/n) ";
                 std::string confirmation;
                 std::cin >> confirmation;
                 if (confirmation == "y") {
-                    file->rm();
+                    file->remove();
                 }
             } else if (action == "write") {
                 std::string filename;
                 std::cin >> filename;
-                auto file = dir->file(filename);
+                auto file = dir->get_file(filename);
                 std::cout << "Write file content in quotation marks.\n"
                              "This will override the current file content!!!!!"
                           << std::endl;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
                         break;
                     }
                 }
-                file->write(filecontent);
+                file->write_string(filecontent);
             } else if (action == "logout") {
                 std::cout << "Logging out will revoke your access-token / app password, if possible.\n"
                              "Do you want to proceed? (y/n)" << std::endl;

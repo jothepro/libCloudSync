@@ -9,7 +9,7 @@ using json = nlohmann::json;
 using P = Request::ParameterType;
 
 namespace CloudSync::dropbox {
-    void DropboxFile::rm() {
+    void DropboxFile::remove() {
         try {
             this->request->POST(
                     "https://api.dropboxapi.com/2/files/delete_v2",
@@ -20,7 +20,7 @@ namespace CloudSync::dropbox {
         }
     }
 
-    bool DropboxFile::pollChange(bool longPoll) {
+    bool DropboxFile::poll_change(bool longPoll) {
         bool hasChanged = false;
         try {
             if (longPoll) {
@@ -45,7 +45,7 @@ namespace CloudSync::dropbox {
         return hasChanged;
     }
 
-    std::string DropboxFile::read() const {
+    std::string DropboxFile::read_as_string() const {
         std::string data;
         try {
             data = this->request
@@ -61,21 +61,21 @@ namespace CloudSync::dropbox {
         return data;
     }
 
-    void DropboxFile::write(const std::string &content) {
+    void DropboxFile::write_string(const std::string &content) {
         try {
-            const auto responseJson =
-                    this->request
-                            ->POST(
-                                    "https://content.dropboxapi.com/2/files/upload",
-                                    {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_BINARY}}},
-                                     {P::QUERY_PARAMS,
-                                                  {{"arg",
-                                                                    json{{"path", this->path()},
-                                                                         {"mode", {{".tag", "update"}, {"update", this->revision()}}}}
-                                                                            .dump()}}}},
-                                    content)
-                            .json();
+            const auto responseJson = this->request->POST(
+                "https://content.dropboxapi.com/2/files/upload",
+                {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_BINARY}}},
+                 {P::QUERY_PARAMS,
+                              {{"arg",
+                                    json{{"path", this->path()},
+                                         {"mode", {{".tag", "update"}, {"update", this->revision()}}}}
+                                            .dump()}}}},
+                content
+            ).json();
             this->_revision = responseJson.at("rev");
+        } catch(const request::Response::Conflict &e) {
+            throw Resource::ResourceHasChanged(path());
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), this->path());
         }

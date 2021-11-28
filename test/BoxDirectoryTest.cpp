@@ -22,7 +22,7 @@ SCENARIO("BoxDirectory", "[directory][box]") {
         const auto directory = std::make_shared<BoxDirectory>("0", "0", "/", request, "");
 
         THEN("the working dir should be '/'") {
-            REQUIRE(directory->pwd() == "/");
+            REQUIRE(directory->path() == "/");
         }
 
         AND_GIVEN("a GET request that returns a valid directory listing") {
@@ -43,8 +43,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling ls()") {
-                auto list = directory->ls();
+            WHEN("calling list_resources()") {
+                auto list = directory->list_resources();
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
                     Verify(Method((requestMock), request)).Once();
                     REQUIRE(requestRecording.front().verb == "GET");
@@ -60,14 +60,14 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
             }
 
-            WHEN("calling cd(testfolder), cd(testfolder/), cd(/testfolder/), cd(/subfolder/../testfolder)") {
+            WHEN("calling cd(testfolder), cd(testfolder/), cd(/testfolder/), get_directory(/subfolder/../testfolder)") {
                 std::string path = GENERATE(
                     as<std::string>{},
                     "testfolder",
                     "testfolder/",
                     "/testfolder/",
                     "/subfolder/../testfolder");
-                const auto newDir = directory->cd(path);
+                const auto newDir = directory->get_directory(path);
 
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
                     Verify(Method((requestMock), request)).Once();
@@ -81,8 +81,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
             }
 
-            WHEN("calling file(test.txt)") {
-                const auto file = directory->file("test.txt");
+            WHEN("calling get_file(test.txt)") {
+                const auto file = directory->get_file("test.txt");
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -111,8 +111,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                      }}}}
                     .dump(),
                 "application/json"));
-            WHEN("calling touch(newfile.txt)") {
-                directory->touch("newfile.txt");
+            WHEN("calling create_file(newfile.txt)") {
+                directory->create_file("newfile.txt");
 
                 THEN("the box upload endpoint should be called") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -163,8 +163,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                            {"name", "testfolder2"}}}}}
                         .dump(),
                     "application/json"));
-            WHEN("calling cd (testfolder/testfolder2)") {
-                const auto newDir = directory->cd("testfolder/testfolder2");
+            WHEN("calling get_directory (testfolder/testfolder2)") {
+                const auto newDir = directory->get_directory("testfolder/testfolder2");
 
                 THEN("the box items endpoint should be called for '/' first, then for 'testfolder'") {
                     REQUIRE_REQUEST_CALLED().Twice();
@@ -194,8 +194,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                     .dump(),
                 "application/json"));
 
-            WHEN("calling mkdir(newfolder)") {
-                const auto newFolder = directory->mkdir("newfolder");
+            WHEN("calling create_directory(newfolder)") {
+                const auto newFolder = directory->create_directory("newfolder");
 
                 THEN("the box post-folders endpoint should be called with a correct json payload") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -239,8 +239,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                         .dump(),
                     "application/json"));
 
-            WHEN("calling mkdir (testfolder/newfolder)") {
-                const auto newDir = directory->mkdir("testfolder/newfolder");
+            WHEN("calling create_directory (testfolder/newfolder)") {
+                const auto newDir = directory->create_directory("testfolder/newfolder");
 
                 THEN("the box items endpoint should be called on the root folder") {
                     REQUIRE_REQUEST_CALLED().Twice();
@@ -263,9 +263,9 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 }
             }
         }
-        WHEN("calling rmdir()") {
+        WHEN("calling remove()") {
             THEN("a PermissionDenied Exception should be thrown") {
-                REQUIRE_THROWS_AS(directory->rmdir(), CloudSync::Resource::PermissionDenied);
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::PermissionDenied);
             }
         }
     }
@@ -275,8 +275,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
         AND_GIVEN("a request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 
-            WHEN("calling rmdir()") {
-                directory->rmdir();
+            WHEN("calling remove()") {
+                directory->remove();
 
                 THEN("the box delete request should be called with the folder id") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -288,8 +288,8 @@ SCENARIO("BoxDirectory", "[directory][box]") {
 
         AND_GIVEN("a GET request that returns the root folder description") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"id", "0"}}.dump(), "application/json"));
-            WHEN("calling cd(..)") {
-                const auto root = directory->cd("..");
+            WHEN("calling get_directory(..)") {
+                const auto root = directory->get_directory("..");
                 THEN("the box folder endpoint should be called for the root folder (0)") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");

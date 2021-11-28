@@ -47,7 +47,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
 
             WHEN("writing to the file") {
                 const std::string newData = "awesome new data";
-                file->write(newData);
+                file->write_string(newData);
                 THEN("a PUT request should be made on the path pointing to the file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
@@ -66,7 +66,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
             WHEN_REQUEST().RESPOND(request::Response(200, "testtext", "text/plain"));
 
             WHEN("reading from a file") {
-                std::string data = file->read();
+                std::string data = file->read_as_string();
                 THEN("a GET request should be made on the desired file") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
@@ -77,7 +77,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
         AND_GIVEN("a request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
             WHEN("deleting the file") {
-                file->rm();
+                file->remove();
                 THEN("a DELETE request should be done on the resource") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
@@ -89,8 +89,8 @@ SCENARIO("WebdavFile", "[file][webdav]") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, xmlResponseContent("7f3805660b049baadd3bef287d7d346b"), "application/xml"));
 
-            WHEN("calling pollChange()") {
-                const bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                const bool hasChanged = file->poll_change();
                 THEN("a PROPFIND request should be made to the resource asking for the etag") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
@@ -114,8 +114,8 @@ SCENARIO("WebdavFile", "[file][webdav]") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, xmlResponseContent("1ab803660mm49baads3bef287d7d3466"), "application/xml"));
 
-            WHEN("calling pollChange()") {
-                const bool hasChanged = file->pollChange();
+            WHEN("calling poll_change()") {
+                const bool hasChanged = file->poll_change();
                 THEN("true should be returned") {
                     REQUIRE(hasChanged);
                 }
@@ -127,18 +127,18 @@ SCENARIO("WebdavFile", "[file][webdav]") {
         AND_GIVEN("a request that returns an invalid xml (not paresable)") {
             WHEN_REQUEST().RESPOND(request::Response(200, "thisisnotxml", "text/plain"));
 
-            WHEN("calling pollChange()") {
+            WHEN("calling poll_change()") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->pollChange(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(file->poll_change(), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }
         AND_GIVEN("a request that returns valid xml that misses the etag field") {
             WHEN_REQUEST().RESPOND(request::Response(200, "<?xml version=\"1.0\"?><a>a</a>", "text/plain"));
 
-            WHEN("calling pollChange()") {
+            WHEN("calling poll_change()") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->pollChange(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(file->poll_change(), CloudSync::Cloud::InvalidResponse);
                 }
             }
         }

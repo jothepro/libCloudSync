@@ -8,9 +8,13 @@ void box::BoxCloud::handleExceptions(const std::exception_ptr &e, const std::str
     try {
         std::rethrow_exception(e);
     } catch (request::Response::NotFound &e) {
-        throw Resource::NoSuchFileOrDirectory(resourcePath);
+        throw Resource::NoSuchResource(resourcePath);
     } catch (request::Response::Forbidden &e) {
         throw Resource::PermissionDenied(resourcePath);
+    } catch (request::Response::Conflict &e) {
+        throw Resource::ResourceConflict(resourcePath);
+    } catch (request::Response::PreconditionFailed &e) {
+        throw Resource::ResourceHasChanged(resourcePath);
     } catch (request::Response::Unauthorized &e) {
         throw Cloud::AuthorizationFailed();
     } catch (request::Response::ResponseException &e) {
@@ -22,7 +26,7 @@ void box::BoxCloud::handleExceptions(const std::exception_ptr &e, const std::str
     }
 }
 
-std::string box::BoxCloud::getUserDisplayName() const {
+std::string box::BoxCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
         const auto getResponse = this->request->GET("https://api.box.com/2.0/users/me").json();
