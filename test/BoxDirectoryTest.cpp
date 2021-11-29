@@ -13,7 +13,6 @@ using namespace CloudSync;
 using namespace CloudSync::box;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("BoxDirectory", "[directory][box]") {
     INIT_REQUEST();
@@ -46,9 +45,9 @@ SCENARIO("BoxDirectory", "[directory][box]") {
             WHEN("calling list_resources()") {
                 auto list = directory->list_resources();
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
-                    Verify(Method((requestMock), request)).Once();
-                    REQUIRE(requestRecording.front().verb == "GET");
-                    REQUIRE(requestRecording.front().url == "https://api.box.com/2.0/folders/0/items");
+                    REQUIRE_REQUEST_CALLED().Once();
+                    REQUIRE_REQUEST(0, verb == "GET");
+                    REQUIRE_REQUEST(0, url == "https://api.box.com/2.0/folders/0/items");
                 }
 
                 THEN("a list of all resources contained in the directory should be returned") {
@@ -70,7 +69,7 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                 const auto newDir = directory->get_directory(path);
 
                 THEN("the box items endpoint should be called with the id of the root folder (0)") {
-                    Verify(Method((requestMock), request)).Once();
+                    REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://api.box.com/2.0/folders/0/items");
                 }
@@ -118,11 +117,9 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://upload.box.com/api/2.0/files/content");
-                    REQUIRE_REQUEST(
-                        0,
-                        parameters.at(P::MIME_POSTFIELDS).at("attributes") ==
+                    REQUIRE_REQUEST(0, mime_postfields.at("attributes") ==
                             "{\"name\":\"newfile.txt\",\"parent\":{\"id\":\"0\"}}");
-                    REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFILES).at("file") == "");
+                    REQUIRE_REQUEST(0, mime_postfiles.at("file") == "");
                 }
             }
         }
@@ -201,7 +198,7 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, url == "https://api.box.com/2.0/folders");
                     REQUIRE_REQUEST(0, body == "{\"name\":\"newfolder\",\"parent\":{\"id\":\"0\"}}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the new folder resource should be returned") {
                     REQUIRE(newFolder->name() == "newfolder");
@@ -255,7 +252,7 @@ SCENARIO("BoxDirectory", "[directory][box]") {
                         1,
                         body == "{\"name\":\"newfolder\",\"parent\":{"
                                 "\"id\":\"1236\"}}");
-                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(1, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the newly created folder should be returned") {
                     REQUIRE(newDir->name() == "newfolder");

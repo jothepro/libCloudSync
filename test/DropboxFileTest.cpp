@@ -13,7 +13,6 @@ using namespace CloudSync;
 using namespace CloudSync::dropbox;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("DropboxFile", "[file][dropbox]") {
     INIT_REQUEST();
@@ -29,7 +28,7 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/delete_v2");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test.txt\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
             }
         }
@@ -43,8 +42,8 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/download");
                     REQUIRE_REQUEST(0, body == "");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_TEXT);
-                    REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("arg") == "{\"path\":\"/test.txt\"}");
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_TEXT);
+                    REQUIRE_REQUEST(0, query_params.at("arg") == "{\"path\":\"/test.txt\"}");
                 }
                 THEN("the file-content should be returned") {
                     REQUIRE(content == "binary-data-010101");
@@ -77,10 +76,10 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/upload");
                     REQUIRE_REQUEST(0, body == newContent);
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_BINARY);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_BINARY);
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("arg") ==
+                        query_params.at("arg") ==
                             "{\"mode\":{\".tag\":\"update\",\"update\":\"revision-id\"},\"path\":\"/test.txt\"}");
                 }
                 THEN("the revision of the file should have been updated") {
@@ -94,7 +93,7 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/get_metadata");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test.txt\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("true should be returned and the revision should be updated") {
                     REQUIRE(hasChanged);

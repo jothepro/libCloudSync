@@ -37,10 +37,10 @@ SCENARIO("OneDriveCloud", "[cloud][onedrive]") {
             }
         }
         WHEN("calling logout()") {
-            When(Method((requestMock), resetAuth)).Return();
+            When(Method(requestMock, reset_auth)).Return();
             cloud->logout();
             THEN("the request credentials should be reset") {
-                Verify(Method(requestMock,resetAuth)).Once();
+                Verify(Method(requestMock,reset_auth)).Once();
             }
         }
     }

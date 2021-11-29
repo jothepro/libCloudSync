@@ -13,7 +13,6 @@ using namespace CloudSync;
 using namespace CloudSync::dropbox;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("DropboxDirectory", "[directory][dropbox]") {
     INIT_REQUEST();
@@ -61,7 +60,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/list_folder");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"\",\"recursive\":false}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a list of all resources contained in the directory should be returned") {
                     REQUIRE(list.size() == 2);
@@ -140,17 +139,17 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST_CALLED().Exactly(3);
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/list_folder");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                     REQUIRE_REQUEST(0, body == "{\"path\":\"\",\"recursive\":false}");
 
                     REQUIRE_REQUEST(1, verb == "POST");
                     REQUIRE_REQUEST(1, url == "https://api.dropboxapi.com/2/files/list_folder/continue");
-                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(1, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                     REQUIRE_REQUEST(1, body == "{\"cursor\":\"AAEunngK5i6uSxwrSlvTngxpzli3qKoVouhB8LtojjN9gA\"}");
 
                     REQUIRE_REQUEST(2, verb == "POST");
                     REQUIRE_REQUEST(2, url == "https://api.dropboxapi.com/2/files/list_folder/continue");
-                    REQUIRE_REQUEST(2, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(2, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                     REQUIRE_REQUEST(2, body == "{\"cursor\":\"BBEunngK5i6uSxwrSleliccAlcqKoVouhB8LtojjN9gB\"}");
                 }
             }
@@ -176,7 +175,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/get_metadata");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a dir called 'test' should be returned") {
                     REQUIRE(newDir->name() == "test");
@@ -208,7 +207,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/create_folder_v2");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a new dir called 'test' should be returned") {
                     REQUIRE(newDir->name() == "test");
@@ -240,9 +239,9 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/upload");
-                    REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("arg") == "{\"path\":\"/test.txt\"}");
+                    REQUIRE_REQUEST(0, query_params.at("arg") == "{\"path\":\"/test.txt\"}");
                     REQUIRE_REQUEST(0, body.empty());
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_BINARY);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_BINARY);
                 }
                 THEN("a new file called 'test.txt' should be returned") {
                     REQUIRE(newFile->name() == "test.txt");
@@ -275,7 +274,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/get_metadata");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test.txt\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("a file called 'test.txt' should be returned") {
                     REQUIRE(file->name() == "test.txt");
@@ -373,7 +372,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/delete_v2");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
             }
         }

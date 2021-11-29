@@ -3,12 +3,6 @@
 #include <utility>
 #include "CloudSync/Credentials.hpp"
 #include "request/Request.hpp"
-#include "request/curl/CurlRequest.hpp"
-
-using namespace CloudSync::request::curl;
-
-
-using C = CloudSync::request::Request::ConfigurationOption;
 
 namespace CloudSync {
 
@@ -16,13 +10,13 @@ namespace CloudSync {
             : baseUrl(std::move(url)), request(std::move(request)) {}
 
     std::shared_ptr<Cloud> CloudImpl::login(const Credentials &credentials) {
-        this->request->setTokenRequestUrl(this->getTokenUrl());
+        this->request->set_token_request_url(this->getTokenUrl());
         credentials.apply(this->request);
         return this->shared_from_this();
     }
 
     std::string CloudImpl::getCurrentRefreshToken() const {
-        return this->request->getCurrentRefreshToken();
+        return this->request->get_current_refresh_token();
     }
 
     void CloudImpl::ping() const {

@@ -5,7 +5,6 @@
 #include "DropboxDirectory.hpp"
 
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 
 namespace CloudSync::dropbox {
     class DropboxCloud : public CloudImpl {

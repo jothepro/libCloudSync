@@ -5,7 +5,7 @@ using namespace CloudSync;
 void dropbox::DropboxCloud::logout() {
     try {
         this->request->POST("https://api.dropboxapi.com/2/auth/token/revoke");
-        this->request->resetAuth();
+        this->request->reset_auth();
     } catch (...) {
         DropboxCloud::handleExceptions(std::current_exception(), "");
     }
@@ -14,9 +14,10 @@ void dropbox::DropboxCloud::logout() {
 std::string dropbox::DropboxCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
-        const auto getResponse =
-                this->request->POST("https://api.dropboxapi.com/2/users/get_current_account").json();
-        userDisplayName = getResponse.at("name").at("display_name");
+        const auto response_json = this->request->POST("https://api.dropboxapi.com/2/users/get_current_account")
+                ->accept(Request::MIMETYPE_JSON)
+                ->send().json();
+        userDisplayName = response_json.at("name").at("display_name");
 
     } catch (...) {
         DropboxCloud::handleExceptions(std::current_exception(), "");

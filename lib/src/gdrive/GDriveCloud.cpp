@@ -2,7 +2,6 @@
 
 using namespace CloudSync;
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 
 void gdrive::GDriveCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
@@ -32,29 +31,24 @@ void gdrive::GDriveCloud::handleExceptions(const std::exception_ptr &e, const st
 }
 
 std::string gdrive::GDriveCloud::get_user_display_name() const {
-    std::string userDisplayName;
+    std::string user_display_name;
     try {
-        const auto getResponse = this->request->GET("https://www.googleapis.com/userinfo/v2/me").json();
-        userDisplayName = getResponse.at("name");
+        const auto response_json = this->request->GET("https://www.googleapis.com/userinfo/v2/me")
+                ->accept(Request::MIMETYPE_JSON)
+                ->send().json();
+        user_display_name = response_json.at("name");
     } catch (...) {
         GDriveCloud::handleExceptions(std::current_exception(), "");
     }
-    return userDisplayName;
+    return user_display_name;
 }
 
 void gdrive::GDriveCloud::logout() {
     try {
-        this->request->POST(
-            "https://oauth2.googleapis.com/revoke",
-            {
-                {
-                    P::MIME_POSTFIELDS, {
-                            {"token", this->request->getCurrentAccessToken()}
-                    }
-                }
-            }
-        );
-        this->request->resetAuth();
+        this->request->POST("https://oauth2.googleapis.com/revoke")
+                ->mime_postfield("token", this->request->get_current_access_token())
+                ->send();
+        this->request->reset_auth();
     } catch (...) {
         GDriveCloud::handleExceptions(std::current_exception(), "");
     }

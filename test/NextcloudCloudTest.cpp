@@ -9,7 +9,6 @@ using namespace fakeit;
 using namespace Catch;
 using namespace CloudSync;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
     INIT_REQUEST();
@@ -35,8 +34,8 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v1.php/cloud/user");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("OCS-APIRequest") == "true");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Accept") == Request::MIMETYPE_XML);
+                    REQUIRE_REQUEST(0, headers.at("OCS-APIRequest") == "true");
+                    REQUIRE_REQUEST(0, headers.at("Accept") == Request::MIMETYPE_XML);
                 }
             }
         }
@@ -73,16 +72,16 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 "</ocs>",
                 "application/xml"));
             WHEN("calling logout()") {
-                When(Method((requestMock), resetAuth)).Return();
+                When(Method(requestMock, reset_auth)).Return();
                 cloud->logout();
                 THEN("the app-password should be invalidated") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v2.php/core/apppassword");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("OCS-APIRequest") == "true");
+                    REQUIRE_REQUEST(0, headers.at("OCS-APIRequest") == "true");
                 }
                 THEN("the request credentials should be reset") {
-                    Verify(Method(requestMock,resetAuth)).Once();
+                    Verify(Method(requestMock, reset_auth)).Once();
                 }
             }
         }

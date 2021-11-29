@@ -7,7 +7,6 @@
 
 using namespace pugi;
 using namespace CloudSync::request;
-using P = CloudSync::request::Request::ParameterType;
 
 namespace CloudSync::nextcloud {
     class NextcloudCloud : public webdav::WebdavCloud {

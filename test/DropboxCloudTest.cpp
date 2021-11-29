@@ -38,7 +38,7 @@ SCENARIO("DropboxCloud", "[cloud][dropbox]") {
         AND_GIVEN("a request that returns 200") {
             WHEN_REQUEST().RESPOND(request::Response(200));
             WHEN("calling logout()") {
-                When(Method((requestMock), resetAuth)).Return();
+                When(Method(requestMock, reset_auth)).Return();
                 cloud->logout();
                 THEN("the OAuth-token should be invalidated") {
                     REQUIRE_REQUEST_CALLED().Once();
@@ -46,7 +46,7 @@ SCENARIO("DropboxCloud", "[cloud][dropbox]") {
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/auth/token/revoke");
                 }
                 THEN("the request credentials should be reset") {
-                    Verify(Method(requestMock,resetAuth)).Once();
+                    Verify(Method(requestMock,reset_auth)).Once();
                 }
             }
         }

@@ -15,19 +15,18 @@ using namespace CloudSync;
 using namespace CloudSync::webdav;
 using namespace CloudSync::request;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("WebdavDirectory", "[directory][webdav]") {
     const std::string BASE_URL = "http://cloud";
-    std::string xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
-                           "<d:propfind  xmlns:d=\"DAV:\">\n"
-                           "   <d:prop>\n"
-                           "       <d:getlastmodified />\n"
-                           "       <d:getetag />\n"
-                           "       <d:getcontenttype />\n"
-                           "       <d:resourcetype />\n"
-                           "       <d:getcontentlength />\n"
-                           "   </d:prop>\n"
+    std::string xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                           "<d:propfind  xmlns:d=\"DAV:\">"
+                               "<d:prop>"
+                                   "<d:getlastmodified/>"
+                                   "<d:getetag/>"
+                                   "<d:getcontenttype/>"
+                                   "<d:resourcetype/>"
+                                   "<d:getcontentlength/>"
+                               "</d:prop>"
                            "</d:propfind>";
     INIT_REQUEST();
 
@@ -74,7 +73,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/folder");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(0, headers.at("Depth") == "0");
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("a object representing the new directory should be returned") {
@@ -122,7 +121,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST_CALLED().Twice();
                     REQUIRE_REQUEST(1, verb == "PROPFIND");
                     REQUIRE_REQUEST(1, url == BASE_URL + "/newDirectory");
-                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(1, headers.at("Depth") == "0");
                     REQUIRE_REQUEST(1, body == xmlQuery);
                 }
                 THEN("a object representing the new directory should be "
@@ -180,7 +179,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST_CALLED().Exactly(3);
                     REQUIRE_REQUEST(2, verb == "PROPFIND");
                     REQUIRE_REQUEST(2, url == BASE_URL + "/newfile.txt");
-                    REQUIRE_REQUEST(2, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(2, headers.at("Depth") == "0");
                     REQUIRE_REQUEST(2, body == xmlQuery);
                 }
                 THEN("an object representing the file should be returned") {
@@ -260,7 +259,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Depth") == "1");
+                    REQUIRE_REQUEST(0, headers.at("Depth") == "1");
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("a list of 2 resources should be returned") {
@@ -305,7 +304,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/some/path/somefile.txt");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(0, headers.at("Depth") == "0");
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("the file should be returned") {
@@ -402,7 +401,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/some/folder/somefolder");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(0, headers.at("Depth") == "0");
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("a object representing the new directory should be "

@@ -2,7 +2,6 @@
 
 using namespace CloudSync;
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 
 void box::BoxCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
@@ -27,18 +26,20 @@ void box::BoxCloud::handleExceptions(const std::exception_ptr &e, const std::str
 }
 
 std::string box::BoxCloud::get_user_display_name() const {
-    std::string userDisplayName;
+    std::string user_display_name;
     try {
-        const auto getResponse = this->request->GET("https://api.box.com/2.0/users/me").json();
-        userDisplayName = getResponse.at("name");
+        const auto response_json = this->request->GET("https://api.box.com/2.0/users/me")
+                ->accept(Request::MIMETYPE_JSON)
+                ->send().json();
+        user_display_name = response_json.at("name");
     } catch (...) {
         BoxCloud::handleExceptions(std::current_exception(), "");
     }
-    return userDisplayName;
+    return user_display_name;
 }
 
 void box::BoxCloud::logout() {
     // logout without providing a client-Id seems to be not supported:
     // https://developer.box.com/guides/authentication/tokens/revoke/
-    this->request->resetAuth();
+    this->request->reset_auth();
 }

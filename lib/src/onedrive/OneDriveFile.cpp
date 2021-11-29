@@ -5,12 +5,11 @@
 
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 
 namespace CloudSync::onedrive {
     void OneDriveFile::remove() {
         try {
-            this->request->DELETE(this->_baseUrl + ":" + this->path());
+            this->request->DELETE(m_base_url + ":" + this->path())->send();
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), this->path());
         }
@@ -22,10 +21,10 @@ namespace CloudSync::onedrive {
             if (longPoll) {
                 throw Cloud::MethodNotSupportedError("Longpoll not supported");
             } else {
-                json responseJson = this->request->GET(this->_baseUrl + ":" + this->path()).json();
-                const std::string newRevision = responseJson.at("eTag");
-                hasChanged = !(newRevision == this->_revision);
-                this->_revision = newRevision;
+                const json response_json = this->request->GET(m_base_url + ":" + this->path())->send().json();
+                const std::string new_revision = response_json.at("eTag");
+                hasChanged = !(new_revision == m_revision);
+                m_revision = new_revision;
             }
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), this->path());
@@ -34,31 +33,23 @@ namespace CloudSync::onedrive {
     }
 
     std::string OneDriveFile::read_as_string() const {
-        std::string fileContent;
+        std::string file_content;
         try {
-            const auto getResult = this->request->GET(this->_baseUrl + ":" + this->path() + ":/content");
-            fileContent = getResult.data;
+            const auto result = this->request->GET(m_base_url + ":" + this->path() + ":/content")->send();
+            file_content = result.data;
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), this->path());
         }
-        return fileContent;
+        return file_content;
     }
 
     void OneDriveFile::write_string(const std::string &content) {
         try {
-            const auto responseJson = this->request->PUT(
-                this->_baseUrl + ":" + this->path() + ":/content",
-                {
-                    {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_BINARY},
-                            {"If-Match", this->revision()}
-                        }
-                    }
-                },
-                content
-            ).json();
-            this->_revision = responseJson.at("eTag");
+            const json response_json = this->request->PUT(m_base_url + ":" + this->path() + ":/content")
+                    ->content_type(Request::MIMETYPE_BINARY)
+                    ->if_match(revision())
+                    ->send(content).json();
+            m_revision = response_json.at("eTag");
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), this->path());
         }

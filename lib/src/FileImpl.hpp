@@ -21,14 +21,14 @@ namespace CloudSync {
                 std::string dir,
                 std::shared_ptr<request::Request> request,
                 std::string name, std::string revision)
-                : _baseUrl(std::move(baseUrl)), _path(std::move(dir)), request(std::move(request)),
-                  _name(std::move(name)), _revision(std::move(revision)) {};
+                : m_base_url(std::move(baseUrl)), m_path(std::move(dir)), request(std::move(request)),
+                  m_name(std::move(name)), m_revision(std::move(revision)) {};
 
-        std::string _revision;
-        const std::string _baseUrl;
+        std::string m_revision;
+        const std::string m_base_url;
         std::shared_ptr<request::Request> request;
     private:
-        const std::string _name;
-        const std::string _path;
+        const std::string m_name;
+        const std::string m_path;
     };
 }

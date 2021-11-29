@@ -10,6 +10,6 @@ using namespace CloudSync::request;
 namespace CloudSync {
 
     void OAuth2Credentials::apply(const std::shared_ptr<request::Request> &request) const {
-        request->setOAuth2(accessToken, refreshToken, expires);
+        request->set_oauth2(accessToken, refreshToken, expires);
     }
 } // namespace CloudSync

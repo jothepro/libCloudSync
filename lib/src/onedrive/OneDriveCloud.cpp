@@ -1,6 +1,7 @@
 #include "OneDriveCloud.hpp"
 
 using namespace CloudSync;
+using namespace CloudSync::request;
 
 void onedrive::OneDriveCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
@@ -35,17 +36,19 @@ void onedrive::OneDriveCloud::handleExceptions(const std::exception_ptr &e, cons
 }
 
 std::string onedrive::OneDriveCloud::get_user_display_name() const {
-    std::string userDisplayName;
+    std::string user_display_name;
     try {
-        const auto getResponse = this->request->GET("https://graph.microsoft.com/v1.0/me").json();
-        userDisplayName = getResponse.at("displayName");
+        const auto response_json = this->request->GET("https://graph.microsoft.com/v1.0/me")
+                ->accept(Request::MIMETYPE_JSON)
+                ->send().json();
+        user_display_name = response_json.at("displayName");
     } catch (...) {
         OneDriveCloud::handleExceptions(std::current_exception(), "");
     }
-    return userDisplayName;
+    return user_display_name;
 }
 
 void onedrive::OneDriveCloud::logout() {
     // token revoking is not supported.
-    this->request->resetAuth();
+    this->request->reset_auth();
 }

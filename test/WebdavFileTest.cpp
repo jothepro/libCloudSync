@@ -13,21 +13,20 @@ using namespace Catch;
 using namespace CloudSync;
 using namespace CloudSync::webdav;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 std::string xmlResponseContent(const std::string &eTag) {
     return "<?xml version=\"1.0\"?>"
            "<d:multistatus xmlns:d=\"DAV:\" xmlns:s=\"http://sabredav.org/ns\" xmlns:oc=\"http://owncloud.org/ns\" "
            "xmlns:nc=\"http://nextcloud.org/ns\">"
-           "    <d:response>"
-           "        <d:href>/file.txt</d:href>"
-           "        <d:propstat>"
-           "            <d:prop>"
-           "                <d:getetag>&quot;" + eTag + "&quot;</d:getetag>"
-           "            </d:prop>"
-           "            <d:status>HTTP/1.1 200 OK</d:status>"
-           "        </d:propstat>"
-           "    </d:response>"
+               "<d:response>"
+                   "<d:href>/file.txt</d:href>"
+                   "<d:propstat>"
+                       "<d:prop>"
+                           "<d:getetag>&quot;" + eTag + "&quot;</d:getetag>"
+                       "</d:prop>"
+                       "<d:status>HTTP/1.1 200 OK</d:status>"
+                   "</d:propstat>"
+               "</d:response>"
            "</d:multistatus>";
 }
 
@@ -55,7 +54,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
                     REQUIRE_REQUEST(0, body == newData);
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::HEADERS).at("If-Match") == "\"7f3805660b049baadd3bef287d7d346b\"");
+                        headers.at("If-Match") == "\"7f3805660b049baadd3bef287d7d346b\"");
                 }
                 THEN("the file should have a new Revision") {
                     REQUIRE(file->revision() == "\"newRevision\"");
@@ -97,13 +96,13 @@ SCENARIO("WebdavFile", "[file][webdav]") {
                     REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
                     REQUIRE_REQUEST(
                         0,
-                        body == "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
-                                "<d:propfind xmlns:d=\"DAV:\">\n"
-                                "   <d:prop>\n"
-                                "       <d:getetag />\n"
-                                "   </d:prop>\n"
+                        body == "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                                "<d:propfind xmlns:d=\"DAV:\">"
+                                    "<d:prop>"
+                                        "<d:getetag/>"
+                                    "</d:prop>"
                                 "</d:propfind>");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Depth") == "0");
+                    REQUIRE_REQUEST(0, headers.at("Depth") == "0");
                 }
                 THEN("false should be returned") {
                     REQUIRE(hasChanged == false);

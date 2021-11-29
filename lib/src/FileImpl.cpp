@@ -3,15 +3,15 @@
 using namespace CloudSync;
 
 std::string FileImpl::name() const {
-    return _name;
+    return m_name;
 }
 
 std::string FileImpl::path() const {
-    return _path;
+    return m_path;
 }
 
 std::string CloudSync::FileImpl::revision() const {
-    return _revision;
+    return m_revision;
 }
 
 bool FileImpl::is_file() const {

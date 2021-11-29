@@ -13,10 +13,10 @@ using namespace CloudSync;
 using namespace CloudSync::box;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("BoxFile", "[file][box]") {
     INIT_REQUEST();
+
     GIVEN("a box file instance") {
         const auto file = std::make_shared<BoxFile>("1234", "/folder/filename.txt", request, "filename.txt", "abcd");
 
@@ -81,9 +81,9 @@ SCENARIO("BoxFile", "[file][box]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://upload.box.com/api/2.0/files/1234/content");
-                    REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFIELDS).at("attributes") == "{}");
-                    REQUIRE_REQUEST(0, parameters.at(P::MIME_POSTFILES).at("file") == "newcontent");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("if-match") == "abcd");
+                    REQUIRE_REQUEST(0, mime_postfields.at("attributes") == "{}");
+                    REQUIRE_REQUEST(0, mime_postfiles.at("file") == "newcontent");
+                    REQUIRE_REQUEST(0, headers.at("If-Match") == "abcd");
                 }
 
                 THEN("the revision should be updated") {

@@ -24,5 +24,5 @@ void webdav::WebdavCloud::handleExceptions(const std::exception_ptr &e, const st
 
 void webdav::WebdavCloud::logout() {
     // reset login credentials
-    this->request->resetAuth();
+    this->request->reset_auth();
 }

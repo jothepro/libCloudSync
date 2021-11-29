@@ -13,7 +13,6 @@ using namespace CloudSync;
 using namespace CloudSync::gdrive;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 
 SCENARIO("GDriveDirectory", "[directory][gdrive]") {
     INIT_REQUEST()
@@ -55,10 +54,10 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("q") == "'root' in parents and trashed = false");
+                        query_params.at("q") == "'root' in parents and trashed = false");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("fields") ==
+                        query_params.at("fields") ==
                             "items(kind,id,title,mimeType,etag,parents(id,isRoot))");
                 }
                 THEN("a list of 2 resources should be returned") {
@@ -117,11 +116,11 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("q") ==
+                        query_params.at("q") ==
                             "'root' in parents and title = 'testfolder' and trashed = false");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("fields") ==
+                        query_params.at("fields") ==
                             "items(kind,id,title,mimeType,etag,parents(id,isRoot))");
                 }
                 THEN("the desired folder should be returned") {
@@ -164,11 +163,11 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("q") ==
+                        query_params.at("q") ==
                             "'root' in parents and title = 'test.txt' and trashed = false");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("fields") ==
+                        query_params.at("fields") ==
                             "items(kind,id,title,mimeType,etag,parents(id,isRoot))");
                 }
                 THEN("the desired file should be returned") {
@@ -210,13 +209,13 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST(1, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
                         1,
-                        parameters.at(P::QUERY_PARAMS).at("fields") ==
+                        query_params.at("fields") ==
                             "kind,id,title,mimeType,etag,parents(id,isRoot)");
                     REQUIRE_REQUEST(
                         1,
                         body == "{\"mimeType\":\"application/vnd.google-apps.folder\","
                                 "\"parents\":[{\"id\":\"root\"}],\"title\":\"newfolder\"}");
-                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(1, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
                 THEN("the new folder should be returned") {
                     REQUIRE(newDir->name() == "newfolder");
@@ -256,10 +255,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST_CALLED().Exactly(2);
                     REQUIRE_REQUEST(1, verb == "POST");
                     REQUIRE_REQUEST(1, url == BASE_URL + "/files");
-                    REQUIRE_REQUEST(
-                        1,
-                        parameters.at(P::QUERY_PARAMS).at("fields") == "kind,id,title,mimeType,etag,parents(id,isRoot)");
-                    REQUIRE_REQUEST(1, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(1, query_params.at("fields") == "kind,id,title,mimeType,etag,parents(id,isRoot)");
+                    REQUIRE_REQUEST(1, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                     REQUIRE_REQUEST(
                         1,
                         body == "{\"mimeType\":\"text/plain\","
@@ -308,7 +305,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files/parentId");
                     REQUIRE_REQUEST(
                         0,
-                        parameters.at(P::QUERY_PARAMS).at("fields") ==
+                        query_params.at("fields") ==
                             "kind,id,title,mimeType,etag,parents(id,isRoot)");
                 }
 

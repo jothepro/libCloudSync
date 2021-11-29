@@ -12,7 +12,6 @@ using namespace CloudSync;
 using namespace CloudSync::onedrive;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("OneDriveFile", "[file][onedrive]") {
     INIT_REQUEST();
@@ -70,7 +69,7 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
                         url == "https://graph.microsoft.com/v1.0/me/"
                                "drive/root:/folder/file.txt:/content");
                     REQUIRE_REQUEST(0, body == "new file content");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("If-Match") == "file_revision");
+                    REQUIRE_REQUEST(0, headers.at("If-Match") == "file_revision");
                 }
 
                 THEN("the file revision should have been updated") {

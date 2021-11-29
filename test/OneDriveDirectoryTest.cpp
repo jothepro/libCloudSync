@@ -13,7 +13,6 @@ using namespace CloudSync;
 using namespace CloudSync::onedrive;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
     INIT_REQUEST();
@@ -254,7 +253,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                         url == "https://graph.microsoft.com/v1.0/me/"
                                "drive/root:/some/folder:/children");
                     REQUIRE_REQUEST(0, body == "{\"@microsoft.graph.conflictBehavior\":\"fail\",\"folder\":{},\"name\":\"somefolder\"}");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("Content-Type") == Request::MIMETYPE_JSON);
+                    REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
                 }
 
                 THEN("the new folder should be returned") {

@@ -8,21 +8,22 @@
 
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 namespace fs = std::filesystem;
 
 namespace CloudSync::onedrive {
     std::vector<std::shared_ptr<Resource>> OneDriveDirectory::list_resources() const {
-        std::vector<std::shared_ptr<Resource>> resourceList;
+        std::vector<std::shared_ptr<Resource>> resource_list;
         try {
-            json responseJson = this->request->GET(this->apiResourcePath(this->path(), true)).json();
-            for (const auto &value: responseJson.at("value")) {
-                resourceList.push_back(this->parseDriveItem(value));
+            const json response_json = this->request->GET(this->apiResourcePath(this->path(), true))
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
+            for (const auto &value: response_json.at("value")) {
+                resource_list.push_back(this->parseDriveItem(value));
             }
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), this->path());
         }
-        return resourceList;
+        return resource_list;
     }
 
     std::shared_ptr<Directory> OneDriveDirectory::get_directory(const std::string &path) const {
@@ -31,10 +32,12 @@ namespace CloudSync::onedrive {
         try {
             if (resourcePath == "/") {
                 // if it's the root we don't need to run a query
-                directory = std::make_shared<OneDriveDirectory>(this->_baseUrl, "/", this->request, "");
+                directory = std::make_shared<OneDriveDirectory>(m_base_url, "/", this->request, "");
             } else {
-                json responseJson = this->request->GET(this->apiResourcePath(resourcePath, false)).json();
-                directory = std::dynamic_pointer_cast<OneDriveDirectory>(this->parseDriveItem(responseJson, "folder"));
+                json response_json = this->request->GET(this->apiResourcePath(resourcePath, false))
+                        ->accept(Request::MIMETYPE_JSON)
+                        ->send().json();
+                directory = std::dynamic_pointer_cast<OneDriveDirectory>(this->parseDriveItem(response_json, "folder"));
             }
 
         } catch (...) {
@@ -46,7 +49,7 @@ namespace CloudSync::onedrive {
     void OneDriveDirectory::remove() {
         try {
             if (this->path() != "/") {
-                this->request->DELETE(this->_baseUrl + ":" + this->path());
+                this->request->DELETE(m_base_url + ":" + this->path())->send();
             } else {
                 throw PermissionDenied("deleting the root folder is not allowed");
             }
@@ -61,22 +64,14 @@ namespace CloudSync::onedrive {
         const std::string newResourceBasePath = resourcePath.parent_path().generic_string();
         const std::string newDirectoryName = resourcePath.filename().string();
         try {
-            const auto responseJson = this->request->POST(
-                this->apiResourcePath(newResourceBasePath, true),
-                {
-                    {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_JSON}
-                        }
-                    }
-                },
-                json{
-                    {"name",   newDirectoryName},
-                    {"folder", json::object()},
-                    {"@microsoft.graph.conflictBehavior", "fail"}
-                }.dump()
-            ).json();
-            newDirectory = std::dynamic_pointer_cast<OneDriveDirectory>(this->parseDriveItem(responseJson, "folder"));
+            const json response_json = this->request->POST(this->apiResourcePath(newResourceBasePath, true))
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send_json({
+                            {"name", newDirectoryName},
+                            {"folder", json::object()},
+                            {"@microsoft.graph.conflictBehavior", "fail"}
+                    }).json();
+            newDirectory = std::dynamic_pointer_cast<OneDriveDirectory>(this->parseDriveItem(response_json, "folder"));
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), resourcePath.generic_string());
         }
@@ -87,23 +82,12 @@ namespace CloudSync::onedrive {
         std::shared_ptr<OneDriveFile> newFile;
         const std::string resourcePath = this->newResourcePath(path);
         try {
-            json responseJson = this->request->PUT(
-                this->_baseUrl + ":" + resourcePath + ":/content",
-                {
-                    {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_BINARY}
-                        }
-                    },
-                    {
-                        P::QUERY_PARAMS, {
-                            {"@microsoft.graph.conflictBehavior", "fail"}
-                        }
-                    }
-                },
-                ""
-            ).json();
-            newFile = std::dynamic_pointer_cast<OneDriveFile>(this->parseDriveItem(responseJson, "file"));
+            const json response_json = this->request->PUT(m_base_url + ":" + resourcePath + ":/content")
+                    ->content_type(Request::MIMETYPE_BINARY)
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->query_param("@microsoft.graph.conflictBehavior", "fail")
+                    ->send().json();
+            newFile = std::dynamic_pointer_cast<OneDriveFile>(this->parseDriveItem(response_json, "file"));
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), resourcePath);
         }
@@ -114,8 +98,10 @@ namespace CloudSync::onedrive {
         std::shared_ptr<OneDriveFile> file;
         const std::string resourcePath = this->newResourcePath(path);
         try {
-            json responseJson = this->request->GET(this->_baseUrl + ":" + resourcePath).json();
-            file = std::dynamic_pointer_cast<OneDriveFile>(this->parseDriveItem(responseJson, "file"));
+            const json response_json = this->request->GET(m_base_url + ":" + resourcePath)
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
+            file = std::dynamic_pointer_cast<OneDriveFile>(this->parseDriveItem(response_json, "file"));
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), resourcePath);
         }
@@ -128,7 +114,7 @@ namespace CloudSync::onedrive {
         const std::string name = value.at("name");
         // check if the returned item is the root item
         if (value.find("root") != value.end()) {
-            resource = std::make_shared<OneDriveDirectory>(this->_baseUrl, "/", this->request, "");
+            resource = std::make_shared<OneDriveDirectory>(m_base_url, "/", this->request, "");
         } else {
             const std::string rawResourcePath = value.at("parentReference").at("path");
             const auto splitPosition = rawResourcePath.find_first_of(':') + 1;
@@ -136,10 +122,10 @@ namespace CloudSync::onedrive {
                     rawResourcePath.substr(splitPosition, rawResourcePath.size() - splitPosition) + "/";
             if (value.find("file") != value.end() && (expectedType.empty() || expectedType == "file")) {
                 const std::string etag = value["eTag"];
-                resource = std::make_shared<OneDriveFile>(this->_baseUrl, resourcePath + name, this->request, name,
+                resource = std::make_shared<OneDriveFile>(m_base_url, resourcePath + name, this->request, name,
                                                           etag);
             } else if (value.find("folder") != value.end() && (expectedType.empty() || expectedType == "folder")) {
-                resource = std::make_shared<OneDriveDirectory>(this->_baseUrl, resourcePath + name, this->request,
+                resource = std::make_shared<OneDriveDirectory>(m_base_url, resourcePath + name, this->request,
                                                                name);
             } else {
                 throw Resource::NoSuchResource("unexpected resource type");
@@ -149,7 +135,7 @@ namespace CloudSync::onedrive {
     }
 
     std::string OneDriveDirectory::apiResourcePath(const std::string &path, bool children) const {
-        std::string out = this->_baseUrl;
+        std::string out = m_base_url;
         if (path == "/") {
             if (children) {
                 out += "/children";

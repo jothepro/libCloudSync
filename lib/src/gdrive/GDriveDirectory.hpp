@@ -15,9 +15,9 @@ class GDriveDirectory : public DirectoryImpl {
                 const std::shared_ptr<request::Request> &request,
                 const std::string &name)
                 : DirectoryImpl(baseUrl, dir, request, name)
-                , resourceId(std::move(resourceId))
-                , parentResourceId(std::move(parentResourceId))
-                , rootName(std::move(rootName)) {};
+                , m_resource_id(std::move(resourceId))
+                , m_parent_resource_id(std::move(parentResourceId))
+                , m_root_name(std::move(rootName)) {};
 
         [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
@@ -35,9 +35,9 @@ class GDriveDirectory : public DirectoryImpl {
         enum ResourceType {
             ANY, FILE, FOLDER
         };
-        const std::string resourceId;
-        const std::string parentResourceId;
-        const std::string rootName;
+        const std::string m_resource_id;
+        const std::string m_parent_resource_id;
+        const std::string m_root_name;
 
         std::shared_ptr<Resource> parseFile(
                 const json &file, ResourceType expectedType = ResourceType::ANY,

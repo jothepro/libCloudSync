@@ -7,11 +7,6 @@
 #include "onedrive/OneDriveCloud.hpp"
 #include "webdav/WebdavCloud.hpp"
 #include "request/Request.hpp"
-#include "request/curl/CurlRequest.hpp"
-
-using namespace CloudSync::request::curl;
-
-using C = CloudSync::request::Request::ConfigurationOption;
 
 namespace CloudSync {
 
@@ -20,9 +15,9 @@ namespace CloudSync {
 
     std::shared_ptr<request::Request> CloudFactory::getRequestImplementation() {
         if (this->requestImplementation == nullptr) {
-            this->requestImplementation = std::make_shared<CurlRequest>();
+            this->requestImplementation = std::make_shared<Request>();
         }
-        this->requestImplementation->setOption(C::FOLLOW_REDIRECT, true);
+        this->requestImplementation->set_follow_redirects(true);
         return this->requestImplementation;
     }
 
@@ -51,7 +46,7 @@ namespace CloudSync {
     }
 
     std::shared_ptr<CloudFactory> CloudFactory::set_proxy(const std::string& url, const std::string& username, const std::string& password) {
-        requestImplementation->setProxy(url, username, password);
+        requestImplementation->set_proxy(url, username, password);
         return shared_from_this();
     }
 

@@ -6,15 +6,12 @@
 using namespace CloudSync::request;
 
 using json = nlohmann::json;
-using P = Request::ParameterType;
 
 namespace CloudSync::dropbox {
     void DropboxFile::remove() {
         try {
-            this->request->POST(
-                    "https://api.dropboxapi.com/2/files/delete_v2",
-                    {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                    json{{"path", this->path()}}.dump());
+            this->request->POST("https://api.dropboxapi.com/2/files/delete_v2")
+                    ->send_json({{"path", this->path()}});
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), this->path());
         }
@@ -27,15 +24,12 @@ namespace CloudSync::dropbox {
                 // TODO implement dropbox change longpoll
                 throw std::logic_error("not yet implemented");
             } else {
-                const auto responseJson = this->request
-                        ->POST(
-                                "https://api.dropboxapi.com/2/files/get_metadata",
-                                {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_JSON}}}},
-                                json{{"path", this->path()}}.dump())
-                        .json();
+                const auto responseJson = this->request->POST("https://api.dropboxapi.com/2/files/get_metadata")
+                        ->accept(Request::MIMETYPE_JSON)
+                        ->send_json({{"path", this->path()}}).json();
                 const std::string newRevision = responseJson.at("rev");
                 if (this->revision() != newRevision) {
-                    this->_revision = newRevision;
+                    m_revision = newRevision;
                     hasChanged = true;
                 }
             }
@@ -48,13 +42,10 @@ namespace CloudSync::dropbox {
     std::string DropboxFile::read_as_string() const {
         std::string data;
         try {
-            data = this->request
-                    ->POST(
-                            "https://content.dropboxapi.com/2/files/download",
-                            {{P::HEADERS,      {{"Content-Type", Request::MIMETYPE_TEXT}}},
-                             {P::QUERY_PARAMS, {{"arg",          json{{"path", this->path()}}.dump()}}}},
-                            "")
-                    .data;
+            data = this->request->POST("https://content.dropboxapi.com/2/files/download")
+                    ->content_type(Request::MIMETYPE_TEXT)
+                    ->query_param("arg", json{{"path", this->path()}}.dump())
+                    ->send().data;
         } catch (...) {
             DropboxCloud::handleExceptions(std::current_exception(), this->path());
         }
@@ -63,17 +54,18 @@ namespace CloudSync::dropbox {
 
     void DropboxFile::write_string(const std::string &content) {
         try {
-            const auto responseJson = this->request->POST(
-                "https://content.dropboxapi.com/2/files/upload",
-                {{P::HEADERS, {{"Content-Type", Request::MIMETYPE_BINARY}}},
-                 {P::QUERY_PARAMS,
-                              {{"arg",
-                                    json{{"path", this->path()},
-                                         {"mode", {{".tag", "update"}, {"update", this->revision()}}}}
-                                            .dump()}}}},
-                content
-            ).json();
-            this->_revision = responseJson.at("rev");
+            const auto responseJson = this->request->POST("https://content.dropboxapi.com/2/files/upload")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->content_type(Request::MIMETYPE_BINARY)
+                    ->query_param("arg", json{
+                        {"path", this->path()},
+                        {"mode", {
+                            {".tag", "update"},
+                            {"update", this->revision()}
+                        }}
+                    }.dump())
+                    ->send(content).json();
+            m_revision = responseJson.at("rev");
         } catch(const request::Response::Conflict &e) {
             throw Resource::ResourceHasChanged(path());
         } catch (...) {

@@ -33,7 +33,7 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
             }
         }
         WHEN("setting the credentials") {
-            When(Method((requestMock), setTokenRequestUrl)).Return();
+            When(Method(requestMock, set_token_request_url)).Return();
             ACCESS_PROTECTED((CloudSync::Credentials), apply);
             auto credentialsMock = Mock<apply_struct>();
             When(Method(credentialsMock, apply)).Return();
@@ -50,10 +50,10 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
             }
         }
         WHEN("calling logout()") {
-            When(Method((requestMock), resetAuth)).Return();
+            When(Method(requestMock, reset_auth)).Return();
             cloud->logout();
             THEN("the request credentials should be reset") {
-                Verify(Method(requestMock,resetAuth)).Once();
+                Verify(Method(requestMock,reset_auth)).Once();
             }
         }
     }

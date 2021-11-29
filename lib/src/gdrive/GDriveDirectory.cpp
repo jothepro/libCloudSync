@@ -6,22 +6,17 @@
 
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 namespace fs = std::filesystem;
 
 namespace CloudSync::gdrive {
     std::vector<std::shared_ptr<Resource>> GDriveDirectory::list_resources() const {
         std::vector<std::shared_ptr<Resource>> resourceList;
         try {
-            const auto responseJson = this->request->GET(
-                this->_baseUrl + "/files",
-                {
-                    {P::QUERY_PARAMS, {
-                            {"q", "'" + this->resourceId + "' in parents and trashed = false"},
-                            {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}
-                        }
-                    }
-                }).json();
+            const auto responseJson = this->request->GET(m_base_url + "/files")
+                    ->query_param("q", "'" + this->m_resource_id + "' in parents and trashed = false")
+                    ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
             for (const auto &file: responseJson.at("items")) {
                 resourceList.push_back(this->parseFile(file));
             }
@@ -40,10 +35,10 @@ namespace CloudSync::gdrive {
             if (relativePath == ".") {
                 // no path change required, return current dir
                 newDir = std::make_shared<GDriveDirectory>(
-                        this->_baseUrl,
-                        this->rootName,
-                        this->resourceId,
-                        this->parentResourceId,
+                        m_base_url,
+                        m_root_name,
+                        this->m_resource_id,
+                        this->m_parent_resource_id,
                         this->path(),
                         this->request,
                         this->name());
@@ -55,10 +50,10 @@ namespace CloudSync::gdrive {
                 // depth of navigation > 1, slowly navigate from folder to folder
                 // one by one.
                 std::shared_ptr<GDriveDirectory> currentDir = std::make_shared<GDriveDirectory>(
-                        this->_baseUrl,
-                        this->rootName,
-                        this->resourceId,
-                        this->parentResourceId,
+                        m_base_url,
+                        m_root_name,
+                        this->m_resource_id,
+                        this->m_parent_resource_id,
                         this->path(),
                         this->request,
                         this->name());
@@ -82,7 +77,7 @@ namespace CloudSync::gdrive {
     void GDriveDirectory::remove() {
         try {
             if (this->path() != "/") {
-                this->request->DELETE(this->_baseUrl + "/files/" + this->resourceId);
+                this->request->DELETE(m_base_url + "/files/" + this->m_resource_id)->send();
             } else {
                 throw PermissionDenied("deleting the root folder is not allowed");
             }
@@ -99,32 +94,20 @@ namespace CloudSync::gdrive {
             if(baseDir->child_resource_exists(folderName)) {
                 throw Resource::ResourceConflict(path);
             } else {
-                const auto responseJson = this->request->POST(
-                    this->_baseUrl + "/files",
-                    {
-                        {
-                            P::QUERY_PARAMS, {
-                                {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
-                            }
-                        },
-                        {
-                            P::HEADERS, {
-                                {"Content-Type", Request::MIMETYPE_JSON}
-                            }
-                        }
-                    },
-                    json{
-                        {"mimeType", "application/vnd.google-apps.folder"},
-                        {"title",    folderName},
-                        {
-                            "parents",  {
+                const auto responseJson = this->request->POST(m_base_url + "/files")
+                        ->accept(Request::MIMETYPE_JSON)
+                        ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
+                        ->send_json({
+                                {"mimeType", "application/vnd.google-apps.folder"},
+                                {"title",    folderName},
                                 {
-                                    {"id", baseDir->resourceId}
+                                 "parents",  {
+                                                 {
+                                                     {"id", baseDir->m_resource_id}
+                                                 }
+                                             }
                                 }
-                            }
-                        }
-                    }.dump()
-                ).json();
+                        }).json();
                 newDir = std::dynamic_pointer_cast<Directory>(baseDir->parseFile(responseJson, ResourceType::FOLDER));
             }
         } catch (...) {
@@ -141,32 +124,20 @@ namespace CloudSync::gdrive {
             if(baseDir->child_resource_exists(fileName)) {
                 throw Resource::ResourceConflict(path);
             } else {
-                const auto responseJson = this->request->POST(
-                        this->_baseUrl + "/files",
-                        {
-                            {
-                                P::QUERY_PARAMS, {
-                                     {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
-                                }
-                            },
-                            {
-                                P::HEADERS, {
-                                     {"Content-Type", Request::MIMETYPE_JSON}
-                                }
-                            }
-                        },
-                        json{
+                const auto responseJson = this->request->POST(m_base_url + "/files")
+                        ->accept(Request::MIMETYPE_JSON)
+                        ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
+                        ->send_json({
                                 {"mimeType", "text/plain"},
                                 {"title",    fileName},
                                 {
-                                    "parents",  {
-                                        {
-                                            {"id", baseDir->resourceId}
-                                        }
-                                    }
+                                 "parents",  {
+                                                 {
+                                                     {"id", baseDir->m_resource_id}
+                                                 }
+                                             }
                                 }
-                        }.dump()
-                ).json();
+                        }).json();
                 newFile = std::dynamic_pointer_cast<GDriveFile>(baseDir->parseFile(responseJson, ResourceType::FILE));
             }
         } catch (...) {
@@ -180,17 +151,11 @@ namespace CloudSync::gdrive {
         std::string fileName;
         try {
             const auto baseDir = this->parent(path, fileName);
-            const auto responseJson = this->request->GET(
-                this->_baseUrl + "/files",
-                {
-                    {
-                        P::QUERY_PARAMS, {
-                            {"q", "'" + baseDir->resourceId + "' in parents and title = '" + fileName + "' and trashed = false"},
-                            {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}
-                        }
-                    }
-                }
-            ).json();
+            const auto responseJson = this->request->GET(m_base_url + "/files")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->query_param("q", "'" + baseDir->m_resource_id + "' in parents and title = '" + fileName + "' and trashed = false")
+                    ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
+                    ->send().json();
             if (!responseJson.at("items").empty()) {
                 file = std::dynamic_pointer_cast<GDriveFile>(
                         baseDir->parseFile(responseJson.at("items").at(0), ResourceType::FILE));
@@ -224,8 +189,8 @@ namespace CloudSync::gdrive {
                 throw NoSuchResource(resourcePath);
             }
             resource = std::make_shared<GDriveDirectory>(
-                    this->_baseUrl,
-                    this->rootName,
+                    m_base_url,
+                    m_root_name,
                     id,
                     parentId,
                     !customPath.empty() ? customPath : resourcePath,
@@ -237,7 +202,7 @@ namespace CloudSync::gdrive {
             }
             const std::string etag = file.at("etag");
             resource = std::make_shared<GDriveFile>(
-                    this->_baseUrl,
+                    m_base_url,
                     id,
                     !customPath.empty() ? customPath : resourcePath,
                     this->request,
@@ -255,24 +220,18 @@ namespace CloudSync::gdrive {
         if (parentPath == "/") {
             // query for root is not possible.
             parentDirectory = std::make_shared<GDriveDirectory>(
-                this->_baseUrl,
-                this->rootName,
-                this->rootName,
-                this->rootName,
+                m_base_url,
+                m_root_name,
+                m_root_name,
+                m_root_name,
                 "/",
                 this->request,
                 "");
         } else {
-            const auto responseJson = this->request->GET(
-                this->_baseUrl + "/files/" + this->parentResourceId,
-                {
-                    {
-                        P::QUERY_PARAMS, {
-                            {"fields", "kind,id,title,mimeType,etag,parents(id,isRoot)"}
-                        }
-                    }
-                }
-            ).json();
+            const auto responseJson = this->request->GET(m_base_url + "/files/" + this->m_parent_resource_id)
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
+                    ->send().json();
             parentDirectory = std::dynamic_pointer_cast<GDriveDirectory>(
                 this->parseFile(
                     responseJson,
@@ -301,17 +260,11 @@ namespace CloudSync::gdrive {
 
     std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name) const {
         std::shared_ptr<GDriveDirectory> childDir;
-        const auto responseJson = this->request->GET(
-            this->_baseUrl + "/files",
-            {
-                {
-                    P::QUERY_PARAMS, {
-                        {"q", "'" + this->resourceId + "' in parents and title = '" + name + "' and trashed = false"},
-                        {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}
-                    }
-                }
-            }
-        ).json();
+        const auto responseJson = this->request->GET(m_base_url + "/files")
+                ->accept(Request::MIMETYPE_JSON)
+                ->query_param("q", "'" + this->m_resource_id + "' in parents and title = '" + name + "' and trashed = false")
+                ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
+                ->send().json();
         if (!responseJson.at("items").empty()) {
             childDir = std::dynamic_pointer_cast<GDriveDirectory>(
                     this->parseFile(responseJson.at("items").at(0), ResourceType::FOLDER));
@@ -322,17 +275,11 @@ namespace CloudSync::gdrive {
     }
 
     bool GDriveDirectory::child_resource_exists(const std::string &resource_name) const {
-        const auto responseJson = this->request->GET(
-                this->_baseUrl + "/files",
-                {
-                        {
-                                P::QUERY_PARAMS, {
-                                {"q", "'" + this->resourceId + "' in parents and title = '" + resource_name + "' and trashed = false"},
-                                {"fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))"}
-                        }
-                        }
-                }
-        ).json();
-        return !responseJson.at("items").empty();
+        const auto response_json = this->request->GET(m_base_url + "/files")
+                ->accept(Request::MIMETYPE_JSON)
+                ->query_param("q", "'" + this->m_resource_id + "' in parents and title = '" + resource_name + "' and trashed = false")
+                ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
+                ->send().json();
+        return !response_json.at("items").empty();
     }
 } // namespace CloudSync::gdrive

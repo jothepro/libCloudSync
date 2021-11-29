@@ -1,132 +1,130 @@
 #pragma once
 
+#include "Request.hpp"
 #include "Response.hpp"
 #include <chrono>
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <curl/curl.h>
+#include <nlohmann/json.hpp>
 
 using namespace std::literals::chrono_literals;
 
 namespace CloudSync::request {
-    class Request {
+    class Request : public std::enable_shared_from_this<Request> {
     public:
-        virtual ~Request() {};
+        Request();
+        virtual ~Request();
 
         class RequestException : public std::runtime_error {
         public:
             RequestException(const std::string &what) : std::runtime_error(what) {};
         };
 
-        // MARK: - new interface
-        enum ParameterType {
-            HEADERS, QUERY_PARAMS, POSTFIELDS, MIME_POSTFIELDS, MIME_POSTFILES
-        };
-        enum ConfigurationOption {
-            VERBOSE, FOLLOW_REDIRECT
-        };
-
-        virtual Response request(
-                const std::string &verb, const std::string &url,
-                const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {},
-                const std::string &body = "") = 0;
+        virtual std::shared_ptr<Request> request(const std::string &verb, const std::string &url);
 
         // MARK: - some aliases for known verbs
-        Response
-        GET(const std::string &url,
-            const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {}) {
-            return this->request("GET", url, parameters);
+        std::shared_ptr<Request> GET(const std::string &url) {
+            return this->request("GET", url);
         }
 
-        Response POST(
-                const std::string &url,
-                const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {},
-                const std::string &body = "") {
-            return this->request("POST", url, parameters, body);
+        std::shared_ptr<Request> POST(const std::string &url) {
+            return this->request("POST", url);
         }
 
-        Response HEAD(
-                const std::string &url,
-                const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {}) {
-            return this->request("HEAD", url, parameters);
+        std::shared_ptr<Request> HEAD(const std::string &url) {
+            return this->request("HEAD", url);
         }
 
-        Response
-        PUT(const std::string &url,
-            const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {},
-            const std::string &body = "") {
-            return this->request("PUT", url, parameters, body);
+        std::shared_ptr<Request> PUT(const std::string &url) {
+            return this->request("PUT", url);
         }
 
-        Response DELETE(
-                const std::string &url,
-                const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {}) {
-            return this->request("DELETE", url, parameters);
+        std::shared_ptr<Request> DELETE(const std::string &url) {
+            return this->request("DELETE", url);
         }
 
-        Response MKCOL(
-                const std::string &url,
-                const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {},
-                const std::string &body = "") {
-            return this->request("MKCOL", url, parameters, body);
+        std::shared_ptr<Request> MKCOL(const std::string &url) {
+            return this->request("MKCOL", url);
         }
 
-        Response PROPFIND(
-                const std::string &url,
-                const std::unordered_map<ParameterType, const std::unordered_map<std::string, std::string>> &parameters = {},
-                const std::string &body = "") {
-            return this->request("PROPFIND", url, parameters, body);
+        std::shared_ptr<Request> PROPFIND(const std::string &url) {
+            return this->request("PROPFIND", url);
         }
 
-        void setBasicAuth(const std::string &username, const std::string &password);
+        virtual std::shared_ptr<Request> header(const std::string& key, const std::string& value);
+        std::shared_ptr<Request> accept(const std::string& mimetype);
+        std::shared_ptr<Request> content_type(const std::string& mimetype);
+        std::shared_ptr<Request> if_match(const std::string& etag);
+        virtual std::shared_ptr<Request> query_param(const std::string& key, const std::string& value);
+        virtual std::shared_ptr<Request> postfield(const std::string& key, const std::string& value);
+        virtual std::shared_ptr<Request> mime_postfield(const std::string& key, const std::string& value);
+        virtual std::shared_ptr<Request> mime_postfile(const std::string& key, const std::string& value);
+
+        virtual Response send(const std::string& body = "");
+        Response send_json(const nlohmann::json& json_data);
+
+
+        void set_basic_auth(const std::string &username, const std::string &password);
 
         /**
          * resets any kind of authentication, basicAuth or Token
          */
-        virtual void resetAuth();
+        virtual void reset_auth();
 
-        std::string getUsername();
+        std::string get_username();
 
-        virtual void setTokenRequestUrl(const std::string &tokenRequestUrl);
+        virtual void set_token_request_url(const std::string &tokenRequestUrl);
 
-        void virtual setProxy(
+        void virtual set_proxy(
                 const std::string &proxyUrl, const std::string &proxyUser = "", const std::string &proxyPassword = "");
 
-        virtual void setOAuth2(
+        virtual void set_oauth2(
                 const std::string &token, const std::string &refreshToken = "",
                 std::chrono::system_clock::time_point expires = std::chrono::system_clock::time_point(
                         std::chrono::seconds(0)));
 
-        std::string getCurrentRefreshToken() const;
-        [[nodiscard]] virtual std::string getCurrentAccessToken() const;
+        std::string get_current_refresh_token() const;
+        [[nodiscard]] virtual std::string get_current_access_token() const;
 
-        void setOption(ConfigurationOption option, bool value);
+        void set_follow_redirects(bool follow);
+        void set_verbose(bool verbose);
 
         static const std::string MIMETYPE_XML;
         static const std::string MIMETYPE_JSON;
         static const std::string MIMETYPE_BINARY;
         static const std::string MIMETYPE_TEXT;
-
     protected:
+        CURL *m_curl;
+
+        std::string url_encode_param(const std::string& key, const std::string& value) const;
         /**
          * attempts to get a new OAuth2-Token
          */
-        void refreshOAuth2TokenIfNeeded();
+        void refresh_oauth2_token_if_needed();
 
-        bool optionVerbose = false;
-        bool optionFollowRedirects = false;
+        bool m_option_verbose = false;
+        bool m_option_follow_redirects = false;
 
         // OAuth2
-        std::string accessToken;
-        std::string refreshToken;
-        std::chrono::system_clock::time_point expires;
-        std::string tokenRequestUrl;
+        std::string m_access_token;
+        std::string m_refresh_token;
+        std::chrono::system_clock::time_point m_expires;
+        std::string m_token_request_url;
         // Basic Auth
-        std::string username;
-        std::string password;
+        std::string m_username;
+        std::string m_password;
         // Proxy
-        std::string proxyUrl;
-        std::string proxyUser;
-        std::string proxyPassword;
+        std::string m_proxy_url;
+        std::string m_proxy_user;
+        std::string m_proxy_password;
+        // Request
+        std::string m_verb;
+        std::string m_url;
+        std::string m_query_params;
+        std::string m_postfields;
+        struct curl_slist* m_headers = nullptr;
+        curl_mime* m_form = nullptr;
     };
 } // namespace CloudSync::request

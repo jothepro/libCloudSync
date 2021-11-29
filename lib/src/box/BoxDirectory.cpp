@@ -6,7 +6,6 @@
 #include <vector>
 
 using namespace CloudSync::request;
-using P = CloudSync::request::Request::ParameterType;
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
@@ -14,8 +13,9 @@ namespace CloudSync::box {
     std::vector<std::shared_ptr<Resource>> BoxDirectory::list_resources() const {
         std::vector<std::shared_ptr<Resource>> resources;
         try {
-            json responseJson = this->request->GET(
-                    "https://api.box.com/2.0/folders/" + this->resourceId + "/items").json();
+            json responseJson = this->request->GET("https://api.box.com/2.0/folders/" + this->resourceId + "/items")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
             for (const auto &entry: responseJson.at("entries")) {
                 resources.push_back(this->parseEntry(entry));
             }
@@ -72,7 +72,7 @@ namespace CloudSync::box {
     void BoxDirectory::remove() {
         try {
             if (this->path() != "/") {
-                this->request->DELETE("https://api.box.com/2.0/folders/" + this->resourceId);
+                this->request->DELETE("https://api.box.com/2.0/folders/" + this->resourceId)->send();
             } else {
                 throw PermissionDenied("deleting the root folder is not allowed");
             }
@@ -86,24 +86,16 @@ namespace CloudSync::box {
         std::string folderName;
         try {
             const auto baseDir = this->parent(path, folderName, true);
-            json responseJson = this->request->POST(
-                "https://api.box.com/2.0/folders",
-                {
-                    {
-                        P::HEADERS, {
-                            {"Content-Type", Request::MIMETYPE_JSON}
-                        }
-                    }
-                },
-                json{
-                    {"name",   folderName},
-                    {"parent",
-                        {
-                            {"id", baseDir->resourceId}
-                        }
-                    }
-                }.dump()
-            ).json();
+            json responseJson = this->request->POST("https://api.box.com/2.0/folders")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send_json({
+                            {"name", folderName},
+                            {"parent",
+                                 {
+                                     {"id", baseDir->resourceId}
+                                 }
+                            }
+                    }).json();
             newDir = std::dynamic_pointer_cast<BoxDirectory>(baseDir->parseEntry(responseJson, "folder"));
         } catch (...) {
             BoxCloud::handleExceptions(std::current_exception(), path);
@@ -116,29 +108,18 @@ namespace CloudSync::box {
         std::string fileName;
         try {
             const auto baseDir = this->parent(path, fileName, true);
-            const auto responseJson = this->request->POST(
-                "https://upload.box.com/api/2.0/files/content",
-                {
-                    {
-                        P::MIME_POSTFIELDS, {
-                            {"attributes", json{
-                                {"name",   fileName},
-                                {
-                                    "parent", {
-                                        {"id", baseDir->resourceId}
-                                    }
-                                }
-                            }.dump()
+            const auto responseJson = this->request->POST("https://upload.box.com/api/2.0/files/content")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->mime_postfield("attributes", json{
+                            {"name",   fileName},
+                            {
+                             "parent", {
+                                           {"id", baseDir->resourceId}
+                                       }
                             }
-                        }
-                    },
-                    {
-                        P::MIME_POSTFILES, {
-                            {"file", ""}
-                        }
-                    }
-                }
-            ).json();
+                    }.dump())
+                    ->mime_postfile("file", "")
+                    ->send().json();
             newFile = std::dynamic_pointer_cast<BoxFile>(baseDir->parseEntry(responseJson.at("entries").at(0), "file"));
         } catch (...) {
             BoxCloud::handleExceptions(std::current_exception(), path);
@@ -151,9 +132,10 @@ namespace CloudSync::box {
         std::string fileName;
         try {
             const auto baseDir = this->parent(path, fileName);
-            json responseJson =
-                    this->request->GET("https://api.box.com/2.0/folders/" + baseDir->resourceId + "/items").json();
-            for (const auto &entryJson: responseJson.at("entries")) {
+            const json response_json = this->request->GET("https://api.box.com/2.0/folders/" + baseDir->resourceId + "/items")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
+            for (const auto &entryJson: response_json.at("entries")) {
                 const auto entry = baseDir->parseEntry(entryJson);
                 if (entry->name() == fileName) {
                     file = std::dynamic_pointer_cast<BoxFile>(baseDir->parseEntry(entryJson, "file"));
@@ -168,9 +150,11 @@ namespace CloudSync::box {
 
     std::shared_ptr<BoxDirectory> BoxDirectory::parent() const {
         std::shared_ptr<BoxDirectory> parentDir;
-        json responseJson = this->request->GET("https://api.box.com/2.0/folders/" + this->parentResourceId).json();
+        const json response_json = this->request->GET("https://api.box.com/2.0/folders/" + this->parentResourceId)
+                ->accept(Request::MIMETYPE_JSON)
+                ->send().json();
         return std::dynamic_pointer_cast<BoxDirectory>(
-                this->parseEntry(responseJson, "folder", fs::path(this->path()).parent_path().generic_string()));
+                this->parseEntry(response_json, "folder", fs::path(this->path()).parent_path().generic_string()));
     }
 
     std::shared_ptr<BoxDirectory> BoxDirectory::parent(const std::string &path, std::string &folderName, bool createIfMissing) const {
@@ -191,8 +175,10 @@ namespace CloudSync::box {
 
     std::shared_ptr<BoxDirectory> BoxDirectory::child(const std::string &name) const {
         std::shared_ptr<BoxDirectory> childDir;
-        json responseJson = this->request->GET("https://api.box.com/2.0/folders/" + this->resourceId + "/items").json();
-        for (const auto &entryJson: responseJson.at("entries")) {
+        const json response_json = this->request->GET("https://api.box.com/2.0/folders/" + this->resourceId + "/items")
+                ->accept(Request::MIMETYPE_JSON)
+                ->send().json();
+        for (const auto &entryJson: response_json.at("entries")) {
             const auto entry = this->parseEntry(entryJson);
             if (entry->name() == name) {
                 childDir = std::dynamic_pointer_cast<BoxDirectory>(this->parseEntry(entryJson, "folder"));

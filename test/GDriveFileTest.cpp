@@ -13,7 +13,6 @@ using namespace CloudSync;
 using namespace CloudSync::gdrive;
 using json = nlohmann::json;
 using namespace CloudSync::request;
-using P = request::Request::ParameterType;
 
 SCENARIO("GDriveFile", "[file][gdrive]") {
     INIT_REQUEST();
@@ -44,7 +43,7 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
                     REQUIRE_REQUEST_CALLED().Twice();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files/fileId");
-                    REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("fields") == "downloadUrl");
+                    REQUIRE_REQUEST(0, query_params.at("fields") == "downloadUrl");
                     REQUIRE_REQUEST(1, verb == "GET");
                     REQUIRE_REQUEST(1, url == "downloadlink");
                 }
@@ -62,10 +61,10 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
                     REQUIRE_REQUEST(0, url == "https://www.googleapis.com/upload/drive/v2/files/fileId");
-                    REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("uploadType") == "media");
-                    REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("fields") == "etag");
+                    REQUIRE_REQUEST(0, query_params.at("uploadType") == "media");
+                    REQUIRE_REQUEST(0, query_params.at("fields") == "etag");
                     REQUIRE_REQUEST(0, body == "somenewcontent");
-                    REQUIRE_REQUEST(0, parameters.at(P::HEADERS).at("If-Match") == "2");
+                    REQUIRE_REQUEST(0, headers.at("If-Match") == "2");
                 }
                 THEN("the file revision should be updated") {
                     REQUIRE(file->revision() == "newetag");
@@ -81,7 +80,7 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://www.googleapis.com/drive/v3/files/fileId");
-                    REQUIRE_REQUEST(0, parameters.at(P::QUERY_PARAMS).at("fields") == "etag");
+                    REQUIRE_REQUEST(0, query_params.at("fields") == "etag");
                 }
                 THEN("false should be returned") {
                     REQUIRE(hasChanged == false);

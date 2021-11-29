@@ -3,12 +3,11 @@
 #include "GDriveCloud.hpp"
 
 using namespace CloudSync::request;
-using P = Request::ParameterType;
 
 namespace CloudSync::gdrive {
     void GDriveFile::remove() {
         try {
-            this->request->DELETE(this->_baseUrl + "/files/" + this->resourceId);
+            this->request->DELETE(m_base_url + "/files/" + this->resourceId)->send();
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), this->path());
         }
@@ -17,20 +16,14 @@ namespace CloudSync::gdrive {
     bool GDriveFile::poll_change(bool longPoll) {
         bool hasChanged = false;
         try {
-            const auto responseJson = this->request->GET(
-                this->_baseUrl + "/files/" + this->resourceId,
-                {
-                    {
-                        P::QUERY_PARAMS, {
-                            {"fields", "etag"}
-                        }
-                    }
-                }
-            ).json();
+            const auto responseJson = this->request->GET(m_base_url + "/files/" + this->resourceId)
+                    ->query_param("fields", "etag")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
             const std::string newRevision = responseJson.at("etag");
             if (this->revision() != newRevision) {
                 hasChanged = true;
-                this->_revision = newRevision;
+                m_revision = newRevision;
             }
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), this->path());
@@ -41,18 +34,12 @@ namespace CloudSync::gdrive {
     std::string GDriveFile::read_as_string() const {
         std::string content;
         try {
-            const auto responseJson = this->request->GET(
-                this->_baseUrl + "/files/" + this->resourceId,
-                {
-                    {
-                        P::QUERY_PARAMS, {
-                            {"fields", "downloadUrl"}
-                        }
-                    }
-                }
-            ).json();
+            const auto responseJson = this->request->GET(m_base_url + "/files/" + this->resourceId)
+                    ->query_param("fields", "downloadUrl")
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->send().json();
             const std::string webContentLink = responseJson.at("downloadUrl");
-            content = this->request->GET(webContentLink).data;
+            content = this->request->GET(webContentLink)->send().data;
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), this->path());
         }
@@ -61,25 +48,14 @@ namespace CloudSync::gdrive {
 
     void GDriveFile::write_string(const std::string &content) {
         try {
-            const auto res = this->request->PUT(
-                "https://www.googleapis.com/upload/drive/v2/files/" + this->resourceId,
-                {
-                    {
-                        P::QUERY_PARAMS, {
-                            {"uploadType", "media"},
-                            {"fields",       "etag"}
-                        }
-                    },
-                    {
-                        P::HEADERS, {
-                            {"If-Match",   this->revision()},
-                            {"Content-Type", Request::MIMETYPE_BINARY}
-                        }
-                    }
-                },
-                content
-            ).json();
-            this->_revision = res.at("etag");
+            const auto res = this->request->PUT("https://www.googleapis.com/upload/drive/v2/files/" + this->resourceId)
+                    ->if_match(this->revision())
+                    ->content_type(Request::MIMETYPE_BINARY)
+                    ->accept(Request::MIMETYPE_JSON)
+                    ->query_param("uploadType", "media")
+                    ->query_param("fields", "etag")
+                    ->send(content).json();
+            m_revision = res.at("etag");
         } catch (...) {
             GDriveCloud::handleExceptions(std::current_exception(), this->path());
         }

@@ -9,15 +9,15 @@ namespace CloudSync {
             std::string dir,
             std::shared_ptr<request::Request> request,
             std::string name = "")
-            : _baseUrl(std::move(baseUrl)), _path(std::move(dir)), request(std::move(request)),
-              _name(std::move(name)) {}
+            : m_base_url(std::move(baseUrl)), m_path(std::move(dir)), request(std::move(request)),
+              m_name(std::move(name)) {}
 
     std::string DirectoryImpl::name() const {
-        return _name;
+        return m_name;
     }
 
     std::string DirectoryImpl::path() const {
-        return _path;
+        return m_path;
     }
 
     bool DirectoryImpl::is_file() const {
