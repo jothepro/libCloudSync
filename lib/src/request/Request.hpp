@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Request.hpp"
 #include "Response.hpp"
 #include <chrono>
 #include <string>
@@ -8,6 +7,8 @@
 #include <utility>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
+
+#undef DELETE
 
 using namespace std::literals::chrono_literals;
 
