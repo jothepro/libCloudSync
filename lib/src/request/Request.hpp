@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <optional>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
