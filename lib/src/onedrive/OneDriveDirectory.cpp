@@ -86,7 +86,7 @@ namespace CloudSync::onedrive {
                     ->content_type(Request::MIMETYPE_BINARY)
                     ->accept(Request::MIMETYPE_JSON)
                     ->query_param("@microsoft.graph.conflictBehavior", "fail")
-                    ->send().json();
+                    ->send("").json();
             newFile = std::dynamic_pointer_cast<OneDriveFile>(this->parseDriveItem(response_json, "file"));
         } catch (...) {
             OneDriveCloud::handleExceptions(std::current_exception(), resourcePath);

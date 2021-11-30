@@ -62,7 +62,7 @@ namespace CloudSync::request {
         virtual std::shared_ptr<Request> mime_postfield(const std::string& key, const std::string& value) = 0;
         virtual std::shared_ptr<Request> mime_postfile(const std::string& key, const std::string& value) = 0;
 
-        virtual Response send(const std::string& body = "") = 0;
+        virtual Response send(const std::optional<std::string>& body = std::nullopt) = 0;
         Response send_json(const nlohmann::json& json_data);
 
 

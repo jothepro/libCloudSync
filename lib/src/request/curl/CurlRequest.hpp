@@ -14,7 +14,7 @@ public:
     std::shared_ptr<Request> postfield(const std::string& key, const std::string& value) override;
     std::shared_ptr<Request> mime_postfield(const std::string& key, const std::string& value) override;
     std::shared_ptr<Request> mime_postfile(const std::string& key, const std::string& value) override;
-    Response send(const std::string& body) override;
+    Response send(const std::optional<std::string>& body = std::nullopt) override;
 private:
     CURL *m_curl;
     std::string url_encode_param(const std::string& key, const std::string& value) const;

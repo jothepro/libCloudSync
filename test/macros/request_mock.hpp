@@ -57,8 +57,8 @@ static std::vector<RequestRecording> requestRecording;
 #define WHEN_REQUEST() When(Method(requestMock, send))
 
 #define RESPOND(returnvalue)                                                                                           \
-    Do([](const std::string& content){                                                                                 \
-        requestRecording.back().body = content;                                                                        \
+    Do([](const std::optional<std::string>& body){                                                                     \
+        requestRecording.back().body = body.value_or("");                                                              \
         return returnvalue;                                                                                            \
     })
 

@@ -81,7 +81,7 @@ namespace CloudSync::request::curl {
         return this->shared_from_this();
     }
 
-    Response CurlRequest::send(const std::string& body) {
+    Response CurlRequest::send(const std::optional<std::string>& body) {
         if (!m_token_request_url.empty() && (!m_access_token.empty() || !m_refresh_token.empty())) {
             refresh_oauth2_token_if_needed();
         }
@@ -139,8 +139,8 @@ namespace CloudSync::request::curl {
                 curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, m_postfields.c_str());
             } else if (m_form != nullptr) {
                 curl_easy_setopt(m_curl, CURLOPT_MIMEPOST, m_form);
-            } else {
-                curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, body.c_str());
+            } else if(body != std::nullopt) {
+                curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, body->c_str());
             }
         }
 

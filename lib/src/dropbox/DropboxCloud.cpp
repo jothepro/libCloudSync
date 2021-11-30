@@ -4,7 +4,7 @@ using namespace CloudSync;
 
 void dropbox::DropboxCloud::logout() {
     try {
-        this->request->POST("https://api.dropboxapi.com/2/auth/token/revoke");
+        this->request->POST("https://api.dropboxapi.com/2/auth/token/revoke")->send();
         this->request->reset_auth();
     } catch (...) {
         DropboxCloud::handleExceptions(std::current_exception(), "");

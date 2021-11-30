@@ -95,6 +95,13 @@ int main(int argc, char *argv[]) {
 
     const auto test_start_time = std::chrono::system_clock::now();
 
+    TEST_IF("Getting user display name",
+        auto user_display_name = cloud->get_user_display_name(),
+        (!user_display_name.empty())
+    )
+
+    std::cout << user_display_name << std::endl;
+
     TEST_IF("Getting root()",
         auto rootDir = cloud->root(),
         (rootDir->name().empty() && rootDir->path() == "/")
