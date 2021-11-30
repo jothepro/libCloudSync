@@ -6,7 +6,7 @@
 #include "nextcloud/NextcloudCloud.hpp"
 #include "onedrive/OneDriveCloud.hpp"
 #include "webdav/WebdavCloud.hpp"
-#include "request/Request.hpp"
+#include "request/curl/CurlRequest.hpp"
 
 namespace CloudSync {
 
@@ -15,7 +15,7 @@ namespace CloudSync {
 
     std::shared_ptr<request::Request> CloudFactory::getRequestImplementation() {
         if (this->requestImplementation == nullptr) {
-            this->requestImplementation = std::make_shared<Request>();
+            this->requestImplementation = std::make_shared<request::curl::CurlRequest>();
         }
         this->requestImplementation->set_follow_redirects(true);
         return this->requestImplementation;

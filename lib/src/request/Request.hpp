@@ -13,17 +13,16 @@
 using namespace std::literals::chrono_literals;
 
 namespace CloudSync::request {
-    class Request : public std::enable_shared_from_this<Request> {
+    class Request {
     public:
-        Request();
-        virtual ~Request();
+        virtual ~Request() = default;
 
         class RequestException : public std::runtime_error {
         public:
             RequestException(const std::string &what) : std::runtime_error(what) {};
         };
 
-        virtual std::shared_ptr<Request> request(const std::string &verb, const std::string &url);
+        virtual std::shared_ptr<Request> request(const std::string &verb, const std::string &url) = 0;
 
         // MARK: - some aliases for known verbs
         std::shared_ptr<Request> GET(const std::string &url) {
@@ -54,16 +53,16 @@ namespace CloudSync::request {
             return this->request("PROPFIND", url);
         }
 
-        virtual std::shared_ptr<Request> header(const std::string& key, const std::string& value);
+        virtual std::shared_ptr<Request> header(const std::string& key, const std::string& value) = 0;
         std::shared_ptr<Request> accept(const std::string& mimetype);
         std::shared_ptr<Request> content_type(const std::string& mimetype);
         std::shared_ptr<Request> if_match(const std::string& etag);
-        virtual std::shared_ptr<Request> query_param(const std::string& key, const std::string& value);
-        virtual std::shared_ptr<Request> postfield(const std::string& key, const std::string& value);
-        virtual std::shared_ptr<Request> mime_postfield(const std::string& key, const std::string& value);
-        virtual std::shared_ptr<Request> mime_postfile(const std::string& key, const std::string& value);
+        virtual std::shared_ptr<Request> query_param(const std::string& key, const std::string& value) = 0;
+        virtual std::shared_ptr<Request> postfield(const std::string& key, const std::string& value) = 0;
+        virtual std::shared_ptr<Request> mime_postfield(const std::string& key, const std::string& value) = 0;
+        virtual std::shared_ptr<Request> mime_postfile(const std::string& key, const std::string& value) = 0;
 
-        virtual Response send(const std::string& body = "");
+        virtual Response send(const std::string& body = "") = 0;
         Response send_json(const nlohmann::json& json_data);
 
 
@@ -78,7 +77,7 @@ namespace CloudSync::request {
 
         virtual void set_token_request_url(const std::string &tokenRequestUrl);
 
-        void virtual set_proxy(
+        virtual void set_proxy(
                 const std::string &proxyUrl, const std::string &proxyUser = "", const std::string &proxyPassword = "");
 
         virtual void set_oauth2(
@@ -97,9 +96,6 @@ namespace CloudSync::request {
         static const std::string MIMETYPE_BINARY;
         static const std::string MIMETYPE_TEXT;
     protected:
-        CURL *m_curl;
-
-        std::string url_encode_param(const std::string& key, const std::string& value) const;
         /**
          * attempts to get a new OAuth2-Token
          */
@@ -120,12 +116,5 @@ namespace CloudSync::request {
         std::string m_proxy_url;
         std::string m_proxy_user;
         std::string m_proxy_password;
-        // Request
-        std::string m_verb;
-        std::string m_url;
-        std::string m_query_params;
-        std::string m_postfields;
-        struct curl_slist* m_headers = nullptr;
-        curl_mime* m_form = nullptr;
     };
 } // namespace CloudSync::request

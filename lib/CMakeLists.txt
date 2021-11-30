@@ -87,6 +87,11 @@ set(SRC_REQUEST
     src/request/Request.cpp
 )
 
+set(SRC_CURL_REQUEST
+    src/request/curl/CurlRequest.cpp
+    src/request/curl/CurlRequest.hpp
+)
+
 source_group(request\\curl FILES ${SRC_REQUEST_CURL})
 source_group(include\\CloudSync FILES ${INCLUDE})
 source_group(src\\ FILES ${SRC})
@@ -97,6 +102,7 @@ source_group(src\\box FILES ${SRC_BOX})
 source_group(src\\onedrive FILES ${SRC_ONEDRIVE})
 source_group(src\\gdrive FILES ${SRC_GDRIVE})
 source_group(src\\request FILES ${SRC_REQUEST})
+source_group(src\\request\\curl FILES ${SRC_CURL_REQUEST})
 
 # library definition
 add_library(CloudSync
@@ -109,6 +115,7 @@ add_library(CloudSync
     ${SRC_ONEDRIVE}
     ${SRC_GDRIVE}
     ${SRC_REQUEST}
+    ${SRC_CURL_REQUEST}
 )
 target_compile_features(CloudSync PUBLIC cxx_std_17)
 target_include_directories(CloudSync
