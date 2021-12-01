@@ -2,16 +2,17 @@
 
 using namespace CloudSync;
 using namespace CloudSync::request;
+using namespace CloudSync::onedrive;
 
-void onedrive::OneDriveCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
+void OneDriveCloud::handleExceptions(const std::exception_ptr &e, const std::string &resource_path) {
     try {
         std::rethrow_exception(e);
     } catch(request::Response::Conflict &e) {
-        throw Resource::ResourceConflict(resourcePath);
+        throw Resource::ResourceConflict(resource_path);
     } catch (request::Response::NotFound &e) {
-        throw Resource::NoSuchResource(resourcePath);
+        throw Resource::NoSuchResource(resource_path);
     } catch (request::Response::Forbidden &e) {
-        throw Resource::PermissionDenied(resourcePath);
+        throw Resource::PermissionDenied(resource_path);
     } catch (request::Response::Unauthorized &e) {
         throw Cloud::AuthorizationFailed();
     } catch (request::Response::PreconditionFailed &e) {
@@ -35,10 +36,10 @@ void onedrive::OneDriveCloud::handleExceptions(const std::exception_ptr &e, cons
     }
 }
 
-std::string onedrive::OneDriveCloud::get_user_display_name() const {
+std::string OneDriveCloud::get_user_display_name() const {
     std::string user_display_name;
     try {
-        const auto response_json = this->request->GET("https://graph.microsoft.com/v1.0/me")
+        const auto response_json = m_request->GET("https://graph.microsoft.com/v1.0/me")
                 ->accept(Request::MIMETYPE_JSON)
                 ->send().json();
         user_display_name = response_json.at("displayName");
@@ -48,7 +49,7 @@ std::string onedrive::OneDriveCloud::get_user_display_name() const {
     return user_display_name;
 }
 
-void onedrive::OneDriveCloud::logout() {
+void OneDriveCloud::logout() {
     // token revoking is not supported.
-    this->request->reset_auth();
+    m_request->reset_auth();
 }

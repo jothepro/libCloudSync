@@ -39,9 +39,9 @@ class GDriveDirectory : public DirectoryImpl {
         const std::string m_parent_resource_id;
         const std::string m_root_name;
 
-        std::shared_ptr<Resource> parseFile(
-                const json &file, ResourceType expectedType = ResourceType::ANY,
-                const std::string &customPath = "") const;
+        std::shared_ptr<Resource> parse_file(
+                const json &file, ResourceType expected_type = ResourceType::ANY,
+                const std::string &custom_path = "") const;
 
         /// @return parent of the current directory
         std::shared_ptr<GDriveDirectory> parent() const;
@@ -52,7 +52,5 @@ class GDriveDirectory : public DirectoryImpl {
         std::shared_ptr<GDriveDirectory> child(const std::string &name) const;
 
         bool child_resource_exists(const std::string & resource_name) const;
-
-        std::shared_ptr<GDriveDirectory> get_or_create_parent_directory(const std::string& path) const;
     };
 } // namespace CloudSync::gdrive

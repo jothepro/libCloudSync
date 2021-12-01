@@ -99,13 +99,13 @@ namespace CloudSync::request {
         const std::unordered_map<std::string, std::string> headers;
 
         nlohmann::json json() {
-            nlohmann::json responseJson;
+            nlohmann::json response_json;
             try {
-                responseJson = nlohmann::json::parse(std::istringstream(this->data));
+                response_json = nlohmann::json::parse(std::istringstream(this->data));
             } catch (...) {
                 throw ParseError("invalid json");
             }
-            return responseJson;
+            return response_json;
         }
 
         std::shared_ptr<pugi::xml_document> xml() {

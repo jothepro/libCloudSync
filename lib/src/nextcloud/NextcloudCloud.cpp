@@ -1,11 +1,12 @@
 #include "NextcloudCloud.hpp"
 
 using namespace CloudSync;
+using namespace CloudSync::nextcloud;
 
-std::string nextcloud::NextcloudCloud::get_user_display_name() const {
+std::string NextcloudCloud::get_user_display_name() const {
     std::string user_display_name;
     try {
-        const auto response_xml = this->request->GET(this->baseUrl + "/ocs/v1.php/cloud/user")
+        const auto response_xml = m_request->GET(m_base_url + "/ocs/v1.php/cloud/user")
                 ->header("OCS-APIRequest", "true")
                 ->accept(Request::MIMETYPE_XML)
                 ->send().xml();
@@ -16,13 +17,13 @@ std::string nextcloud::NextcloudCloud::get_user_display_name() const {
     return user_display_name;
 }
 
-void nextcloud::NextcloudCloud::logout() {
+void NextcloudCloud::logout() {
     try {
-        this->request->DELETE(this->baseUrl + "/ocs/v2.php/core/apppassword")
+        m_request->DELETE(m_base_url + "/ocs/v2.php/core/apppassword")
                 ->header("OCS-APIRequest", "true")
                 ->accept(Request::MIMETYPE_XML)
                 ->send();
-        this->request->reset_auth();
+        m_request->reset_auth();
     } catch (...) {
         NextcloudCloud::handleExceptions(std::current_exception(), "");
     }

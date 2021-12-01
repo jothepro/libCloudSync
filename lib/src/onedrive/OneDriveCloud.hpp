@@ -23,10 +23,10 @@ namespace CloudSync::onedrive {
         }
 
         std::shared_ptr<Directory> root() const override {
-            return std::make_shared<OneDriveDirectory>(this->baseUrl, "/", this->request, "");
+            return std::make_shared<OneDriveDirectory>(m_base_url, "/", m_request, "");
         }
 
-        static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);
+        static void handleExceptions(const std::exception_ptr &e, const std::string &resource_path);
 
         std::string get_user_display_name() const override;
 

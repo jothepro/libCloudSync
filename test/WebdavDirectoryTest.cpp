@@ -68,7 +68,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
             WHEN("calling get_directory(folder), get_directory(folder/), get_directory(/folder/), get_directory(/folder/test/..)") {
                 std::string path = GENERATE(as<std::string>{}, "folder", "folder/", "/folder/", "/folder/test/..");
-                const auto newDirectory = directory->get_directory(path);
+                const auto new_directory = directory->get_directory(path);
                 THEN("a PROPFIND request on the desired folder should be made") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
@@ -77,8 +77,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST(0, body == xmlQuery);
                 }
                 THEN("a object representing the new directory should be returned") {
-                    REQUIRE(newDirectory->name() == "folder");
-                    REQUIRE(newDirectory->path() == "/folder");
+                    REQUIRE(new_directory->name() == "folder");
+                    REQUIRE(new_directory->path() == "/folder");
                 }
             }
         }
@@ -111,7 +111,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
             WHEN("calling create_directory(newDirectory), create_directory(newDirectory/)") {
                 std::string path = GENERATE(as<std::string>{}, "newDirectory", "newDirectory/");
-                const auto newDirectory = directory->create_directory(path);
+                const auto new_directory = directory->create_directory(path);
                 THEN("a MKCOL request should be made on the path of the new folder") {
                     REQUIRE_REQUEST_CALLED().Twice();
                     REQUIRE_REQUEST(0, verb == "MKCOL");
@@ -126,8 +126,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
                 THEN("a object representing the new directory should be "
                      "returned") {
-                    REQUIRE(newDirectory->name() == "newDirectory");
-                    REQUIRE(newDirectory->path() == "/newDirectory");
+                    REQUIRE(new_directory->name() == "newDirectory");
+                    REQUIRE(new_directory->path() == "/newDirectory");
                 }
             }
         }
@@ -163,7 +163,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     "application/xml"));
 
             WHEN("calling create_file(newfile.txt)") {
-                const auto newFile = directory->create_file("newfile.txt");
+                const auto new_file = directory->create_file("newfile.txt");
                 THEN("a HEAD request should be made to find out if the resource already exists") {
                     REQUIRE_REQUEST_CALLED().Exactly(3);
                     REQUIRE_REQUEST(0, verb == "HEAD");
@@ -183,9 +183,9 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     REQUIRE_REQUEST(2, body == xmlQuery);
                 }
                 THEN("an object representing the file should be returned") {
-                    REQUIRE(newFile->name() == "newfile.txt");
-                    REQUIRE(newFile->path() == "/newfile.txt");
-                    REQUIRE(newFile->revision() == "\"5e18e1bede073\"");
+                    REQUIRE(new_file->name() == "newfile.txt");
+                    REQUIRE(new_file->path() == "/newfile.txt");
+                    REQUIRE(new_file->revision() == "\"5e18e1bede073\"");
                 }
             }
         }

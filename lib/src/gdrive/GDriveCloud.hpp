@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "CloudImpl.hpp"
 #include "request/Request.hpp"
 #include "request/Response.hpp"
@@ -8,8 +10,8 @@
 namespace CloudSync::gdrive {
     class GDriveCloud : public CloudImpl {
     public:
-        GDriveCloud(const std::string &rootName, const std::shared_ptr<request::Request> &request)
-                : CloudImpl("https://www.googleapis.com/drive/v2", request), rootName(rootName) {}
+        GDriveCloud(std::string root_name, const std::shared_ptr<request::Request> &request)
+                : CloudImpl("https://www.googleapis.com/drive/v2", request), m_root_name(std::move(root_name)) {}
 
         std::string getAuthorizeUrl() const override {
             return "https://accounts.google.com/o/oauth2/v2/auth";
@@ -21,12 +23,12 @@ namespace CloudSync::gdrive {
 
         std::shared_ptr<Directory> root() const override {
             return std::make_shared<GDriveDirectory>(
-                    this->baseUrl,
-                    this->rootName,
-                    this->rootName,
-                    this->rootName,
+                    m_base_url,
+                    m_root_name,
+                    m_root_name,
+                    m_root_name,
                     "/",
-                    this->request,
+                    m_request,
                     "");
         }
 
@@ -37,6 +39,6 @@ namespace CloudSync::gdrive {
         void logout() override;
 
     private:
-        std::string rootName;
+        std::string m_root_name;
     };
 } // namespace CloudSync::gdrive

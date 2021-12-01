@@ -18,7 +18,7 @@ namespace CloudSync {
                 std::shared_ptr<request::Request> request,
                 std::string name);
 
-        std::shared_ptr<request::Request> request;
+        std::shared_ptr<request::Request> m_request;
         const std::string m_base_url;
     private:
         const std::string m_name;

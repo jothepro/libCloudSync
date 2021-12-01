@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Resource.hpp"
-#include <iomanip>
-#include <sstream>
-#include <utility>
 
 namespace CloudSync {
     namespace request {
@@ -44,15 +41,6 @@ namespace CloudSync {
          * @throws Cloud::MethodNotSupportedError if long-polling is not supported by the provider but `longPoll=true`.
          * @return `true` if a new version exists, otherwise `false`
          */
-        virtual bool poll_change(bool longPoll = false) = 0;
-
-        /**
-         * @return `true` if long-polling is supported, otherwise `false`
-         * @code
-         * // Example usage: Only longpoll if it's supported
-         * file->poll_change(file->supports_long_poll());
-         * @endcode
-         */
-        [[nodiscard]] virtual bool supports_long_poll() const = 0;
+        virtual bool poll_change() = 0;
     };
 } // namespace CloudSync

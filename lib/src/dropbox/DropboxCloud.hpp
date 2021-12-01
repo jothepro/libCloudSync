@@ -21,7 +21,7 @@ namespace CloudSync::dropbox {
         }
 
         std::shared_ptr<Directory> root() const override {
-            return std::make_shared<DropboxDirectory>("/", this->request, "");
+            return std::make_shared<DropboxDirectory>("/", m_request, "");
         }
 
         static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);

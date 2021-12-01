@@ -15,9 +15,9 @@ SCENARIO("WebdavCloud", "[cloud][webdav]") {
     GIVEN("a webdav cloud instance") {
         const auto cloud = std::make_shared<webdav::WebdavCloud>("http://cloud", request);
         WHEN("calling getBaseUrl") {
-            const auto baseUrl = cloud->getBaseUrl();
+            const std::string base_url = cloud->getBaseUrl();
             THEN("it should return the correct base url") {
-                REQUIRE(baseUrl == "http://cloud");
+                REQUIRE(base_url == "http://cloud");
             }
         }
         WHEN("calling getTokenUrl") {

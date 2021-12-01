@@ -11,11 +11,7 @@ namespace CloudSync::webdav {
 
         void remove() override;
 
-        bool poll_change(bool longPoll = false) override;
-
-        [[nodiscard]] bool supports_long_poll() const override {
-            return false;
-        }
+        bool poll_change() override;
 
         [[nodiscard]] std::string read_as_string() const override;
 
@@ -23,5 +19,7 @@ namespace CloudSync::webdav {
 
     private:
         static std::string xmlQuery;
+
+        [[nodiscard]] std::string resource_path() const override;
     };
 } // namespace CloudSync::webdav

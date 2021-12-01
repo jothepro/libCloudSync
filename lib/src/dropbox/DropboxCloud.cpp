@@ -1,20 +1,21 @@
 #include "DropboxCloud.hpp"
 
 using namespace CloudSync;
+using namespace CloudSync::dropbox;
 
-void dropbox::DropboxCloud::logout() {
+void DropboxCloud::logout() {
     try {
-        this->request->POST("https://api.dropboxapi.com/2/auth/token/revoke")->send();
-        this->request->reset_auth();
+        m_request->POST("https://api.dropboxapi.com/2/auth/token/revoke")->send();
+        m_request->reset_auth();
     } catch (...) {
         DropboxCloud::handleExceptions(std::current_exception(), "");
     }
 }
 
-std::string dropbox::DropboxCloud::get_user_display_name() const {
+std::string DropboxCloud::get_user_display_name() const {
     std::string userDisplayName;
     try {
-        const auto response_json = this->request->POST("https://api.dropboxapi.com/2/users/get_current_account")
+        const auto response_json = m_request->POST("https://api.dropboxapi.com/2/users/get_current_account")
                 ->accept(Request::MIMETYPE_JSON)
                 ->send().json();
         userDisplayName = response_json.at("name").at("display_name");
@@ -25,7 +26,7 @@ std::string dropbox::DropboxCloud::get_user_display_name() const {
     return userDisplayName;
 }
 
-void dropbox::DropboxCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
+void DropboxCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
         std::rethrow_exception(e);
     } catch (request::Response::Conflict &e) {

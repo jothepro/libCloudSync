@@ -18,7 +18,7 @@ namespace CloudSync {
     protected:
         CloudImpl(std::string url, std::shared_ptr<request::Request> request);
 
-        std::shared_ptr<request::Request> request;
-        std::string baseUrl;
+        std::shared_ptr<request::Request> m_request;
+        std::string m_base_url;
     };
 } // namespace CloudSync

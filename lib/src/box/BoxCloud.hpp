@@ -18,7 +18,7 @@ namespace CloudSync::box {
         }
 
         std::shared_ptr<Directory> root() const override {
-            return std::make_shared<BoxDirectory>("0", "0", "/", this->request, "");
+            return std::make_shared<BoxDirectory>("0", "0", "/", m_request, "");
         }
 
         static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);

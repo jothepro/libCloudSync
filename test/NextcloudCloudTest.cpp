@@ -26,7 +26,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 "application/xml"));
 
             WHEN("calling get_user_display_name()") {
-                std::string name = cloud->get_user_display_name();
+                const std::string name = cloud->get_user_display_name();
                 THEN("the display name should be set to 'John Doe'") {
                     REQUIRE(name == "John Doe");
                 }
@@ -40,7 +40,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
             }
         }
         WHEN("calling getBaseUrl") {
-            const auto baseUrl = cloud->getBaseUrl();
+            const std::string baseUrl = cloud->getBaseUrl();
             THEN("it should return the correct base url") {
                 REQUIRE(baseUrl == "http://nextcloud");
             }
@@ -48,7 +48,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
         WHEN("calling getTokenUrl") {
             const std::string result = cloud->getTokenUrl();
             THEN("an empty string should be returned") {
-                REQUIRE(result.empty());
+                REQUIRE(result == "");
             }
         }
         WHEN("calling root()") {

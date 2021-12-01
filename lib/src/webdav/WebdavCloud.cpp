@@ -1,8 +1,9 @@
 #include "WebdavCloud.hpp"
 
 using namespace CloudSync;
+using namespace CloudSync::webdav;
 
-void webdav::WebdavCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
+void WebdavCloud::handleExceptions(const std::exception_ptr &e, const std::string &resourcePath) {
     try {
         std::rethrow_exception(e);
     } catch(request::Response::PreconditionFailed &e) {
@@ -22,7 +23,7 @@ void webdav::WebdavCloud::handleExceptions(const std::exception_ptr &e, const st
     }
 }
 
-void webdav::WebdavCloud::logout() {
+void WebdavCloud::logout() {
     // reset login credentials
-    this->request->reset_auth();
+    m_request->reset_auth();
 }

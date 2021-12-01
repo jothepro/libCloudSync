@@ -11,11 +11,7 @@ namespace CloudSync::box {
 
         void remove() override;
 
-        bool poll_change(bool longPoll = false) override;
-
-        bool supports_long_poll() const override {
-            return true;
-        }
+        bool poll_change() override;
 
         std::string read_as_string() const override;
 
@@ -23,5 +19,7 @@ namespace CloudSync::box {
 
     private:
         const std::string resourceId;
+
+        [[nodiscard]] std::string resource_path() const override;
     };
 } // namespace CloudSync::box

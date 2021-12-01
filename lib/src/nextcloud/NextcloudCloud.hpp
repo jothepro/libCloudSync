@@ -15,12 +15,12 @@ namespace CloudSync::nextcloud {
                 : webdav::WebdavCloud(url, request) {}
 
         std::string getAuthorizeUrl() const override {
-            return this->baseUrl + "/index.php/login/flow";
+            return m_base_url + "/index.php/login/flow";
         }
 
         std::shared_ptr<Directory> root() const override {
             return std::make_shared<webdav::WebdavDirectory>(
-                this->baseUrl, "/remote.php/webdav", "/", this->request, "");
+                    m_base_url, "/remote.php/webdav", "/", m_request, "");
         }
 
         std::string get_user_display_name() const override;

@@ -21,13 +21,13 @@ namespace CloudSync::webdav {
         }
 
         std::shared_ptr<Directory> root() const override {
-            return std::make_shared<WebdavDirectory>(this->baseUrl, "", "/", this->request, "");
+            return std::make_shared<WebdavDirectory>(m_base_url, "", "/", m_request, "");
         }
 
         static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);
 
         std::string get_user_display_name() const override {
-            return this->request->get_username();
+            return m_request->get_username();
         };
 
         void logout() override;

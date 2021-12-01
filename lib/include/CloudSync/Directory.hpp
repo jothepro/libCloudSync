@@ -2,9 +2,6 @@
 
 #include "File.hpp"
 #include "Resource.hpp"
-#include <iomanip>
-#include <sstream>
-#include <string>
 #include <vector>
 
 namespace CloudSync {
