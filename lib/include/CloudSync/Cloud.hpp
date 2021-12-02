@@ -46,9 +46,9 @@ namespace CloudSync {
          *
          * Possible reasons why this occurs:
          *     * A request has failed before it even reached the server. This may be due to a wrong usage of the request
-         * library or, less likely, a problem with the request library itself (libCURL).
+         *       library or, less likely, a problem with the request library itself (libCURL).
          *     * The server responded with an unexpected result. Unexpected means that the library does not know how to
-         * handle it because the implementation or the response does not follow the API-spec.
+         *       handle it because the implementation or the response does not follow the API-spec.
          */
         class CommunicationError : public CloudException {
         public:
@@ -59,8 +59,8 @@ namespace CloudSync {
         /**
          @brief Thrown if the server response cannot be parsed.
          *
-         * This is a special case of a CommunicationError. When using the library in production catching CommunicationErrors
-         should be enough.
+         * This is a special case of a CommunicationError. When using the library in production catching
+         * CommunicationErrors should be enough.
          * This exists to make debugging easier.
          *
          * It's not possible to recover from this.
@@ -76,7 +76,7 @@ namespace CloudSync {
          * `cloud->root()->list_resources();`.
          * @throws AuthorizationFailed if your login-credentials are wrong.
          */
-        virtual void ping() const = 0;
+        virtual void test_connection() const = 0;
 
         /**
          * set login credentials

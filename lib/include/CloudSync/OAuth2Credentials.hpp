@@ -21,12 +21,13 @@ namespace CloudSync {
                 std::string accessToken,
                 std::string refreshToken = "",
                 std::chrono::seconds expiresIn = 0s)
-                : accessToken(std::move(accessToken)), refreshToken(std::move(refreshToken)), expires(expiresIn != 0s
-                                                                                                      ?
-                                                                                                      std::chrono::system_clock::now() +
-                                                                                                      expiresIn
-                                                                                                      : std::chrono::system_clock::time_point(
-                        0s)) {};
+                : accessToken(std::move(accessToken))
+                , refreshToken(std::move(refreshToken))
+                , expires(expiresIn != 0s
+                      ?
+                      std::chrono::system_clock::now() +
+                      expiresIn
+                      : std::chrono::system_clock::time_point(0s)) {};
 
     protected:
         void apply(const std::shared_ptr<request::Request> &request) const override;

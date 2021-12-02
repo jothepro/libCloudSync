@@ -20,7 +20,7 @@ void WebdavFile::remove() {
     try {
         m_request->DELETE(resource_path())->send();
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), resource_path());
+        WebdavCloud::handleExceptions(std::current_exception(), path());
     }
 }
 
@@ -41,7 +41,7 @@ bool WebdavFile::poll_change() {
                 .node()
                 .child_value();
         if (!new_revision.empty()) {
-            if (this->revision() != new_revision) {
+            if (revision() != new_revision) {
                 has_changed = true;
                 m_revision = new_revision;
             }
@@ -49,7 +49,7 @@ bool WebdavFile::poll_change() {
             throw Cloud::InvalidResponse("reading XML failed: missing required 'getetag' property");
         }
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), resource_path());
+        WebdavCloud::handleExceptions(std::current_exception(), path());
     }
     return has_changed;
 }
@@ -59,7 +59,7 @@ std::string WebdavFile::read_as_string() const {
     try {
         data = m_request->GET(resource_path())->send().data;
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), resource_path());
+        WebdavCloud::handleExceptions(std::current_exception(), path());
     }
     return data;
 }
@@ -72,7 +72,7 @@ void WebdavFile::write_string(const std::string &input) {
                 ->send(input);
         m_revision = response.headers.at("etag");
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), resource_path());
+        WebdavCloud::handleExceptions(std::current_exception(), path());
     }
 }
 

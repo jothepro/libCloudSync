@@ -5,7 +5,7 @@
 namespace CloudSync {
     class CloudImpl : public Cloud, public std::enable_shared_from_this<CloudImpl> {
     public:
-        void ping() const override;
+        void test_connection() const override;
 
         std::shared_ptr<Cloud> login(const Credentials &credentials) override;
 

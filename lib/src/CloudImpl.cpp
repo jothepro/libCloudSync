@@ -18,7 +18,7 @@ std::string CloudImpl::getCurrentRefreshToken() const {
     return m_request->get_current_refresh_token();
 }
 
-void CloudImpl::ping() const {
+void CloudImpl::test_connection() const {
     this->root()->list_resources();
 }
 

@@ -3,13 +3,12 @@
 #include "OneDriveCloud.hpp"
 #include "OneDriveFile.hpp"
 #include <filesystem>
-#include <sstream>
 #include <vector>
 
-using json = nlohmann::json;
 using namespace CloudSync;
 using namespace CloudSync::request;
 using namespace CloudSync::onedrive;
+using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 std::vector<std::shared_ptr<Resource>> OneDriveDirectory::list_resources() const {
