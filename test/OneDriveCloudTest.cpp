@@ -1,7 +1,7 @@
 #include "onedrive/OneDriveCloud.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 
@@ -11,8 +11,9 @@ using namespace CloudSync;
 
 SCENARIO("OneDriveCloud", "[cloud][onedrive]") {
     INIT_REQUEST();
+    OAUTH_MOCK("mytoken");
     GIVEN("a onedrive cloud instance") {
-        const auto cloud = std::make_shared<onedrive::OneDriveCloud>("me/drive/root", request);
+        const auto cloud = std::make_shared<onedrive::OneDriveCloud>("me/drive/root", credentials, request);
         AND_GIVEN("a request that returns a graph user account description") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, json{{"displayName", "John Doe"}}.dump(), "application/json"));
@@ -34,13 +35,6 @@ SCENARIO("OneDriveCloud", "[cloud][onedrive]") {
             THEN("the root directory is returned") {
                 REQUIRE(directory->name() == "");
                 REQUIRE(directory->path() == "/");
-            }
-        }
-        WHEN("calling logout()") {
-            When(Method(requestMock, reset_auth)).Return();
-            cloud->logout();
-            THEN("the request credentials should be reset") {
-                Verify(Method(requestMock,reset_auth)).Once();
             }
         }
     }

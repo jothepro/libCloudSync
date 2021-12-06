@@ -1,9 +1,9 @@
 #include "webdav/WebdavFile.hpp"
 #include "CloudSync/Cloud.hpp"
-#include "CloudSync/Exceptions.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/basic_auth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 #include <sstream>
@@ -33,11 +33,12 @@ std::string xmlResponseContent(const std::string &eTag) {
 SCENARIO("WebdavFile", "[file][webdav]") {
     const std::string BASE_URL = "http://cloud";
     INIT_REQUEST();
-
+    BASIC_AUTH_MOCK("john", "password123");
     GIVEN("a webdav file instance of a textfile") {
         const auto file = std::make_shared<WebdavFile>(
             BASE_URL,
             "/test.txt",
+            credentials,
             request,
             "test.txt",
             "\"7f3805660b049baadd3bef287d7d346b\"");
@@ -128,7 +129,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
 
             WHEN("calling poll_change()") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->poll_change(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(file->poll_change(), CloudSync::exceptions::cloud::InvalidResponse);
                 }
             }
         }
@@ -137,7 +138,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
 
             WHEN("calling poll_change()") {
                 THEN("an InvalidResponse Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->poll_change(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(file->poll_change(), CloudSync::exceptions::cloud::InvalidResponse);
                 }
             }
         }

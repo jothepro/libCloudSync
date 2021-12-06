@@ -1,8 +1,10 @@
 #include "gdrive/GDriveDirectory.hpp"
 #include "CloudSync/Cloud.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 #include <nlohmann/json.hpp>
@@ -15,11 +17,12 @@ using json = nlohmann::json;
 using namespace CloudSync::request;
 
 SCENARIO("GDriveDirectory", "[directory][gdrive]") {
-    INIT_REQUEST()
+    INIT_REQUEST();
+    OAUTH_MOCK("mytoken");
     const std::string BASE_URL = "https://www.googleapis.com/drive/v2";
 
     GIVEN("a google drive root directory") {
-        const auto directory = std::make_shared<GDriveDirectory>(BASE_URL, "root", "root", "root", "/", request, "");
+        const auto directory = std::make_shared<GDriveDirectory>(BASE_URL, "root", "root", "root", "/", credentials, request, "");
 
         THEN("the working dir should be '/'") {
             REQUIRE(directory->path() == "/");
@@ -76,7 +79,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
 
             WHEN("calling list_resources()") {
                 THEN("an Cloud::AuthorizationFailed exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->list_resources(), Cloud::AuthorizationFailed);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::exceptions::cloud::AuthorizationFailed);
                 }
             }
         }
@@ -270,7 +273,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         }
         WHEN("calling remove()") {
             THEN("a PermissionDenied exception should be thrown (deleting root is not allowed") {
-                REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::PermissionDenied);
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::resource::PermissionDenied);
             }
         }
     }
@@ -281,6 +284,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             "resourceId",
             "parentId",
             "/test/folder",
+            credentials,
             request,
             "folder");
 
@@ -342,7 +346,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 json{{"error", {{"errors", {{{"domain", "global"}, {"reason", "notFound"}}}}}}}.dump()));
             WHEN("calling remove()") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->remove(), Resource::NoSuchResource);
+                    REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::resource::NoSuchResource);
                 }
             }
         }

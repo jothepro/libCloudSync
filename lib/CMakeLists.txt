@@ -11,24 +11,44 @@ set(INCLUDE
     include/CloudSync/CloudFactory.hpp
     include/CloudSync/Cloud.hpp
     include/CloudSync/Directory.hpp
-    include/CloudSync/Exceptions.hpp
     include/CloudSync/File.hpp
     include/CloudSync/Resource.hpp
-    include/CloudSync/Credentials.hpp
     include/CloudSync/OAuth2Credentials.hpp
-    include/CloudSync/UsernamePasswordCredentials.hpp
+    include/CloudSync/BasicCredentials.hpp
+)
+
+set(INCLUDE_EXCEPTIONS
+    include/CloudSync/exceptions/Exception.hpp
+)
+
+set(INCLUDE_EXCEPTIONS_CLOUD
+    include/CloudSync/exceptions/cloud/CloudException.hpp
+)
+
+set(INCLUDE_EXCEPTIONS_RESOURCE
+    include/CloudSync/exceptions/resource/ResourceException.hpp
 )
 
 set(SRC
     src/CloudFactory.cpp
     src/CloudImpl.hpp
     src/CloudImpl.cpp
+    src/OAuthCloudImpl.hpp
     src/OAuth2Credentials.cpp
-    src/UsernamePasswordCredentials.cpp
+    src/BasicCredentials.cpp
     src/DirectoryImpl.hpp
     src/DirectoryImpl.cpp
+    src/OAuthDirectoryImpl.hpp
     src/FileImpl.cpp
     src/FileImpl.hpp
+    src/OAuthFileImpl.hpp
+)
+
+set(SRC_CREDENTIALS
+    src/credentials/BasicCredentialsImpl.hpp
+    src/credentials/BasicCredentialsImpl.cpp
+    src/credentials/OAuth2CredentialsImpl.cpp
+    src/credentials/OAuth2CredentialsImpl.hpp
 )
 
 set(SRC_WEBDAV
@@ -52,15 +72,6 @@ set(SRC_DROPBOX
     src/dropbox/DropboxDirectory.cpp
     src/dropbox/DropboxFile.hpp
     src/dropbox/DropboxFile.cpp
-)
-
-set(SRC_BOX
-    src/box/BoxCloud.cpp
-    src/box/BoxCloud.hpp
-    src/box/BoxDirectory.hpp
-    src/box/BoxDirectory.cpp
-    src/box/BoxFile.hpp
-    src/box/BoxFile.cpp
 )
 
 set(SRC_ONEDRIVE
@@ -94,11 +105,14 @@ set(SRC_CURL_REQUEST
 
 source_group(request\\curl FILES ${SRC_REQUEST_CURL})
 source_group(include\\CloudSync FILES ${INCLUDE})
+source_group(include\\CloudSync\\exceptions FILES ${INCLUDE_EXCEPTIONS})
+source_group(include\\CloudSync\\exceptions\\resource FILES ${INCLUDE_EXCEPTIONS_RESOURCE})
+source_group(include\\CloudSync\\exceptions\\cloud FILES ${INCLUDE_EXCEPTIONS_CLOUD})
 source_group(src\\ FILES ${SRC})
+source_group(src\\credentials FILES ${SRC_CREDENTIALS})
 source_group(src\\webdav FILES ${SRC_WEBDAV})
 source_group(src\\nextcloud FILES ${SRC_NEXTCLOUD})
 source_group(src\\dropbox FILES ${SRC_DROPBOX})
-source_group(src\\box FILES ${SRC_BOX})
 source_group(src\\onedrive FILES ${SRC_ONEDRIVE})
 source_group(src\\gdrive FILES ${SRC_GDRIVE})
 source_group(src\\request FILES ${SRC_REQUEST})
@@ -107,11 +121,14 @@ source_group(src\\request\\curl FILES ${SRC_CURL_REQUEST})
 # library definition
 add_library(CloudSync
     ${INCLUDE}
+    ${INCLUDE_EXCEPTIONS}
+    ${INCLUDE_EXCEPTIONS_RESOURCE}
+    ${INCLUDE_EXCEPTIONS_CLOUD}
     ${SRC}
+    ${SRC_CREDENTIALS}
     ${SRC_WEBDAV}
     ${SRC_NEXTCLOUD}
     ${SRC_DROPBOX}
-    ${SRC_BOX}
     ${SRC_ONEDRIVE}
     ${SRC_GDRIVE}
     ${SRC_REQUEST}

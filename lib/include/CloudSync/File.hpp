@@ -3,9 +3,6 @@
 #include "Resource.hpp"
 
 namespace CloudSync {
-    namespace request {
-        class Request;
-    }
     class File : public Resource {
     public:
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <utility>
-
 #include "CloudSync/File.hpp"
+#include "request/Request.hpp"
+#include <utility>
 
 namespace CloudSync {
     class FileImpl : public File {

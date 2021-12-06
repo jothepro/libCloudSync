@@ -1,8 +1,8 @@
 #include "dropbox/DropboxFile.hpp"
-#include "CloudSync/Cloud.hpp"
 #include "request/Request.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 #include <nlohmann/json.hpp>
@@ -16,9 +16,9 @@ using namespace CloudSync::request;
 
 SCENARIO("DropboxFile", "[file][dropbox]") {
     INIT_REQUEST();
-
+    OAUTH_MOCK("mytoken");
     GIVEN("a DropboxFile instance") {
-        const auto file = std::make_shared<DropboxFile>("/test.txt", request, "test.txt", "revision-id");
+        const auto file = std::make_shared<DropboxFile>("/test.txt", credentials, request, "test.txt", "revision-id");
         AND_GIVEN("a request that returns 200") {
             WHEN_REQUEST().RESPOND(request::Response(200, "", ""));
             WHEN("the file is deleted") {
@@ -105,7 +105,7 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
             WHEN_REQUEST().Throw(request::Response::Conflict(""));
             WHEN("writing to the file") {
                 THEN("a ResourceHasChanged exeception should be thrown") {
-                    REQUIRE_THROWS_AS(file->write_string("test"), Resource::ResourceHasChanged);
+                    REQUIRE_THROWS_AS(file->write_string("test"), CloudSync::exceptions::resource::ResourceHasChanged);
                 }
             }
         }

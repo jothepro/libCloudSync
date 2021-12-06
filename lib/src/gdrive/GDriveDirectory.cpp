@@ -2,6 +2,8 @@
 #include "request/Request.hpp"
 #include "GDriveCloud.hpp"
 #include "GDriveFile.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
 #include <filesystem>
 
 using json = nlohmann::json;
@@ -13,7 +15,9 @@ namespace fs = std::filesystem;
 std::vector<std::shared_ptr<Resource>> GDriveDirectory::list_resources() const {
     std::vector<std::shared_ptr<Resource>> resourceList;
     try {
+        const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(m_base_url + "/files")
+                ->token_auth(token)
                 ->query_param("q", "'" + this->m_resource_id + "' in parents and trashed = false")
                 ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
                 ->accept(Request::MIMETYPE_JSON)
@@ -41,6 +45,7 @@ std::shared_ptr<Directory> GDriveDirectory::get_directory(const std::string &pat
                     m_resource_id,
                     m_parent_resource_id,
                     this->path(),
+                    m_credentials,
                     m_request,
                     name());
         } else if (relativePath.begin() == --relativePath.end() && *relativePath.begin() != "..") {
@@ -56,6 +61,7 @@ std::shared_ptr<Directory> GDriveDirectory::get_directory(const std::string &pat
                     m_resource_id,
                     m_parent_resource_id,
                     this->path(),
+                    m_credentials,
                     m_request,
                     name());
             for (const auto &pathComponent: relativePath) {
@@ -78,9 +84,12 @@ std::shared_ptr<Directory> GDriveDirectory::get_directory(const std::string &pat
 void GDriveDirectory::remove() {
     try {
         if (this->path() != "/") {
-            m_request->DELETE(m_base_url + "/files/" + this->m_resource_id)->send();
+            const auto token = m_credentials->get_current_access_token();
+            m_request->DELETE(m_base_url + "/files/" + this->m_resource_id)
+                    ->token_auth(token)
+                    ->send();
         } else {
-            throw PermissionDenied("deleting the root folder is not allowed");
+            throw exceptions::resource::PermissionDenied("deleting the root folder is not allowed");
         }
     } catch (...) {
         GDriveCloud::handleExceptions(std::current_exception(), this->path());
@@ -93,9 +102,11 @@ std::shared_ptr<Directory> GDriveDirectory::create_directory(const std::string &
     try {
         const auto baseDir = this->parent(path, folderName, true);
         if(baseDir->child_resource_exists(folderName)) {
-            throw Resource::ResourceConflict(path);
+            throw exceptions::resource::ResourceConflict(path);
         } else {
+            const auto token = m_credentials->get_current_access_token();
             const auto response_json = m_request->POST(m_base_url + "/files")
+                    ->token_auth(token)
                     ->accept(Request::MIMETYPE_JSON)
                     ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
                     ->send_json({
@@ -123,9 +134,11 @@ std::shared_ptr<File> GDriveDirectory::create_file(const std::string &path) cons
     try {
         const auto baseDir = this->parent(path, fileName, true);
         if(baseDir->child_resource_exists(fileName)) {
-            throw Resource::ResourceConflict(path);
+            throw exceptions::resource::ResourceConflict(path);
         } else {
+            const auto token = m_credentials->get_current_access_token();
             const auto response_json = m_request->POST(m_base_url + "/files")
+                    ->token_auth(token)
                     ->accept(Request::MIMETYPE_JSON)
                     ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
                     ->send_json({
@@ -152,7 +165,9 @@ std::shared_ptr<File> GDriveDirectory::get_file(const std::string &path) const {
     std::string fileName;
     try {
         const auto baseDir = this->parent(path, fileName);
+        const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(m_base_url + "/files")
+                ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
                 ->query_param("q", "'" + baseDir->m_resource_id + "' in parents and title = '" + fileName + "' and trashed = false")
                 ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
@@ -161,7 +176,7 @@ std::shared_ptr<File> GDriveDirectory::get_file(const std::string &path) const {
             file = std::dynamic_pointer_cast<GDriveFile>(
                     baseDir->parse_file(response_json.at("items").at(0), ResourceType::FILE));
         } else {
-            throw NoSuchResource(fileName);
+            throw exceptions::resource::NoSuchResource(fileName);
         }
     } catch (...) {
         GDriveCloud::handleExceptions(std::current_exception(), path);
@@ -183,11 +198,11 @@ GDriveDirectory::parse_file(const json &file, ResourceType expected_type, const 
         parent_id = file.at("parents").at(0).at("id");
     }
     if (file.at("kind") != "drive#file") {
-        throw Cloud::CommunicationError("unknown file kind");
+        throw exceptions::cloud::CommunicationError("unknown file kind");
     }
     if (mime_type == "application/vnd.google-apps.folder") {
         if (expected_type != ResourceType::ANY && expected_type != ResourceType::FOLDER) {
-            throw NoSuchResource(resource_path);
+            throw exceptions::resource::NoSuchResource(resource_path);
         }
         resource = std::make_shared<GDriveDirectory>(
                 m_base_url,
@@ -195,17 +210,19 @@ GDriveDirectory::parse_file(const json &file, ResourceType expected_type, const 
                 id,
                 parent_id,
                 !custom_path.empty() ? custom_path : resource_path,
+                m_credentials,
                 m_request,
                 name);
     } else {
         if (expected_type != ResourceType::ANY && expected_type != ResourceType::FILE) {
-            throw NoSuchResource(name);
+            throw exceptions::resource::NoSuchResource(name);
         }
         const std::string etag = file.at("etag");
         resource = std::make_shared<GDriveFile>(
                 m_base_url,
                 id,
                 !custom_path.empty() ? custom_path : resource_path,
+                m_credentials,
                 m_request,
                 name,
                 etag);
@@ -226,10 +243,13 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent() const {
             m_root_name,
             m_root_name,
             "/",
+            m_credentials,
             m_request,
             "");
     } else {
+        const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(m_base_url + "/files/" + this->m_parent_resource_id)
+                ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
                 ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
                 ->send().json();
@@ -250,7 +270,7 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path
     folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
     try {
         return std::static_pointer_cast<GDriveDirectory>(this->get_directory(relativeParentPath.generic_string()));
-    } catch (const NoSuchResource &e) {
+    } catch (const exceptions::resource::NoSuchResource &e) {
         if(createIfMissing && relativeParentPath != "") {
             return std::static_pointer_cast<GDriveDirectory>(this->create_directory(relativeParentPath.generic_string()));
         } else {
@@ -261,7 +281,9 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path
 
 std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name) const {
     std::shared_ptr<GDriveDirectory> childDir;
+    const auto token = m_credentials->get_current_access_token();
     const auto response_json = m_request->GET(m_base_url + "/files")
+            ->token_auth(token)
             ->accept(Request::MIMETYPE_JSON)
             ->query_param("q", "'" + this->m_resource_id + "' in parents and title = '" + name + "' and trashed = false")
             ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
@@ -270,13 +292,15 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name)
         childDir = std::dynamic_pointer_cast<GDriveDirectory>(
                 this->parse_file(response_json.at("items").at(0), ResourceType::FOLDER));
     } else {
-        throw NoSuchResource(fs::path(this->path() + "/" + name).lexically_normal().generic_string());
+        throw exceptions::resource::NoSuchResource(fs::path(this->path() + "/" + name).lexically_normal().generic_string());
     }
     return childDir;
 }
 
 bool GDriveDirectory::child_resource_exists(const std::string &resource_name) const {
+    const auto token = m_credentials->get_current_access_token();
     const auto response_json = m_request->GET(m_base_url + "/files")
+            ->token_auth(token)
             ->accept(Request::MIMETYPE_JSON)
             ->query_param("q", "'" + this->m_resource_id + "' in parents and title = '" + resource_name + "' and trashed = false")
             ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")

@@ -1,7 +1,7 @@
 #include "gdrive/GDriveCloud.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 
@@ -12,8 +12,9 @@ using namespace CloudSync::request;
 
 SCENARIO("GDriveCloud", "[cloud][gdrive]") {
     INIT_REQUEST();
+    OAUTH_MOCK("mytoken");
     GIVEN("a google drive cloud instance") {
-        const auto cloud = std::make_shared<gdrive::GDriveCloud>("root", request);
+        const auto cloud = std::make_shared<gdrive::GDriveCloud>("root", credentials, request);
         AND_GIVEN("a request that returns a user description") {
             WHEN_REQUEST().RESPOND(request::Response(200, json{{"name", "john doe"}}.dump(), "application/json"));
 
@@ -36,22 +37,16 @@ SCENARIO("GDriveCloud", "[cloud][gdrive]") {
                 REQUIRE(directory->path() == "/");
             }
         }
-        AND_GIVEN("the currently used access-token being 'mytoken'") {
-            When(Method(requestMock, get_current_access_token)).Return("mytoken");
-            AND_GIVEN("a request that returns 200") {
-                WHEN_REQUEST().RESPOND(request::Response(200));
-                WHEN("calling logout()") {
-                    When(Method(requestMock, reset_auth)).Return();
-                    cloud->logout();
-                    THEN("the OAuth-token should be invalidated") {
-                        REQUIRE_REQUEST_CALLED().Once();
-                        REQUIRE_REQUEST(0, verb == "POST");
-                        REQUIRE_REQUEST(0, url == "https://oauth2.googleapis.com/revoke");
-                        REQUIRE_REQUEST(0, mime_postfields.at("token") == "mytoken");
-                    }
-                    THEN("the request credentials should be reset") {
-                        Verify(Method(requestMock, reset_auth)).Once();
-                    }
+        AND_GIVEN("a request that returns 200") {
+            WHEN_REQUEST().RESPOND(request::Response(200));
+            WHEN("calling logout()") {
+                cloud->logout();
+                THEN("the OAuth-token should be invalidated") {
+                    REQUIRE_REQUEST_CALLED().Once();
+                    REQUIRE_REQUEST(0, verb == "POST");
+                    REQUIRE_REQUEST(0, url == "https://oauth2.googleapis.com/revoke");
+                    REQUIRE_REQUEST(0, mime_postfields.at("token") == "mytoken");
+                    REQUIRE_REQUEST(0, bearer_token == "mytoken");
                 }
             }
         }

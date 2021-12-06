@@ -1,27 +1,21 @@
 #pragma once
 
-#include "CloudImpl.hpp"
+#include "OAuthCloudImpl.hpp"
 #include "request/Request.hpp"
 #include "DropboxDirectory.hpp"
 
 using namespace CloudSync::request;
 
 namespace CloudSync::dropbox {
-    class DropboxCloud : public CloudImpl {
+    class DropboxCloud : public OAuthCloudImpl {
     public:
-        explicit DropboxCloud(const std::shared_ptr<request::Request> &request) : CloudImpl("https://www.dropbox.com",
-                                                                                   request) {}
-
-        std::string getAuthorizeUrl() const override {
-            return "https://www.dropbox.com/oauth2/authorize";
-        }
-
-        std::string getTokenUrl() const override {
-            return "https://api.dropboxapi.com/oauth2/token";
-        }
+        DropboxCloud(
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl>& credentials,
+                const std::shared_ptr<request::Request> &request)
+                : OAuthCloudImpl("https://www.dropbox.com", "https://api.dropbox.com/oauth2/token", credentials, request) {}
 
         std::shared_ptr<Directory> root() const override {
-            return std::make_shared<DropboxDirectory>("/", m_request, "");
+            return std::make_shared<DropboxDirectory>("/", m_credentials, m_request, "");
         }
 
         static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);

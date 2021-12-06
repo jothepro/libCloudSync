@@ -1,42 +1,12 @@
 #pragma once
 
-#include "Exceptions.hpp"
 #include <memory>
 #include <string>
 #include <utility>
 
 namespace CloudSync {
-
     class Resource {
     public:
-        class ResourceException : public BaseException {
-        public:
-            explicit ResourceException(const std::string &what) : BaseException(what) {};
-        };
-
-        class NoSuchResource : public ResourceException {
-        public:
-            explicit NoSuchResource(const std::string &path) : ResourceException(
-                    "A resource with the requested type and name doesn't exist: " + path) {};
-        };
-
-        class PermissionDenied : public ResourceException {
-        public:
-            explicit PermissionDenied(const std::string &path)
-                    : ResourceException("Forbidden action on file or directory: " + path) {};
-        };
-
-        class ResourceHasChanged : public ResourceException {
-        public:
-            explicit ResourceHasChanged(const std::string &path) : ResourceException(
-                    "Resource has changed: " + path) {};
-        };
-
-        class ResourceConflict : public ResourceException {
-        public:
-            explicit ResourceConflict(const std::string &path) : ResourceException(
-                    "A resource with this name already exists: " + path) {};
-        };
 
         [[nodiscard]] virtual std::string name() const = 0;
 

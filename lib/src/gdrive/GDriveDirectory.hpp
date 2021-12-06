@@ -1,20 +1,21 @@
 #pragma once
 
-#include "DirectoryImpl.hpp"
+#include "OAuthDirectoryImpl.hpp"
 #include <nlohmann/json.hpp>
 #include <utility>
 
 using json = nlohmann::json;
 
 namespace CloudSync::gdrive {
-class GDriveDirectory : public DirectoryImpl {
+class GDriveDirectory : public OAuthDirectoryImpl {
     public:
         GDriveDirectory(
                 const std::string &baseUrl, std::string rootName, std::string resourceId,
                 std::string parentResourceId, const std::string &dir,
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl>& credentials,
                 const std::shared_ptr<request::Request> &request,
                 const std::string &name)
-                : DirectoryImpl(baseUrl, dir, request, name)
+                : OAuthDirectoryImpl(baseUrl, dir, credentials, request, name)
                 , m_resource_id(std::move(resourceId))
                 , m_parent_resource_id(std::move(parentResourceId))
                 , m_root_name(std::move(rootName)) {};

@@ -1,11 +1,9 @@
 #include "CloudSync/CloudFactory.hpp"
 #include "CloudSync/Directory.hpp"
-#include "CloudSync/File.hpp"
 #include "CloudSync/OAuth2Credentials.hpp"
-#include "CloudSync/UsernamePasswordCredentials.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "macros/test.hpp"
 #include <cxxopts.hpp>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -25,7 +23,6 @@ int main(int argc, char *argv[]) {
             ("nextcloud", "access nextcloud server")
             ("owncloud", "access owncloud server")
             ("dropbox", "access dropbox cloud")
-            ("box", "access box cloud")
             ("onedrive", "access onedrive server")
             ("gdrive", "access google drive");
     options.add_options("2) configuration")
@@ -46,47 +43,43 @@ int main(int argc, char *argv[]) {
     // get server address
     if (result.count("domain")) {
         providerUrl = result["domain"].as<std::string>();
-    } else {
-        if(result.count("webdav") || result.count("nextcloud")) {
-            std::cerr << "no domain provided" << std::endl;
-            std::cout << options.help({"2) configuration"}) << std::endl;
-            exit(1);
-        }
+    } else if(result.count("webdav") || result.count("nextcloud")) {
+        std::cerr << "no domain provided" << std::endl;
+        std::cout << options.help({"2) configuration"}) << std::endl;
+        exit(1);
     }
 
     if (result.count("root")) {
         root = result["root"].as<std::string>();
     }
 
-    // find out cloud type
-    if (result.count("webdav")) {
-        cloud = CloudSync::CloudFactory().webdav(providerUrl);
-    } else if (result.count("nextcloud")) {
-        cloud = CloudSync::CloudFactory().nextcloud(providerUrl);
-    } else if (result.count("dropbox")) {
-        cloud = CloudSync::CloudFactory().dropbox();
-    } else if (result.count("box")) {
-        cloud = CloudSync::CloudFactory().box();
-    } else if (result.count("onedrive")) {
-        cloud = CloudSync::CloudFactory().onedrive(root);
-    } else if (result.count("gdrive")) {
-        cloud = CloudSync::CloudFactory().gdrive(root);
-    } else {
-        std::cerr << "no cloud provider specified" << std::endl;
-        std::cout << options.help({"1) cloud providers"}) << std::endl;
-        exit(1);
-    }
+    if(result.count("username") && result.count("password")) {
+        const auto username = result["username"].as<std::string>();
+        const auto password = result["password"].as<std::string>();
+        auto credentials = CloudSync::BasicCredentials::from_username_password(username, password);
+        if (result.count("webdav")) {
+            cloud = CloudSync::CloudFactory().create_webdav(providerUrl, credentials);
+        } else if (result.count("nextcloud")) {
+            cloud = CloudSync::CloudFactory().create_nextcloud(providerUrl, credentials);
+        } else {
+            std::cerr << "no cloud provider of list [webdav, nextcloud] specified" << std::endl;
+            std::cout << options.help({"1) cloud providers"}) << std::endl;
+            exit(1);
+        }
+    } else if(result.count("token")) {
+        auto credentials = CloudSync::OAuth2Credentials::from_access_token(result["token"].as<std::string>());
 
-    // find out login method and do login
-    if (result.count("username") && result.count("password")) {
-        auto credentials = CloudSync::UsernamePasswordCredentials(
-            result["username"].as<std::string>(),
-            result["password"].as<std::string>()
-        );
-        cloud->login(credentials);
-    } else if (result.count("token")) {
-        auto credentials = CloudSync::OAuth2Credentials(result["token"].as<std::string>());
-        cloud->login(credentials);
+        if (result.count("dropbox")) {
+            cloud = CloudSync::CloudFactory().create_dropbox(credentials);
+        } else if (result.count("onedrive")) {
+            cloud = CloudSync::CloudFactory().create_onedrive(credentials, root);
+        } else if (result.count("gdrive")) {
+            cloud = CloudSync::CloudFactory().create_gdrive(credentials, root);
+        } else {
+            std::cerr << "no cloud provider of list [dropbox, onedrive, gdrive] specified" << std::endl;
+            std::cout << options.help({"1) cloud providers"}) << std::endl;
+            exit(1);
+        }
     } else {
         std::cerr << "no username/password or token provided" << std::endl;
         std::cout << options.help({"3) authentication"}) << std::endl;
@@ -109,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     TEST_THROWS("When calling remove on the root dir, a PermissionDenied exception should be thrown",
         rootDir->remove(),
-        CloudSync::Resource::PermissionDenied);
+        CloudSync::exceptions::resource::PermissionDenied);
 
     const auto test_directory_name = "test_" + std::to_string(test_start_time.time_since_epoch().count());
     TEST_IF("Creating a directory " + test_directory_name,
@@ -142,15 +135,15 @@ int main(int argc, char *argv[]) {
     )
 
     TEST_THROWS("When creating another file with the same name 'test.txt', a ResourceConflict exception should be thrown",
-        test_directory->create_file("test.txt"), CloudSync::Resource::ResourceConflict
+        test_directory->create_file("test.txt"), CloudSync::exceptions::resource::ResourceConflict
     )
 
     TEST_THROWS("When creating an folder with the name 'test.txt', a ResourceConflict exception should be thrown",
-        test_directory->create_directory("test.txt"), CloudSync::Resource::ResourceConflict
+        test_directory->create_directory("test.txt"), CloudSync::exceptions::resource::ResourceConflict
     )
 
     TEST_THROWS("When calling get_directory(test.txt), a NoSuchResource exception should be thrown",
-        test_directory->get_directory("test.txt"), CloudSync::Resource::NoSuchResource
+        test_directory->get_directory("test.txt"), CloudSync::exceptions::resource::NoSuchResource
     )
 
     TEST("Getting a new reference to the same 'test.txt' file",
@@ -163,7 +156,7 @@ int main(int argc, char *argv[]) {
 
     TEST_THROWS("When trying to write new content from the original (first) reference to 'test.txt', "
                 "a ResourceHasChanged exception should be thrown",
-        test_file->write_string("even newer content"), CloudSync::Resource::ResourceHasChanged
+        test_file->write_string("even newer content"), CloudSync::exceptions::resource::ResourceHasChanged
     )
 
     TEST_IF("When calling poll_change(), the revision on the old reference should be updated",
@@ -188,15 +181,15 @@ int main(int argc, char *argv[]) {
     )
 
     TEST_THROWS("When creating another folder with the same name 'new_directory', a ResourceConflict exception should be thrown",
-        test_directory->create_directory("new_directory"), CloudSync::Resource::ResourceConflict
+        test_directory->create_directory("new_directory"), CloudSync::exceptions::resource::ResourceConflict
     )
 
     TEST_THROWS("When creating a file with the name 'new_directory', a ResourceConflict exception should be thrown",
-        test_directory->create_file("new_directory"), CloudSync::Resource::ResourceConflict
+        test_directory->create_file("new_directory"), CloudSync::exceptions::resource::ResourceConflict
     )
 
     TEST_THROWS("When calling get_file(new_directory), a NoSuchResourceException should be thrown",
-        test_directory->get_file("new_directory"), CloudSync::Resource::NoSuchResource
+        test_directory->get_file("new_directory"), CloudSync::exceptions::resource::NoSuchResource
     )
 
     TEST_IF("When calling list_resources(), then a resource list with both 'test.txt' and 'new_directory' "

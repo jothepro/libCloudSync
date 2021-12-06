@@ -1,13 +1,12 @@
 #include "webdav/WebdavDirectory.hpp"
 #include "CloudSync/Cloud.hpp"
-#include "CloudSync/Exceptions.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "request/Request.hpp"
-#include "macros/access_protected.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/basic_auth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
-#include <sstream>
 
 using namespace fakeit;
 using namespace Catch;
@@ -18,7 +17,7 @@ using namespace CloudSync::request;
 
 SCENARIO("WebdavDirectory", "[directory][webdav]") {
     const std::string BASE_URL = "http://cloud";
-    std::string xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    const std::string xmlQuery = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                            "<d:propfind  xmlns:d=\"DAV:\">"
                                "<d:prop>"
                                    "<d:getlastmodified/>"
@@ -29,10 +28,10 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                                "</d:prop>"
                            "</d:propfind>";
     INIT_REQUEST();
-
+    BASIC_AUTH_MOCK("john", "password123");
     GIVEN("a webdav root directory") {
 
-        const auto directory = std::make_shared<WebdavDirectory>(BASE_URL, "", "/", request, "");
+        const auto directory = std::make_shared<WebdavDirectory>(BASE_URL, "", "/", credentials, request, "");
 
         THEN("the a directory with path '/' & name '' should be returned") {
             REQUIRE(directory->path() == "/");
@@ -133,7 +132,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
         }
         WHEN("deleting the directory") {
             THEN("a PermissionDenied exeception shoudl be thrown, because the root dir cannot be deleted") {
-                REQUIRE_THROWS_AS(directory->remove(), CloudSync::Resource::PermissionDenied);
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::resource::PermissionDenied);
             }
         }
         AND_GIVEN("a request series  that returns 404,  201 and then a request that returns a description of the a new file") {
@@ -317,7 +316,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 THEN("a NoSuchFileOrDirectory exception should be thrown") {
                     REQUIRE_THROWS_AS(
                             directory->get_directory("some/path/somefile.txt"),
-                        CloudSync::Resource::NoSuchResource);
+                        CloudSync::exceptions::resource::NoSuchResource);
                 }
             }
         }
@@ -330,12 +329,12 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
             WHEN("calling list_resources()") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::exceptions::cloud::InvalidResponse);
                 }
             }
             WHEN("calling get_directory(test)") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::exceptions::cloud::InvalidResponse);
                 }
             }
         }
@@ -344,19 +343,19 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
             WHEN("getting the current dir content") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::exceptions::cloud::InvalidResponse);
                 }
             }
             WHEN("calling get_directory(test)") {
                 THEN("a RequestException should be thrown") {
-                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::Cloud::InvalidResponse);
+                    REQUIRE_THROWS_AS(directory->get_directory("test"), CloudSync::exceptions::cloud::InvalidResponse);
                 }
             }
         }
     }
 
     GIVEN("a webdav directory (non-root)") {
-        const auto directory = std::make_shared<WebdavDirectory>(BASE_URL, "", "/some/folder", request, "folder");
+        const auto directory = std::make_shared<WebdavDirectory>(BASE_URL, "", "/some/folder", credentials, request, "folder");
 
         THEN("the a directory with path '/some/folder' & name 'folder' should "
              "be returned") {
@@ -415,7 +414,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
 
     GIVEN("a webdav directory with a nextcloud/owncloud dirOffset") {
         const auto nextcloudDir =
-            std::make_shared<WebdavDirectory>(BASE_URL, "/remote.php/webdav", "/some/folder", request, "folder");
+            std::make_shared<WebdavDirectory>(BASE_URL, "/remote.php/webdav", "/some/folder", credentials, request, "folder");
         AND_GIVEN("a DELETE request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 

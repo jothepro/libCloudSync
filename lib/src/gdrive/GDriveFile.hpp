@@ -2,15 +2,16 @@
 
 #include <utility>
 
-#include "FileImpl.hpp"
+#include "OAuthFileImpl.hpp"
 
 namespace CloudSync::gdrive {
-    class GDriveFile : public FileImpl {
+    class GDriveFile : public OAuthFileImpl {
     public:
         GDriveFile(
                 const std::string &baseUrl, std::string resourceId, const std::string &dir,
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl> credentials,
                 const std::shared_ptr<request::Request> &request, const std::string &name, const std::string &revision)
-                : FileImpl(baseUrl, dir, request, name, revision), resourceId(std::move(resourceId)) {};
+                : OAuthFileImpl(baseUrl, dir, credentials, request, name, revision), resourceId(std::move(resourceId)) {};
 
         void remove() override;
 

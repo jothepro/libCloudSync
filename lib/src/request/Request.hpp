@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Response.hpp"
+#include "CloudSync/OAuth2Credentials.hpp"
 #include <chrono>
 #include <string>
 #include <unordered_map>
@@ -62,32 +63,13 @@ namespace CloudSync::request {
         virtual std::shared_ptr<Request> postfield(const std::string& key, const std::string& value) = 0;
         virtual std::shared_ptr<Request> mime_postfield(const std::string& key, const std::string& value) = 0;
         virtual std::shared_ptr<Request> mime_postfile(const std::string& key, const std::string& value) = 0;
+        virtual std::shared_ptr<Request> basic_auth(const std::string& username, const std::string& value) = 0;
+        virtual std::shared_ptr<Request> token_auth(const std::string& token) = 0;
 
         virtual Response send(const std::optional<std::string>& body = std::nullopt) = 0;
         Response send_json(const nlohmann::json& json_data);
 
-
-        void set_basic_auth(const std::string &username, const std::string &password);
-
-        /**
-         * resets any kind of authentication, basicAuth or Token
-         */
-        virtual void reset_auth();
-
-        std::string get_username();
-
-        virtual void set_token_request_url(const std::string &tokenRequestUrl);
-
-        virtual void set_proxy(
-                const std::string &proxyUrl, const std::string &proxyUser = "", const std::string &proxyPassword = "");
-
-        virtual void set_oauth2(
-                const std::string &token, const std::string &refreshToken = "",
-                std::chrono::system_clock::time_point expires = std::chrono::system_clock::time_point(
-                        std::chrono::seconds(0)));
-
-        std::string get_current_refresh_token() const;
-        [[nodiscard]] virtual std::string get_current_access_token() const;
+        virtual void set_proxy(const std::string &proxyUrl, const std::string &proxyUser = "", const std::string &proxyPassword = "") = 0;
 
         void set_follow_redirects(bool follow);
         void set_verbose(bool verbose);
@@ -97,25 +79,9 @@ namespace CloudSync::request {
         static const std::string MIMETYPE_BINARY;
         static const std::string MIMETYPE_TEXT;
     protected:
-        /**
-         * attempts to get a new OAuth2-Token
-         */
-        void refresh_oauth2_token_if_needed();
 
         bool m_option_verbose = false;
         bool m_option_follow_redirects = false;
 
-        // OAuth2
-        std::string m_access_token;
-        std::string m_refresh_token;
-        std::chrono::system_clock::time_point m_expires;
-        std::string m_token_request_url;
-        // Basic Auth
-        std::string m_username;
-        std::string m_password;
-        // Proxy
-        std::string m_proxy_url;
-        std::string m_proxy_user;
-        std::string m_proxy_password;
     };
 } // namespace CloudSync::request

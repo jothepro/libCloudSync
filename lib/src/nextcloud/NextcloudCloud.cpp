@@ -7,6 +7,7 @@ std::string NextcloudCloud::get_user_display_name() const {
     std::string user_display_name;
     try {
         const auto response_xml = m_request->GET(m_base_url + "/ocs/v1.php/cloud/user")
+                ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("OCS-APIRequest", "true")
                 ->accept(Request::MIMETYPE_XML)
                 ->send().xml();
@@ -20,10 +21,10 @@ std::string NextcloudCloud::get_user_display_name() const {
 void NextcloudCloud::logout() {
     try {
         m_request->DELETE(m_base_url + "/ocs/v2.php/core/apppassword")
+                ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("OCS-APIRequest", "true")
                 ->accept(Request::MIMETYPE_XML)
                 ->send();
-        m_request->reset_auth();
     } catch (...) {
         NextcloudCloud::handleExceptions(std::current_exception(), "");
     }

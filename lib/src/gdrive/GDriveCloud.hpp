@@ -2,24 +2,18 @@
 
 #include <utility>
 
-#include "CloudImpl.hpp"
+#include "OAuthCloudImpl.hpp"
 #include "request/Request.hpp"
 #include "request/Response.hpp"
 #include "GDriveDirectory.hpp"
 
 namespace CloudSync::gdrive {
-    class GDriveCloud : public CloudImpl {
+    class GDriveCloud : public OAuthCloudImpl {
     public:
-        GDriveCloud(std::string root_name, const std::shared_ptr<request::Request> &request)
-                : CloudImpl("https://www.googleapis.com/drive/v2", request), m_root_name(std::move(root_name)) {}
-
-        std::string getAuthorizeUrl() const override {
-            return "https://accounts.google.com/o/oauth2/v2/auth";
-        }
-
-        std::string getTokenUrl() const override {
-            return "https://oauth2.googleapis.com/token";
-        }
+        GDriveCloud(std::string root_name,
+                    const std::shared_ptr<credentials::OAuth2CredentialsImpl> credentials,
+                    const std::shared_ptr<request::Request> &request)
+                : OAuthCloudImpl("https://www.googleapis.com/drive/v2", "https://oauth2.googleapis.com/token", credentials, request), m_root_name(std::move(root_name)) {}
 
         std::shared_ptr<Directory> root() const override {
             return std::make_shared<GDriveDirectory>(
@@ -28,6 +22,7 @@ namespace CloudSync::gdrive {
                     m_root_name,
                     m_root_name,
                     "/",
+                    m_credentials,
                     m_request,
                     "");
         }

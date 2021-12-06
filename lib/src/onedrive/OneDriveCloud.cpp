@@ -1,4 +1,6 @@
 #include "OneDriveCloud.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
 
 using namespace CloudSync;
 using namespace CloudSync::request;
@@ -8,38 +10,40 @@ void OneDriveCloud::handleExceptions(const std::exception_ptr &e, const std::str
     try {
         std::rethrow_exception(e);
     } catch(request::Response::Conflict &e) {
-        throw Resource::ResourceConflict(resource_path);
+        throw exceptions::resource::ResourceConflict(resource_path);
     } catch (request::Response::NotFound &e) {
-        throw Resource::NoSuchResource(resource_path);
+        throw exceptions::resource::NoSuchResource(resource_path);
     } catch (request::Response::Forbidden &e) {
-        throw Resource::PermissionDenied(resource_path);
+        throw exceptions::resource::PermissionDenied(resource_path);
     } catch (request::Response::Unauthorized &e) {
-        throw Cloud::AuthorizationFailed();
+        throw exceptions::cloud::AuthorizationFailed();
     } catch (request::Response::PreconditionFailed &e) {
         try {
             json errorJson = json::parse(e.data());
             const std::string errorMessage = errorJson.at("error").at("message");
             if (errorMessage == "ETag does not match current item's value") {
-                throw Resource::ResourceHasChanged(errorMessage);
+                throw exceptions::resource::ResourceHasChanged(errorMessage);
             } else {
-                throw Cloud::CommunicationError(errorMessage);
+                throw exceptions::cloud::CommunicationError(errorMessage);
             }
         } catch (json::exception &e) {
-            throw Cloud::InvalidResponse(e.what());
+            throw exceptions::cloud::InvalidResponse(e.what());
         }
     } catch (request::Response::ResponseException &e) {
-        throw Cloud::CommunicationError(e.what());
+        throw exceptions::cloud::CommunicationError(e.what());
     } catch (json::exception &e) {
-        throw Cloud::InvalidResponse(e.what());
+        throw exceptions::cloud::InvalidResponse(e.what());
     } catch (request::Request::RequestException &e) {
-        throw Cloud::CommunicationError(e.what());
+        throw exceptions::cloud::CommunicationError(e.what());
     }
 }
 
 std::string OneDriveCloud::get_user_display_name() const {
     std::string user_display_name;
     try {
+        const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET("https://graph.microsoft.com/v1.0/me")
+                ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
                 ->send().json();
         user_display_name = response_json.at("displayName");
@@ -51,5 +55,4 @@ std::string OneDriveCloud::get_user_display_name() const {
 
 void OneDriveCloud::logout() {
     // token revoking is not supported.
-    m_request->reset_auth();
 }

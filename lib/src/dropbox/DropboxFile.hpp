@@ -1,13 +1,15 @@
-#include "FileImpl.hpp"
+#include "OAuthFileImpl.hpp"
 #include "request/Request.hpp"
 
 namespace CloudSync::dropbox {
-    class DropboxFile : public FileImpl {
+    class DropboxFile : public OAuthFileImpl {
     public:
         DropboxFile(
-                const std::string &dir, const std::shared_ptr<request::Request> &request, const std::string &name,
+                const std::string &dir,
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl>& credentials,
+                const std::shared_ptr<request::Request> &request, const std::string &name,
                 const std::string &revision)
-                : FileImpl("", dir, request, name, revision) {};
+                : OAuthFileImpl("", dir, credentials, request, name, revision) {};
 
         void remove() override;
 

@@ -1,17 +1,19 @@
 #pragma once
 
-#include "DirectoryImpl.hpp"
+#include "OAuthDirectoryImpl.hpp"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 namespace CloudSync::onedrive {
-    class OneDriveDirectory : public DirectoryImpl {
+    class OneDriveDirectory : public OAuthDirectoryImpl {
     public:
         OneDriveDirectory(
-                const std::string &baseUrl, const std::string &dir, const std::shared_ptr<request::Request> &request,
+                const std::string &baseUrl, const std::string &dir,
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl>& credentials,
+                const std::shared_ptr<request::Request> &request,
                 const std::string &name)
-                : DirectoryImpl(baseUrl, dir, request, name) {};
+                : OAuthDirectoryImpl(baseUrl, dir, credentials, request, name) {};
 
         [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 

@@ -16,6 +16,9 @@ struct RequestRecording {
     const std::string verb;
     const std::string url;
     std::string body;
+    std::string bearer_token;
+    std::string basic_username;
+    std::string basic_password;
     std::unordered_map<std::string, std::string> headers;
     std::unordered_map<std::string, std::string> query_params;
     std::unordered_map<std::string, std::string> postfields;
@@ -51,7 +54,16 @@ static std::vector<RequestRecording> requestRecording;
     When(Method(requestMock, mime_postfile)).AlwaysDo([request](const std::string& key, const std::string& value){     \
         requestRecording.back().mime_postfiles.insert({key, value});                                                   \
         return request;                                                                                                \
-    });
+    });                                                                                                                \
+    When(Method(requestMock, basic_auth)).AlwaysDo([request](const std::string& username, const std::string& password){\
+        requestRecording.back().basic_username = username;                                                             \
+        requestRecording.back().basic_password = password;                                                             \
+        return request;                                                                                                \
+    });                                                                                                                \
+    When(Method(requestMock, token_auth)).AlwaysDo([request](const std::string& token){                                \
+        requestRecording.back().bearer_token = token;                                                                  \
+        return request;                                                                                                \
+    })
 
 
 #define WHEN_REQUEST() When(Method(requestMock, send))

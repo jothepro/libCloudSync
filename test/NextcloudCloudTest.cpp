@@ -1,7 +1,7 @@
 #include "nextcloud/NextcloudCloud.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/basic_auth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 
@@ -12,8 +12,9 @@ using namespace CloudSync::request;
 
 SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
     INIT_REQUEST();
+    BASIC_AUTH_MOCK("john", "password123");
     GIVEN("a nextcloud cloud instance") {
-        const auto cloud = std::make_shared<nextcloud::NextcloudCloud>("http://nextcloud", request);
+        const auto cloud = std::make_shared<nextcloud::NextcloudCloud>("http://nextcloud", credentials, request);
         AND_GIVEN("a request that returns a ocs user description") {
             WHEN_REQUEST().RESPOND(request::Response(
                 200,
@@ -39,16 +40,10 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 }
             }
         }
-        WHEN("calling getBaseUrl") {
-            const std::string baseUrl = cloud->getBaseUrl();
+        WHEN("calling get_base_url") {
+            const std::string baseUrl = cloud->get_base_url();
             THEN("it should return the correct base url") {
                 REQUIRE(baseUrl == "http://nextcloud");
-            }
-        }
-        WHEN("calling getTokenUrl") {
-            const std::string result = cloud->getTokenUrl();
-            THEN("an empty string should be returned") {
-                REQUIRE(result == "");
             }
         }
         WHEN("calling root()") {
@@ -72,16 +67,12 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                 "</ocs>",
                 "application/xml"));
             WHEN("calling logout()") {
-                When(Method(requestMock, reset_auth)).Return();
                 cloud->logout();
                 THEN("the app-password should be invalidated") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v2.php/core/apppassword");
                     REQUIRE_REQUEST(0, headers.at("OCS-APIRequest") == "true");
-                }
-                THEN("the request credentials should be reset") {
-                    Verify(Method(requestMock, reset_auth)).Once();
                 }
             }
         }

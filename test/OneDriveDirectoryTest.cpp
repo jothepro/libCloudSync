@@ -1,8 +1,9 @@
 #include "onedrive/OneDriveDirectory.hpp"
 #include "CloudSync/Cloud.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 #include <nlohmann/json.hpp>
@@ -16,10 +17,10 @@ using namespace CloudSync::request;
 
 SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
     INIT_REQUEST();
-
+    OAUTH_MOCK("mytoken");
     GIVEN("a onedrive root directory") {
         const auto directory =
-            std::make_shared<OneDriveDirectory>("https://graph.microsoft.com/v1.0/me/drive/root", "/", request, "");
+            std::make_shared<OneDriveDirectory>("https://graph.microsoft.com/v1.0/me/drive/root", "/", credentials, request, "");
 
         AND_GIVEN("a request that returns a valid directory listing") {
             WHEN_REQUEST().RESPOND(request::Response(
@@ -87,6 +88,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         const auto directory = std::make_shared<OneDriveDirectory>(
             "https://graph.microsoft.com/v1.0/me/drive/root",
             "/some/folder",
+            credentials,
             request,
             "folder");
         AND_GIVEN("a request that returns a directory listing") {
@@ -132,7 +134,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
 
             WHEN("calling list_resources()") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->list_resources(), Resource::NoSuchResource);
+                    REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::exceptions::resource::NoSuchResource);
                 }
             }
         }
@@ -197,7 +199,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
 
             WHEN("calling get_file(somefile.txt)") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
-                    REQUIRE_THROWS_AS(directory->get_file("somefile.txt"), Resource::NoSuchResource);
+                    REQUIRE_THROWS_AS(directory->get_file("somefile.txt"), CloudSync::exceptions::resource::NoSuchResource);
                 }
             }
         }

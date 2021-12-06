@@ -1,4 +1,5 @@
 #include "CurlRequest.hpp"
+#include "credentials/OAuth2CredentialsImpl.hpp"
 
 namespace CloudSync::request::curl {
     CurlRequest::CurlRequest() {
@@ -82,9 +83,6 @@ namespace CloudSync::request::curl {
     }
 
     Response CurlRequest::send(const std::optional<std::string>& body) {
-        if (!m_token_request_url.empty() && (!m_access_token.empty() || !m_refresh_token.empty())) {
-            refresh_oauth2_token_if_needed();
-        }
         // enable redirects
         if (m_option_follow_redirects)
             curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -92,17 +90,6 @@ namespace CloudSync::request::curl {
         // set verbose
         if (m_option_verbose)
             curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1);
-
-        // authorization
-        if (!m_username.empty() && !m_password.empty()) {
-            // Basic Auth
-            curl_easy_setopt(m_curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-            curl_easy_setopt(m_curl, CURLOPT_USERNAME, m_username.c_str());
-            curl_easy_setopt(m_curl, CURLOPT_PASSWORD, m_password.c_str());
-        } else if (!m_token_request_url.empty() && (!m_access_token.empty() || !m_refresh_token.empty())) {
-            // OAuth2
-            m_headers = curl_slist_append(m_headers, std::string("Authorization: Bearer " + m_access_token).c_str());
-        }
 
         // apply proxy
         if (!m_proxy_url.empty()) {
@@ -158,21 +145,21 @@ namespace CloudSync::request::curl {
         const auto request_result = curl_easy_perform(m_curl);
         const auto response_code_info_result = curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &response_code);
         const auto content_type_info_result = curl_easy_getinfo(m_curl, CURLINFO_CONTENT_TYPE, &response_content_type);
+        // when the response has no body, responseContentType is a nullptr. This needs to be checked when
+        // transforming the char* to a string.
+        const std::string response_content_type_string = response_content_type ? std::string(response_content_type) : "";
 
         // cleanup after request
         curl_mime_free(m_form);
         m_form = nullptr;
         curl_slist_free_all(m_headers);
         m_headers = nullptr;
-        curl_easy_reset(m_curl);
         m_query_params.clear();
         m_postfields.clear();
+        curl_easy_reset(m_curl);
 
         // return result
         if (request_result == CURLE_OK && response_code_info_result == CURLE_OK && content_type_info_result == CURLE_OK) {
-            // when the response has no body, responseContentType is a nullptr. This needs to be checked when
-            // transforming the char* to a string.
-            const std::string response_content_type_string = response_content_type ? std::string(response_content_type) : "";
             auto response = Response(response_code, response_read_buffer, response_content_type_string, response_headers);
             return response;
         } else {
@@ -191,6 +178,25 @@ namespace CloudSync::request::curl {
         return result;
     }
 
+    void CurlRequest::set_proxy(const std::string &proxyUrl, const std::string &proxyUser,
+                                const std::string &proxyPassword) {
+        m_proxy_url = proxyUrl;
+        m_proxy_user = proxyUser;
+        m_proxy_password = proxyPassword;
+    }
+
+    std::shared_ptr<Request> CurlRequest::basic_auth(const std::string &username, const std::string &password) {
+        curl_easy_setopt(m_curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_easy_setopt(m_curl, CURLOPT_USERNAME, username.c_str());
+        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, password.c_str());
+        return this->shared_from_this();
+    }
+
+    std::shared_ptr<Request> CurlRequest::token_auth(const std::string &token) {
+        curl_easy_setopt(m_curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
+        curl_easy_setopt(m_curl, CURLOPT_XOAUTH2_BEARER, token.c_str());
+        return this->shared_from_this();
+    }
 
 }
 

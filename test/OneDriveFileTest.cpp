@@ -1,7 +1,8 @@
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "onedrive/OneDriveFile.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 #include <nlohmann/json.hpp>
@@ -15,10 +16,12 @@ using namespace CloudSync::request;
 
 SCENARIO("OneDriveFile", "[file][onedrive]") {
     INIT_REQUEST();
+    OAUTH_MOCK("mytoken");
     GIVEN("a OneDriveFile instance") {
         const auto file = std::make_shared<OneDriveFile>(
             "https://graph.microsoft.com/v1.0/me/drive/root",
             "/folder/file.txt",
+            credentials,
             request,
             "file.txt",
             "file_revision");
@@ -85,7 +88,7 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
 
             WHEN("calling write_string(new content)") {
                 THEN("a ResourceHasChanged Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->write_string("new content"), Resource::ResourceHasChanged);
+                    REQUIRE_THROWS_AS(file->write_string("new content"), CloudSync::exceptions::resource::ResourceHasChanged);
                 }
             }
         }

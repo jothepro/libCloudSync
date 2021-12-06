@@ -2,7 +2,7 @@
 #include "CloudSync/Directory.hpp"
 #include "CloudSync/File.hpp"
 #include "CloudSync/OAuth2Credentials.hpp"
-#include "CloudSync/UsernamePasswordCredentials.hpp"
+#include "CloudSync/exceptions/Exception.hpp"
 #include <cxxopts.hpp>
 #include <iomanip>
 #include <iostream>
@@ -32,15 +32,15 @@ int main(int argc, char *argv[]) {
             ("nextcloud", "access nextcloud server")
             ("owncloud", "access owncloud server")
             ("dropbox", "access dropbox cloud")
-            ("box", "access box cloud")
             ("onedrive", "access onedrive server")
             ("gdrive", "access google drive");
     options.add_options("2) configuration")
             ("r,root", "root name (used in onedrive & gdrive)", cxxopts::value<std::string>())
             ("d,domain", "address under which the cloud can be found", cxxopts::value<std::string>());
     options.add_options("3) authentication")
-            ("u,username", "username, if login with username & password should be used. You will be prompted to provide the related password.", cxxopts::value<std::string>())
-            ("t,token", "OAuth2 access token. If not set, you will be prompted to provide it.", cxxopts::value<std::string>());
+            ("u,username", "username, if login with username & password should be used.", cxxopts::value<std::string>())
+            ("p,password", "password, if login with username & password should be used.", cxxopts::value<std::string>())
+            ("t,token", "OAuth2 access token.", cxxopts::value<std::string>());
     auto result = options.parse(argc, argv);
 
     // printing help
@@ -52,74 +52,49 @@ int main(int argc, char *argv[]) {
     // get server address
     if (result.count("domain")) {
         providerUrl = result["domain"].as<std::string>();
-    } else {
-        if(result.count("webdav") || result.count("nextcloud")) {
-            std::cerr << "no domain provided" << std::endl;
-            std::cout << options.help({"2) configuration"}) << std::endl;
-            exit(1);
-        }
+    } else if(result.count("webdav") || result.count("nextcloud")) {
+        std::cerr << "no domain provided" << std::endl;
+        std::cout << options.help({"2) configuration"}) << std::endl;
+        exit(1);
     }
 
     if (result.count("root")) {
         root = result["root"].as<std::string>();
     }
 
-    // find out cloud type
-    if (result.count("webdav")) {
-        cloud = CloudSync::CloudFactory().webdav(providerUrl);
-    } else if (result.count("nextcloud")) {
-        cloud = CloudSync::CloudFactory().nextcloud(providerUrl);
-    } else if (result.count("dropbox")) {
-        cloud = CloudSync::CloudFactory().dropbox();
-    } else if (result.count("box")) {
-        cloud = CloudSync::CloudFactory().box();
-    } else if (result.count("onedrive")) {
-        cloud = CloudSync::CloudFactory().onedrive(root);
-    } else if (result.count("gdrive")) {
-        cloud = CloudSync::CloudFactory().gdrive(root);
+    if(result.count("username") && result.count("password")) {
+        const auto username = result["username"].as<std::string>();
+        const auto password = result["password"].as<std::string>();
+        auto credentials = CloudSync::BasicCredentials::from_username_password(username, password);
+        if (result.count("webdav")) {
+            cloud = CloudSync::CloudFactory().create_webdav(providerUrl, credentials);
+        } else if (result.count("nextcloud")) {
+            cloud = CloudSync::CloudFactory().create_nextcloud(providerUrl, credentials);
+        } else {
+            std::cerr << "no cloud provider of list [webdav, nextcloud] specified" << std::endl;
+            std::cout << options.help({"1) cloud providers"}) << std::endl;
+            exit(1);
+        }
+    } else if(result.count("token")) {
+        auto credentials = CloudSync::OAuth2Credentials::from_access_token(result["token"].as<std::string>());
+        if (result.count("dropbox")) {
+            cloud = CloudSync::CloudFactory().create_dropbox(credentials);
+        } else if (result.count("onedrive")) {
+            cloud = CloudSync::CloudFactory().create_onedrive(credentials, root);
+        } else if (result.count("gdrive")) {
+            cloud = CloudSync::CloudFactory().create_gdrive(credentials, root);
+        } else {
+            std::cerr << "no cloud provider of list [dropbox, onedrive, gdrive] specified" << std::endl;
+            std::cout << options.help({"1) cloud providers"}) << std::endl;
+            exit(1);
+        }
     } else {
-        std::cerr << "no cloud provider specified" << std::endl;
-        std::cout << options.help({"1) cloud providers"}) << std::endl;
+        std::cerr << "no username/password or token provided" << std::endl;
+        std::cout << options.help({"3) authentication"}) << std::endl;
         exit(1);
     }
 
-    // find out login method and do login
-    if (result.count("username")) {
-        while (true) {
-            try {
-                std::string password;
-                std::cout << "password: ";
-                std::cin >> password;
-                auto credentials =
-                        CloudSync::UsernamePasswordCredentials(result["username"].as<std::string>(), password);
-                cloud->login(credentials);
-                break;
-            } catch (CloudSync::BaseException& e) {
-                std::cerr << "\e[1A" << e.what() << std::endl;
-            }
-        }
-
-    } else {
-        if (result.count("token")) {
-            auto credentials = CloudSync::OAuth2Credentials(result["token"].as<std::string>());
-            cloud->login(credentials);
-        } else {
-            while (true) {
-                try {
-                    std::string token;
-                    std::cout << "token: ";
-                    std::cin >> token;
-                    auto credentials = CloudSync::OAuth2Credentials(token);
-                    cloud->login(credentials);
-                    break;
-                } catch (CloudSync::BaseException& e) {
-                    std::cerr << "\e[1A" << e.what() << std::endl;
-                }
-            }
-        }
-    }
-
-    std::cout << "\e[1A" << std::setfill(' ') << std::left << std::setw(80) << "[Cloud url: " << cloud->getBaseUrl() << "]" << std::endl;
+    std::cout << "[1A" << std::setfill(' ') << std::left << std::setw(80) << "[Cloud url: " << cloud->get_base_url() << "]" << std::endl;
     std::cout << "Logged in as: " << cloud->get_user_display_name() << std::endl;
     dir = cloud->root();
 
@@ -215,7 +190,7 @@ int main(int argc, char *argv[]) {
             } else {
                 std::cout << "unknown command. available commands: ls, cd <dir>, pwd, file <filename>, read <filename>, write <filename>, mkdir <dirname>, rmdir <dirname>, touch <filename>, rm <filename>, exit" << std::endl;
             }
-        } catch (CloudSync::BaseException& e) {
+        } catch (CloudSync::exceptions::Exception& e) {
             std::cout << "ERROR: " << e.what() << std::endl;
         }
     }

@@ -8,7 +8,10 @@ using namespace CloudSync::gdrive;
 
 void GDriveFile::remove() {
     try {
-        m_request->DELETE(resource_path())->send();
+        const auto token = m_credentials->get_current_access_token();
+        m_request->DELETE(resource_path())
+                ->token_auth(token)
+                ->send();
     } catch (...) {
         GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
@@ -17,7 +20,9 @@ void GDriveFile::remove() {
 bool GDriveFile::poll_change() {
     bool has_changed = false;
     try {
+        const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(resource_path())
+                ->token_auth(token)
                 ->query_param("fields", "etag")
                 ->accept(Request::MIMETYPE_JSON)
                 ->send().json();
@@ -35,12 +40,16 @@ bool GDriveFile::poll_change() {
 std::string GDriveFile::read_as_string() const {
     std::string content;
     try {
+        const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(resource_path())
+                ->token_auth(token)
                 ->query_param("fields", "downloadUrl")
                 ->accept(Request::MIMETYPE_JSON)
                 ->send().json();
         const std::string web_content_link = response_json.at("downloadUrl");
-        content = m_request->GET(web_content_link)->send().data;
+        content = m_request->GET(web_content_link)
+                ->token_auth(token)
+                ->send().data;
     } catch (...) {
         GDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
@@ -49,7 +58,9 @@ std::string GDriveFile::read_as_string() const {
 
 void GDriveFile::write_string(const std::string &content) {
     try {
+        const auto token = m_credentials->get_current_access_token();
         const auto res = m_request->PUT("https://www.googleapis.com/upload/drive/v2/files/" + this->resourceId)
+                ->token_auth(token)
                 ->if_match(this->revision())
                 ->content_type(Request::MIMETYPE_BINARY)
                 ->accept(Request::MIMETYPE_JSON)

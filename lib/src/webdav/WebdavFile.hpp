@@ -1,13 +1,19 @@
+#include <utility>
+
 #include "FileImpl.hpp"
+#include "credentials/BasicCredentialsImpl.hpp"
 #include "request/Request.hpp"
 
 namespace CloudSync::webdav {
     class WebdavFile : public FileImpl {
     public:
         WebdavFile(
-                const std::string &baseUrl, const std::string &dir, const std::shared_ptr<request::Request> &request,
+                const std::string &baseUrl, const std::string &dir,
+                std::shared_ptr<credentials::BasicCredentialsImpl> credentials,
+                const std::shared_ptr<request::Request> &request,
                 const std::string &name, const std::string &revision)
-                : FileImpl(baseUrl, dir, request, name, revision) {};
+                : FileImpl(baseUrl, dir, request, name, revision)
+                , m_credentials(std::move(credentials)) {};
 
         void remove() override;
 
@@ -18,7 +24,8 @@ namespace CloudSync::webdav {
         void write_string(const std::string &content) override;
 
     private:
-        static std::string xmlQuery;
+        static const std::string XML_QUERY;
+        const std::shared_ptr<credentials::BasicCredentialsImpl> m_credentials;
 
         [[nodiscard]] std::string resource_path() const override;
     };

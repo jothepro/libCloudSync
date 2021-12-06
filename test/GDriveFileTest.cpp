@@ -2,7 +2,7 @@
 #include "CloudSync/Cloud.hpp"
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
-#include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 #include <nlohmann/json.hpp>
@@ -16,10 +16,11 @@ using namespace CloudSync::request;
 
 SCENARIO("GDriveFile", "[file][gdrive]") {
     INIT_REQUEST();
+    OAUTH_MOCK("mytoken");
     const std::string BASE_URL = "https://www.googleapis.com/drive/v3";
 
     GIVEN("a google drive file") {
-        const auto file = std::make_shared<GDriveFile>(BASE_URL, "fileId", "/test.txt", request, "test.txt", "2");
+        const auto file = std::make_shared<GDriveFile>(BASE_URL, "fileId", "/test.txt", credentials, request, "test.txt", "2");
         AND_GIVEN("a request that returns 204") {
             WHEN_REQUEST().RESPOND(request::Response(204));
 

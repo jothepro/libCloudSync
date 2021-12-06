@@ -2,6 +2,7 @@
 #include "request/Request.hpp"
 #include "macros/request_mock.hpp"
 #include "macros/shared_ptr_mock.hpp"
+#include "macros/oauth_mock.hpp"
 #include <catch2/catch.hpp>
 #include <fakeit.hpp>
 
@@ -11,8 +12,9 @@ using namespace CloudSync;
 
 SCENARIO("DropboxCloud", "[cloud][dropbox]") {
     INIT_REQUEST();
+    OAUTH_MOCK("mytoken");
     GIVEN("a dropbox cloud instance") {
-        const auto cloud = std::make_shared<dropbox::DropboxCloud>(request);
+        const auto cloud = std::make_shared<dropbox::DropboxCloud>(credentials, request);
         AND_GIVEN("a request that returns the users account information") {
             WHEN_REQUEST().RESPOND(
                 request::Response(200, json{{"name", {{"display_name", "John Doe"}}}}.dump(), "application/json"));
@@ -38,15 +40,11 @@ SCENARIO("DropboxCloud", "[cloud][dropbox]") {
         AND_GIVEN("a request that returns 200") {
             WHEN_REQUEST().RESPOND(request::Response(200));
             WHEN("calling logout()") {
-                When(Method(requestMock, reset_auth)).Return();
                 cloud->logout();
                 THEN("the OAuth-token should be invalidated") {
                     REQUIRE_REQUEST_CALLED().Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/auth/token/revoke");
-                }
-                THEN("the request credentials should be reset") {
-                    Verify(Method(requestMock,reset_auth)).Once();
                 }
             }
         }

@@ -10,7 +10,10 @@ using namespace CloudSync::onedrive;
 
 void OneDriveFile::remove() {
     try {
-        m_request->DELETE(resource_path())->send();
+        const auto token = m_credentials->get_current_access_token();
+        m_request->DELETE(resource_path())
+                ->token_auth(token)
+                ->send();
     } catch (...) {
         OneDriveCloud::handleExceptions(std::current_exception(), this->path());
     }
@@ -19,7 +22,10 @@ void OneDriveFile::remove() {
 bool OneDriveFile::poll_change() {
     bool has_changed = false;
     try {
-        const json response_json = m_request->GET(resource_path())->send().json();
+        const auto token = m_credentials->get_current_access_token();
+        const json response_json = m_request->GET(resource_path())
+                ->token_auth(token)
+                ->send().json();
         const std::string new_revision = response_json.at("eTag");
         has_changed = !(new_revision == m_revision);
         m_revision = new_revision;
@@ -32,7 +38,10 @@ bool OneDriveFile::poll_change() {
 std::string OneDriveFile::read_as_string() const {
     std::string file_content;
     try {
-        const auto result = m_request->GET(resource_path() + ":/content")->send();
+        const auto token = m_credentials->get_current_access_token();
+        const auto result = m_request->GET(resource_path() + ":/content")
+                ->token_auth(token)
+                ->send();
         file_content = result.data;
     } catch (...) {
         OneDriveCloud::handleExceptions(std::current_exception(), this->path());
@@ -42,7 +51,9 @@ std::string OneDriveFile::read_as_string() const {
 
 void OneDriveFile::write_string(const std::string &content) {
     try {
+        const auto token = m_credentials->get_current_access_token();
         const json response_json = m_request->PUT(resource_path() + ":/content")
+                ->token_auth(token)
                 ->content_type(Request::MIMETYPE_BINARY)
                 ->if_match(revision())
                 ->send(content).json();

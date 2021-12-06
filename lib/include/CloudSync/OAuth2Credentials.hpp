@@ -1,40 +1,30 @@
 #pragma once
 
-#include "Cloud.hpp"
-#include "Credentials.hpp"
 #include <chrono>
 #include <memory>
 #include <string>
-#include <utility>
-
-using namespace std::chrono_literals;
 
 namespace CloudSync {
-    namespace request {
-        class Response;
-    }
-    class OAuth2Credentials : public Credentials {
-        friend class Cloud;
-
+    class OAuth2Credentials {
     public:
-        explicit OAuth2Credentials(
-                std::string accessToken,
-                std::string refreshToken = "",
-                std::chrono::seconds expiresIn = 0s)
-                : accessToken(std::move(accessToken))
-                , refreshToken(std::move(refreshToken))
-                , expires(expiresIn != 0s
-                      ?
-                      std::chrono::system_clock::now() +
-                      expiresIn
-                      : std::chrono::system_clock::time_point(0s)) {};
+        virtual ~OAuth2Credentials() = default;
+        [[nodiscard]] static std::shared_ptr<OAuth2Credentials> from_authorization_code(
+                const std::string& client_id,
+                const std::string& authorization_code,
+                const std::string& redirect_uri,
+                const std::string& code_verifier);
+        [[nodiscard]] static std::shared_ptr<OAuth2Credentials> from_access_token(
+                const std::string& access_token,
+                std::chrono::system_clock::time_point expires = std::chrono::system_clock::time_point::max(),
+                const std::string& client_id = "",
+                const std::string& refresh_token = "");
+        [[nodiscard]] static std::shared_ptr<OAuth2Credentials> from_refresh_token(
+                const std::string& client_id,
+                const std::string& refresh_token);
 
-    protected:
-        void apply(const std::shared_ptr<request::Request> &request) const override;
-
-    private:
-        const std::string accessToken;
-        const std::string refreshToken;
-        const std::chrono::system_clock::time_point expires;
+        virtual void on_token_update(const std::function<void(
+                        const std::string& access_token,
+                        std::chrono::system_clock::time_point expires,
+                        const std::string& refresh_token)> &callback) = 0;
     };
-} // namespace CloudSync
+}

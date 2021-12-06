@@ -3,6 +3,8 @@
 #include "request/Response.hpp"
 #include "WebdavCloud.hpp"
 #include "WebdavFile.hpp"
+#include "CloudSync/exceptions/resource/ResourceException.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
 #include <pugixml.hpp>
 #include <filesystem>
 #include <sstream>
@@ -15,7 +17,7 @@ using namespace pugi;
 namespace fs = std::filesystem;
 
 
-std::string WebdavDirectory::xmlQuery =
+const std::string WebdavDirectory::XML_QUERY =
     "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
     "<d:propfind  xmlns:d=\"DAV:\">"
         "<d:prop>"
@@ -29,82 +31,88 @@ std::string WebdavDirectory::xmlQuery =
 
 std::vector<std::shared_ptr<Resource>> WebdavDirectory::list_resources() const {
     std::vector<std::shared_ptr<Resource>> resources;
-    const auto resourcePath = this->requestUrl("");
     try {
-        const auto response_xml = m_request->PROPFIND(resourcePath)
+        const auto response_xml = m_request->PROPFIND(request_url(""))
+                ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("Depth", "1")
                 ->accept(Request::MIMETYPE_XML)
                 ->content_type(Request::MIMETYPE_XML)
-                ->send(xmlQuery).xml();
+                ->send(XML_QUERY).xml();
         resources = this->parseXmlResponse(response_xml->root());
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+        WebdavCloud::handleExceptions(std::current_exception(), path());
     }
     return resources;
 }
 
 std::shared_ptr<Directory> WebdavDirectory::get_directory(const std::string &path) const {
-    const auto resourcePath = this->requestUrl(path);
+    const auto resource_path = this->request_url(path);
     std::shared_ptr<WebdavDirectory> directory;
     try {
-        const auto response_xml = m_request->PROPFIND(resourcePath)
+        const auto response_xml = m_request->PROPFIND(resource_path)
+                ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("Depth", "0")
                 ->accept(Request::MIMETYPE_XML)
                 ->content_type(Request::MIMETYPE_XML)
-                ->send(xmlQuery).xml();
-        const auto resourceList = this->parseXmlResponse(response_xml->root());
-        if (resourceList.size() == 1) {
-            directory = std::dynamic_pointer_cast<WebdavDirectory>(resourceList[0]);
+                ->send(XML_QUERY).xml();
+        const auto resource_list = this->parseXmlResponse(response_xml->root());
+        if (resource_list.size() == 1) {
+            directory = std::dynamic_pointer_cast<WebdavDirectory>(resource_list[0]);
             if(!directory) { // if the dynamic cast has failed, the returned resource is a file, not a directory
-                throw Resource::NoSuchResource(resourcePath);
+                throw exceptions::resource::NoSuchResource(resource_path);
             }
         } else {
-            throw Cloud::CommunicationError("cannot get resource description");
+            throw exceptions::cloud::CommunicationError("cannot get resource description");
         }
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+        WebdavCloud::handleExceptions(std::current_exception(), resource_path);
     }
     return directory;
 }
 
 void WebdavDirectory::remove() {
     if(path() != "/") {
-        const std::string resourcePath = this->requestUrl("");
+        const std::string resource_path = this->request_url("");
         try {
-            m_request->DELETE(resourcePath)->send();
+            m_request->DELETE(resource_path)
+                    ->basic_auth(m_credentials->username(), m_credentials->password())
+                    ->send();
         } catch (...) {
-            WebdavCloud::handleExceptions(std::current_exception(), resourcePath);
+            WebdavCloud::handleExceptions(std::current_exception(), resource_path);
         }
     } else {
-        throw PermissionDenied("deleting the root folder is not allowed");
+        throw exceptions::resource::PermissionDenied("deleting the root folder is not allowed");
     }
 
 }
 
 std::shared_ptr<Directory> WebdavDirectory::create_directory(const std::string &path) const {
-    const auto resourcePath = this->requestUrl(path);
+    const auto resource_path = this->request_url(path);
     std::shared_ptr<WebdavDirectory> directory;
     auto normalizedPath = fs::path( WebdavDirectory::remove_trailing_slashes(path));
     if(normalizedPath.has_parent_path()) {
-        if(!resource_exists(fs::path(resourcePath).parent_path().generic_string())) {
+        if(!resource_exists(fs::path(resource_path).parent_path().generic_string())) {
             create_directory(normalizedPath.parent_path().generic_string());
         }
     }
     try {
-        m_request->MKCOL(resourcePath)->send();
-        const auto response_xml = m_request->PROPFIND(resourcePath)
+        m_request->MKCOL(resource_path)
+                ->basic_auth(m_credentials->username(), m_credentials->password())
+                ->send();
+        const auto response_xml = m_request->PROPFIND(resource_path)
+                ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("Depth", "0")
                 ->accept(Request::MIMETYPE_XML)
                 ->content_type(Request::MIMETYPE_XML)
-                ->send(xmlQuery).xml();
+                ->send(XML_QUERY).xml();
         const auto resourceList = this->parseXmlResponse(response_xml->root());
         if (resourceList.size() == 1) {
             directory = std::dynamic_pointer_cast<WebdavDirectory>(resourceList[0]);
         } else {
-            throw Cloud::CommunicationError("cannot get resource description");
+            throw exceptions::cloud::CommunicationError("cannot get resource description");
         }
     } catch(request::Response::MethodNotAllowed &e) {
-        throw Resource::ResourceConflict((fs::path(this->path()) / path).generic_string());
+        throw exceptions::resource::ResourceConflict((fs::path(this->path()) / path).generic_string());
     } catch (...) {
         WebdavCloud::handleExceptions(std::current_exception(), (fs::path(this->path()) / path).generic_string());
     }
@@ -112,18 +120,20 @@ std::shared_ptr<Directory> WebdavDirectory::create_directory(const std::string &
 }
 
 std::shared_ptr<File> WebdavDirectory::create_file(const std::string &path) const {
-    const auto resourcePath = this->requestUrl(path);
+    const auto resource_path = this->request_url(path);
     std::shared_ptr<File> file;
     if(fs::path(path).has_parent_path()) {
-        if(!resource_exists(fs::path(resourcePath).parent_path().generic_string())) {
+        if(!resource_exists(fs::path(resource_path).parent_path().generic_string())) {
             create_directory(fs::path(path).parent_path().generic_string());
         }
     }
     try {
-        if(resource_exists(resourcePath)) {
-            throw Resource::ResourceConflict(fs::path(fs::path(this->path()) / path).generic_string());
+        if(resource_exists(resource_path)) {
+            throw exceptions::resource::ResourceConflict(fs::path(fs::path(this->path()) / path).generic_string());
         } else {
-            m_request->PUT(resourcePath)->content_type(Request::MIMETYPE_BINARY)->send();
+            m_request->PUT(resource_path)
+                    ->basic_auth(m_credentials->username(), m_credentials->password())
+                    ->content_type(Request::MIMETYPE_BINARY)->send();
             file = this->get_file(path);
         }
     } catch (...) {
@@ -133,22 +143,23 @@ std::shared_ptr<File> WebdavDirectory::create_file(const std::string &path) cons
 }
 
 std::shared_ptr<File> WebdavDirectory::get_file(const std::string &path) const {
-    const auto resourcePath = this->requestUrl(path);
+    const auto resource_path = this->request_url(path);
     std::shared_ptr<WebdavFile> file;
     try {
-        const auto response_xml = m_request->PROPFIND(resourcePath)
+        const auto response_xml = m_request->PROPFIND(resource_path)
+                ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("Depth", "0")
                 ->accept(Request::MIMETYPE_XML)
                 ->content_type(Request::MIMETYPE_XML)
-                ->send(WebdavDirectory::xmlQuery).xml();
+                ->send(WebdavDirectory::XML_QUERY).xml();
         const auto resourceList = this->parseXmlResponse(response_xml->root());
         if (resourceList.size() == 1) {
             file = std::dynamic_pointer_cast<WebdavFile>(resourceList[0]);
             if(!file) { // if the dynamic cast has failed, the returned resource is a not a file
-                throw Resource::NoSuchResource(resourcePath);
+                throw exceptions::resource::NoSuchResource(resource_path);
             }
         } else {
-            throw Cloud::CommunicationError("cannot get metadata for file");
+            throw exceptions::cloud::CommunicationError("cannot get metadata for file");
         }
     } catch (...) {
         WebdavCloud::handleExceptions(std::current_exception(), (fs::path(this->path()) / path).generic_string());
@@ -166,7 +177,7 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
         // read path from xml
         std::string resourceHref = responseNode.select_node("./*[local-name()='href']").node().child_value();
         // remove path offset from the beginning of the path
-        resourceHref.erase(0, this->dirOffset.size());
+        resourceHref.erase(0, this->m_dir_offset.size());
         // remove any trailing slashes because webdav returns folders with
         // trailing slashes.
         resourceHref = WebdavDirectory::remove_trailing_slashes(resourceHref);
@@ -186,8 +197,9 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
             ) {
                 resource = std::make_shared<WebdavDirectory>(
                     m_base_url,
-                    this->dirOffset,
+                    this->m_dir_offset,
                     resourceHref,
+                    m_credentials,
                     m_request,
                     filename);
             } else if (const auto revision = responseNode.select_node(
@@ -196,8 +208,9 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
                 "/*[local-name()='getetag']").node().child_value()
             ) {
                 resource = std::make_shared<WebdavFile>(
-                        m_base_url + this->dirOffset,
+                        m_base_url + this->m_dir_offset,
                     resourceHref,
+                    m_credentials,
                     m_request,
                     filename,
                     revision);
@@ -208,14 +221,14 @@ std::vector<std::shared_ptr<Resource>> WebdavDirectory::parseXmlResponse(const x
     return resources;
 }
 
-std::string WebdavDirectory::requestUrl(const std::string &path) const {
+std::string WebdavDirectory::request_url(const std::string &path) const {
     // normalize path
     std::string normalized_path = (fs::path(this->path()) / path).lexically_normal().generic_string();
     // remove any trailing slashes, because we cannot be sure if the user adds
     // them or not
     normalized_path = WebdavDirectory::remove_trailing_slashes(normalized_path);
     std::stringstream result;
-    result << m_base_url << this->dirOffset << normalized_path;
+    result << m_base_url << this->m_dir_offset << normalized_path;
     return result.str();
 }
 
@@ -230,7 +243,9 @@ std::string WebdavDirectory::remove_trailing_slashes(const std::string &path) {
 bool WebdavDirectory::resource_exists(const std::string &resource_path) const {
     bool exists = true;
     try {
-        m_request->HEAD(resource_path)->send();
+        m_request->HEAD(resource_path)
+            ->basic_auth(m_credentials->username(), m_credentials->password())
+            ->send();
     } catch (request::Response::NotFound &e) {
         exists = false;
     }

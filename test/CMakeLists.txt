@@ -9,8 +9,6 @@ include(Catch)
 
 add_executable(CloudSyncTest
     main.cpp
-    OAuth2CredentialsTest.cpp
-    UsernamePasswordCredentialsTest.cpp
     WebdavCloudTest.cpp
     NextcloudCloudTest.cpp
     WebdavDirectoryTest.cpp
@@ -18,9 +16,6 @@ add_executable(CloudSyncTest
     DropboxCloudTest.cpp
     DropboxDirectoryTest.cpp
     DropboxFileTest.cpp
-    BoxCloudTest.cpp
-    BoxDirectoryTest.cpp
-    BoxFileTest.cpp
     OneDriveCloudTest.cpp
     OneDriveDirectoryTest.cpp
     OneDriveFileTest.cpp

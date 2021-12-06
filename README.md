@@ -3,14 +3,13 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/jothepro/libcloudsync)](https://github.com/jothepro/libcloudsync/releases/latest)
 [![GitHub](https://img.shields.io/github/license/jothepro/libcloudsync)](https://github.com/jothepro/libcloudsync/blob/main/LICENSE)
 
-A simple to use C++ interface to interact with cloud storage providers.
+A simple-to-use C++ interface to interact with cloud storage providers.
 
 ## Features
 
 - ☁️ Supported Cloud Providers:
   - Nextcloud
   - Dropbox
-  - Box
   - Onedrive
   - GDrive
   - WebDav
@@ -33,6 +32,42 @@ libcloudsync/0.0.1@jothepro/stable
 If you don't want to build & run tests when building from source, set the [CONAN_RUN_TESTS](https://docs.conan.io/en/latest/reference/env_vars.html#conan-run-tests) variable:
 ```sh
 conan install -if build --build missing . -e CONAN_RUN_TESTS=0
+```
+
+## Quick start
+
+```cpp
+auto credentials = std::make_shared<OAuth2Credentials>(token, refresh_token, 3600s);
+// if this is the users first login, provide the authorization code to get a fresh access_token & refresh_token
+auto credentials = OAuth2Credentials::from_authorization_code(client_id, authorization_code, redirect_uri, code_verifier);
+// if you already have an access token that is still valid, create a session that will automatically refresh when the token gets outdated
+auto credentials = OAuth2Credentials::from_access_token(access_token, refresh_token, valid_until);
+// if the access_token that you stored is already expired, just initialize with the refresh token, it will get a new access_token for you
+auto credentials = OAuth2Credentials::from_refresh_token(refresh_token);
+// listen on any token update. This will be called with a fresh access_token & refresh_token if you just provided an authorization_code.
+// Otherwise just the access_token will change and the refresh token will be unchanged
+credentials->on_token_update([this](const std::string& access_token, std::chrono::time_point expires, const std::string& refresh_token){
+    // store the new access_token/refresh_token 
+})
+auto cloud = CloudFactory().create_dropbox(credentials);
+try {
+    auto root_directory = cloud->root();
+    root_directory->get_file("test.txt");
+    // ...
+    cloud->logout();
+} catch(const CloudException &e) {
+    std::cerr << "Sth went wrong: " << e.what() << std::endl;
+}
+```
+
+```cpp
+auto credentials = BasicCredentials::from_username_password("john", "password123");
+auto cloud = CloudFactory().create_nextcloud("nextcloud.com", credentials);
+try {
+    auto file = cloud->root->create_file("test.txt");
+} catch(const CloudException &e) {
+    std::cerr << "Sth went wrong: " << e.what() << std::endl;
+}
 ```
 
 ## Development
@@ -184,3 +219,6 @@ In your Nextcloud installation go to `/settings/user/security` to create a speci
 
 - Implement equality operators for Cloud, Directory, File
 - Add tests for CURL wrapper (e.g. by going against a (mocked?) http server)
+- wrapper object for reading/writing content to file. abstract container that holds binary & can convert to string.
+  this allows the read/write interfaces to be more generic and to write content when creating a new file
+- implementing support for big file upload/download (chunked upload/download)

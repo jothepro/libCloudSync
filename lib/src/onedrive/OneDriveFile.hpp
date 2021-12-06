@@ -1,14 +1,16 @@
 #pragma once
 
-#include "FileImpl.hpp"
+#include "OAuthFileImpl.hpp"
 
 namespace CloudSync::onedrive {
-    class OneDriveFile : public FileImpl {
+    class OneDriveFile : public OAuthFileImpl {
     public:
         OneDriveFile(
-                const std::string &baseUrl, const std::string &dir, const std::shared_ptr<request::Request> &request,
+                const std::string &baseUrl, const std::string &dir,
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl> credentials,
+                const std::shared_ptr<request::Request> &request,
                 const std::string &name, const std::string &revision)
-                : FileImpl(baseUrl, dir, request, name, revision) {};
+                : OAuthFileImpl(baseUrl, dir, credentials, request, name, revision) {};
 
         void remove() override;
 

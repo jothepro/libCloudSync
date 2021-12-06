@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CloudSync/Directory.hpp"
+#include "request/Request.hpp"
 
 namespace CloudSync {
     class DirectoryImpl : public Directory {
