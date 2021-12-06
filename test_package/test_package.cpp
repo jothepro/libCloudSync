@@ -4,5 +4,6 @@
 using namespace CloudSync;
 
 int main() {
-    auto cloud = CloudFactory().dropbox();
+    auto credentials = OAuth2Credentials::from_access_token("abc");
+    auto cloud = CloudFactory().create_dropbox(credentials);
 }

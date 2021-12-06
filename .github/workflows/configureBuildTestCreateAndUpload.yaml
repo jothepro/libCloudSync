@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: conan install -if build --build missing .
     - name: configure, build, test and create project
-      run: conan create  -tbf build . jothepro/release
+      run: conan create -tbf build . jothepro/release
     - name: upload to artifactory
       if: github.event_name == 'release'
       run: conan upload libcloudsync -r=gitlab --all --confirm
