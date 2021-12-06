@@ -3,6 +3,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <functional>
 
 namespace CloudSync {
     class OAuth2Credentials {

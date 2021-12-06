@@ -1,5 +1,6 @@
 #include "CloudSync/OAuth2Credentials.hpp"
 #include "credentials/OAuth2CredentialsImpl.hpp"
+#undef min
 
 using namespace CloudSync;
 
