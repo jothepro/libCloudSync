@@ -7,6 +7,9 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 int main(int argc, char *argv[]) {
     std::string providerUrl;
@@ -104,6 +107,9 @@ int main(int argc, char *argv[]) {
         rootDir->remove(),
         CloudSync::exceptions::resource::PermissionDenied);
 
+    TEST("listing all resources in root",
+         const auto list = rootDir->list_resources());
+
     const auto test_directory_name = "test_" + std::to_string(test_start_time.time_since_epoch().count());
     TEST_IF("Creating a directory " + test_directory_name,
         auto test_directory = rootDir->create_directory(test_directory_name),
@@ -121,16 +127,16 @@ int main(int argc, char *argv[]) {
     )
 
     TEST_IF("When reading the content of the new file, an emtpy string should be returned",
-        auto test_file_content = test_file->read_as_string(),
+        auto test_file_content = test_file->read(),
         (test_file_content.empty())
     )
 
     TEST("Writing content to the file 'test.txt'",
-        test_file->write_string("hello from test")
+        test_file->write("hello from test")
     )
 
     TEST_IF("Reading content from the file 'test.txt'",
-        auto new_test_file_content = test_file->read_as_string(),
+        auto new_test_file_content = test_file->read(),
         (new_test_file_content == "hello from test")
     )
 
@@ -151,13 +157,30 @@ int main(int argc, char *argv[]) {
     )
 
     TEST("Writing new file content to the new reference to 'test.txt'",
-        test_file_2->write_string("new content")
+        test_file_2->write("new content")
     )
 
     TEST_THROWS("When trying to write new content from the original (first) reference to 'test.txt', "
                 "a ResourceHasChanged exception should be thrown",
-        test_file->write_string("even newer content"), CloudSync::exceptions::resource::ResourceHasChanged
+        test_file->write("even newer content"), CloudSync::exceptions::resource::ResourceHasChanged
     )
+
+    TEST("Writing binary content to a file 'test.bson'",
+        test_directory->create_file("test.bson")->write_binary(json::to_bson({{"key", "value üöä"}}))
+    )
+
+    TEST_IF("Reading binary content from file 'test.bson'",
+        auto json_content = json::from_bson(test_directory->get_file("test.bson")->read_binary()),
+        (json_content.at("key") == "value üöä")
+    )
+
+    TEST_THROWS("When getting a file that does not exist, a NoSuchResource exception should be thrown",
+                test_directory->get_file("nonexistent-file.txt"),
+                CloudSync::exceptions::resource::NoSuchResource)
+
+    TEST_THROWS("When getting a directory that does not exist, a NoSuchResource exception should be thrown",
+                test_directory->get_directory("nonexistent-directory"),
+                CloudSync::exceptions::resource::NoSuchResource)
 
     TEST_IF("When calling poll_change(), the revision on the old reference should be updated",
              auto poll_successful = test_file->poll_change(),
@@ -171,7 +194,7 @@ int main(int argc, char *argv[]) {
 
     TEST_IF("When trying to write new content from the original (first) reference to 'test.txt' again, "
             "then it should now succeed",
-        test_file->write_string("even newer content"),
+        test_file->write({"even newer content"}),
         (test_file->revision() != test_file_2->revision())
     )
 
@@ -192,13 +215,14 @@ int main(int argc, char *argv[]) {
         test_directory->get_file("new_directory"), CloudSync::exceptions::resource::NoSuchResource
     )
 
-    TEST_IF("When calling list_resources(), then a resource list with both 'test.txt' and 'new_directory' "
-            "should be returned in alphabetical order",
+    TEST_IF("When calling list_resources(), then a resource list with both 'test.txt', 'test.bson' and 'new_directory' "
+            "should be returned",
         auto test_directory_resources_2 = test_directory->list_resources(),
         (
-            test_directory_resources_2.size() == 2 &&
-            test_directory_resources_2[0]->name() == "new_directory" &&
-            test_directory_resources_2[1]->name() == "test.txt"
+            test_directory_resources_2.size() == 3 &&
+            test_directory_resources_2[0]->name() == "new_directory" || "test.bson" || "test.txt" &&
+            test_directory_resources_2[1]->name() == "new_directory" || "test.bson" || "test.txt" &&
+            test_directory_resources_2[2]->name() == "new_directory" || "test.bson" || "test.txt"
         )
     )
 
@@ -255,6 +279,10 @@ int main(int argc, char *argv[]) {
 
     TEST("Deleting the file 'test.txt'",
         test_file->remove()
+    )
+
+    TEST("Deleting the file 'test.bson'",
+         test_directory->get_file("test.bson")->remove()
     )
 
     TEST("Deleting the test directory",

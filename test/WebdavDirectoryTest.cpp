@@ -39,7 +39,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
         }
 
         AND_GIVEN("a PROPFIND request that returns a valid webdav directory description (Depth:0)") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>\n"
                 "<d:multistatus xmlns:d=\"DAV:\" >\n"
@@ -69,7 +69,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 std::string path = GENERATE(as<std::string>{}, "folder", "folder/", "/folder/", "/folder/test/..");
                 const auto new_directory = directory->get_directory(path);
                 THEN("a PROPFIND request on the desired folder should be made") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/folder");
                     REQUIRE_REQUEST(0, headers.at("Depth") == "0");
@@ -81,47 +81,16 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a request that returns 201 and a request that returns a PROPFIND result") {
-            WHEN_REQUEST()
-                .RESPOND(request::Response(201))
-                .RESPOND(request::Response(
-                    200,
-                    "<?xml version=\"1.0\"?>\n"
-                    "<d:multistatus xmlns:d=\"DAV:\" >\n"
-                    // directory description
-                    "  <d:response>\n"
-                    "      <d:href>/newDirectory/</d:href>\n"
-                    // properties for the resource
-                    "      <d:propstat>\n"
-                    "          <d:prop>\n"
-                    "              <d:getlastmodified>Fri, 10 Jan 2020 20:42:38 GMT</d:getlastmodified>\n"
-                    "              <d:getetag>&quot;5e18e1bede073&quot;</d:getetag>\n"
-                    "              <d:resourcetype><d:collection/></d:resourcetype>\n"
-                    "          </d:prop>\n"
-                    "          <d:status>HTTP/1.1 200 OK</d:status>\n"
-                    "      </d:propstat>\n"
-                    "      <d:propstat>\n"
-                    "          <d:prop><d:getcontenttype/></d:prop>\n"
-                    "          <d:status>HTTP/1.1 404 Not Found</d:status>\n"
-                    "      </d:propstat>\n"
-                    "  </d:response>\n"
-                    "</d:multistatus>",
-                    "application/xml"));
+        AND_GIVEN("a request that returns 201") {
+            When(Method(requestMock, request)).Return(request::StringResponse(201));
 
             WHEN("calling create_directory(newDirectory), create_directory(newDirectory/)") {
                 std::string path = GENERATE(as<std::string>{}, "newDirectory", "newDirectory/");
                 const auto new_directory = directory->create_directory(path);
                 THEN("a MKCOL request should be made on the path of the new folder") {
-                    REQUIRE_REQUEST_CALLED().Twice();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "MKCOL");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/newDirectory");
-                }
-                THEN("a PROPFIND request on the new folder should be made") {
-                    REQUIRE_REQUEST_CALLED().Twice();
-                    REQUIRE_REQUEST(1, verb == "PROPFIND");
-                    REQUIRE_REQUEST(1, url == BASE_URL + "/newDirectory");
-                    REQUIRE_REQUEST(1, headers.at("Depth") == "0");
-                    REQUIRE_REQUEST(1, body == xmlQuery);
                 }
                 THEN("a object representing the new directory should be "
                      "returned") {
@@ -131,55 +100,26 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
             }
         }
         WHEN("deleting the directory") {
-            THEN("a PermissionDenied exeception shoudl be thrown, because the root dir cannot be deleted") {
+            THEN("a PermissionDenied exeception should be thrown, because the root dir cannot be deleted") {
                 REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::resource::PermissionDenied);
             }
         }
-        AND_GIVEN("a request series  that returns 404,  201 and then a request that returns a description of the a new file") {
-            WHEN_REQUEST()
-                .RESPOND(request::Response(404))
-                .RESPOND(request::Response(201))
-                .RESPOND(request::Response(
-                    200,
-                    "<?xml version=\"1.0\"?>\n"
-                    "<d:multistatus xmlns:d=\"DAV:\" >\n"
-                    // file
-                    "  <d:response>\n"
-                    "      <d:href>/newfile.txt</d:href>\n"
-                    // properties for the resource
-                    "      <d:propstat>\n"
-                    "          <d:prop>\n"
-                    "              <d:getlastmodified>Fri, 10 Jan 2020 20:42:38 GMT</d:getlastmodified>\n"
-                    "              <d:getetag>&quot;5e18e1bede073&quot;</d:getetag>\n"
-                    // this is a folder
-                    "              <d:getcontenttype>text/plain</d:getcontenttype>\n"
-                    "              <d:resourcetype/>\n"
-                    "          </d:prop>\n"
-                    "          <d:status>HTTP/1.1 200 OK</d:status>\n"
-                    "      </d:propstat>\n"
-                    "  </d:response>\n"
-                    "</d:multistatus>",
-                    "application/xml"));
+        AND_GIVEN("a request series  that returns 404 and then 201 with an etag header") {
+            When(Method(requestMock, request)).Throw(request::exceptions::response::NotFound())
+                .Return(request::StringResponse(201, "", "", {{"etag", "\"5e18e1bede073\""}}));
 
             WHEN("calling create_file(newfile.txt)") {
                 const auto new_file = directory->create_file("newfile.txt");
                 THEN("a HEAD request should be made to find out if the resource already exists") {
-                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    Verify(Method(requestMock, request)).Exactly(2);
                     REQUIRE_REQUEST(0, verb == "HEAD");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/newfile.txt");
                 }
                 THEN("a PUT request should be made on path of the file to be created") {
-                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    Verify(Method(requestMock, request)).Exactly(2);
                     REQUIRE_REQUEST(1, verb == "PUT");
                     REQUIRE_REQUEST(1, url == BASE_URL + "/newfile.txt");
                     REQUIRE_REQUEST(1, body == "");
-                }
-                THEN("a PROPFIND request should be made on the new file") {
-                    REQUIRE_REQUEST_CALLED().Exactly(3);
-                    REQUIRE_REQUEST(2, verb == "PROPFIND");
-                    REQUIRE_REQUEST(2, url == BASE_URL + "/newfile.txt");
-                    REQUIRE_REQUEST(2, headers.at("Depth") == "0");
-                    REQUIRE_REQUEST(2, body == xmlQuery);
                 }
                 THEN("an object representing the file should be returned") {
                     REQUIRE(new_file->name() == "newfile.txt");
@@ -190,7 +130,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
         }
 
         AND_GIVEN("a request that returns a valid root webdav directory listing") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>"
                 "<d:multistatus xmlns:d=\"DAV:\" >"
@@ -255,7 +195,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
             WHEN("calling list_resources()") {
                 const auto dirlist = directory->list_resources();
                 THEN("a PROPFIND request should be made on the current directory") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/");
                     REQUIRE_REQUEST(0, headers.at("Depth") == "1");
@@ -276,8 +216,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a PROPFIND request that returns a valid file description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a valid file description") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>"
                 "<d:multistatus xmlns:d=\"DAV:\" >"
@@ -300,7 +240,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
             WHEN("calling get_file(some/path/somefile.txt)") {
                 const auto file = directory->get_file("some/path/somefile.txt");
                 THEN("a PROPFIND request should be made to the requested file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/some/path/somefile.txt");
                     REQUIRE_REQUEST(0, headers.at("Depth") == "0");
@@ -320,8 +260,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a PROPFIND request that returns a xml that misses the expected content") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a xml that misses the expected content") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<!xml version=\"1.0\"?>"
                 "<notwhatweexpect />",
@@ -338,8 +278,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a PROPFIND request that returns no xml") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "noxml", "text/plain"));
+        AND_GIVEN("a request that returns no xml") {
+            When(Method(requestMock, request)).Return(request::StringResponse(200, "noxml", "text/plain"));
 
             WHEN("getting the current dir content") {
                 THEN("a RequestException should be thrown") {
@@ -363,8 +303,8 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
             REQUIRE(directory->name() == "folder");
         }
 
-        AND_GIVEN("a PROPFIND request that returns a valid webdav directory description (Depth:0)") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a valid webdav directory description (Depth:0)") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>"
                 "<d:multistatus xmlns:d=\"DAV:\" >"
@@ -397,7 +337,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
                     "somefolder/morefolder/..");
                 const auto newDirectory = directory->get_directory(path);
                 THEN("a PROPFIND request on the desired folder should be made") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/some/folder/somefolder");
                     REQUIRE_REQUEST(0, headers.at("Depth") == "0");
@@ -415,21 +355,21 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
     GIVEN("a webdav directory with a nextcloud/owncloud dirOffset") {
         const auto nextcloudDir =
             std::make_shared<WebdavDirectory>(BASE_URL, "/remote.php/webdav", "/some/folder", credentials, request, "folder");
-        AND_GIVEN("a DELETE request that returns 204") {
-            WHEN_REQUEST().RESPOND(request::Response(204));
+        AND_GIVEN("a request that returns 204") {
+            When(Method(requestMock, request)).Return(request::StringResponse(204, ""));
 
             WHEN("deleting the directory") {
                 nextcloudDir->remove();
                 THEN("a DELETE request should be made on the current folder") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/remote.php/webdav/some/folder");
                 }
             }
         }
-        AND_GIVEN("a PROPFIND request that returns a valid webdav directory description (Depth:0) including the "
+        AND_GIVEN("a request that returns a valid webdav directory description (Depth:0) including the "
                   "dirOffset of nextcloud") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>"
                 "<d:multistatus xmlns:d=\"DAV:\" >"
@@ -458,7 +398,7 @@ SCENARIO("WebdavDirectory", "[directory][webdav]") {
             WHEN("calling get_directory(somefolder)") {
                 const auto newNextcloudDir = nextcloudDir->get_directory("somefolder");
                 THEN("a PROPFIND request should be made on the correct resource Path") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/remote.php/webdav/some/folder/somefolder");
                     REQUIRE_REQUEST(0, body == xmlQuery);

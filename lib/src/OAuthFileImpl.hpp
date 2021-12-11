@@ -9,7 +9,7 @@ namespace CloudSync {
     class OAuthFileImpl : public FileImpl {
     protected:
         OAuthFileImpl(std::string baseUrl,
-                      std::string dir,
+                      std::filesystem::path dir,
                       std::shared_ptr<credentials::OAuth2CredentialsImpl> credentials,
                       std::shared_ptr<request::Request> request,
                       std::string name, std::string revision)

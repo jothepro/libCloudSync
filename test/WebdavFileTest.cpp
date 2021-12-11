@@ -43,13 +43,13 @@ SCENARIO("WebdavFile", "[file][webdav]") {
             "test.txt",
             "\"7f3805660b049baadd3bef287d7d346b\"");
         AND_GIVEN("a request that returns 204 and a new eTag") {
-            WHEN_REQUEST().RESPOND(request::Response(204, "", "text/plain", {{"etag", "\"newRevision\""}}));
+            When(Method(requestMock, request)).Return(request::StringResponse(204, "", "text/plain", {{"etag", "\"newRevision\""}}));
 
             WHEN("writing to the file") {
                 const std::string newData = "awesome new data";
-                file->write_string(newData);
+                file->write(newData);
                 THEN("a PUT request should be made on the path pointing to the file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
                     REQUIRE_REQUEST(0, body == newData);
@@ -62,37 +62,40 @@ SCENARIO("WebdavFile", "[file][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a request that returns 200") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "testtext", "text/plain"));
+        AND_GIVEN("a request that returns 200 and some text in the body") {
+            When(Method(requestMock, request)).Return(request::StringResponse(200, "testtext", "text/plain"));
 
             WHEN("reading from a file") {
-                std::string data = file->read_as_string();
+                const auto data = file->read();
                 THEN("a GET request should be made on the desired file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
+                }
+                THEN("The read data should be 'testtext'") {
+                    REQUIRE(data == "testtext");
                 }
             }
         }
         AND_GIVEN("a request that returns 204") {
-            WHEN_REQUEST().RESPOND(request::Response(204));
+            When(Method(requestMock, request)).Return(request::StringResponse(204));
             WHEN("deleting the file") {
                 file->remove();
-                THEN("a DELETE request should be done on the resource") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                THEN("a DELETE request should be made on the resource") {
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
                 }
             }
         }
 
-        AND_GIVEN("a PROPFIND request that returns the same etag (no change)") {
-            WHEN_REQUEST().RESPOND(
-                request::Response(200, xmlResponseContent("7f3805660b049baadd3bef287d7d346b"), "application/xml"));
+        AND_GIVEN("a request that returns 200 and the same etag (no change)") {
+            When(Method(requestMock, request)).Return(
+                request::StringResponse(200, xmlResponseContent("7f3805660b049baadd3bef287d7d346b"), "application/xml"));
 
             WHEN("calling poll_change()") {
                 const bool hasChanged = file->poll_change();
                 THEN("a PROPFIND request should be made to the resource asking for the etag") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PROPFIND");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
                     REQUIRE_REQUEST(
@@ -110,9 +113,9 @@ SCENARIO("WebdavFile", "[file][webdav]") {
                 }
             }
         }
-        AND_GIVEN("a request that returns a new etag (change)") {
-            WHEN_REQUEST().RESPOND(
-                request::Response(200, xmlResponseContent("1ab803660mm49baads3bef287d7d3466"), "application/xml"));
+        AND_GIVEN("a request that returns 200 and a new etag (change)") {
+            When(Method(requestMock, request)).Return(
+                request::StringResponse(200, xmlResponseContent("1ab803660mm49baads3bef287d7d3466"), "application/xml"));
 
             WHEN("calling poll_change()") {
                 const bool hasChanged = file->poll_change();
@@ -125,7 +128,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
             }
         }
         AND_GIVEN("a request that returns an invalid xml (not paresable)") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "thisisnotxml", "text/plain"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, "thisisnotxml", "text/plain"));
 
             WHEN("calling poll_change()") {
                 THEN("an InvalidResponse Exception should be thrown") {
@@ -134,7 +137,7 @@ SCENARIO("WebdavFile", "[file][webdav]") {
             }
         }
         AND_GIVEN("a request that returns valid xml that misses the etag field") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "<?xml version=\"1.0\"?><a>a</a>", "text/plain"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, "<?xml version=\"1.0\"?><a>a</a>", "text/plain"));
 
             WHEN("calling poll_change()") {
                 THEN("an InvalidResponse Exception should be thrown") {

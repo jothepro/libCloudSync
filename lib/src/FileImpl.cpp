@@ -6,7 +6,7 @@ std::string FileImpl::name() const {
     return m_name;
 }
 
-std::string FileImpl::path() const {
+std::filesystem::path FileImpl::path() const {
     return m_path;
 }
 

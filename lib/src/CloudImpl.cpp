@@ -1,5 +1,6 @@
 #include "CloudImpl.hpp"
 #include "request/Request.hpp"
+#include "CloudSync/exceptions/cloud/CloudException.hpp"
 #include <utility>
 
 using namespace CloudSync;

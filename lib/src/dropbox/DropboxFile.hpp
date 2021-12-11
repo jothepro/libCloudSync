@@ -15,10 +15,16 @@ namespace CloudSync::dropbox {
 
         bool poll_change() override;
 
-        [[nodiscard]] std::string read_as_string() const override;
+        [[nodiscard]] std::string read() const override;
 
-        void write_string(const std::string &content) override;
+        [[nodiscard]] std::vector<std::uint8_t> read_binary() const override;
+
+        void write(const std::string& content) override;
+
+        void write_binary(const std::vector<std::uint8_t> & content) override;
+
     private:
-        [[nodiscard]] std::string resource_path() const override;
+        std::shared_ptr<request::Request> prepare_read_request() const;
+        std::shared_ptr<request::Request> prepare_write_request() const;
     };
 } // namespace CloudSync::dropbox

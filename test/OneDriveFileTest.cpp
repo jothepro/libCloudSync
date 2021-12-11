@@ -26,25 +26,25 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
             "file.txt",
             "file_revision");
         AND_GIVEN("a request that returns 204") {
-            WHEN_REQUEST().RESPOND(request::Response(204));
+            When(Method(requestMock, request)).Return(request::StringResponse(204, ""));
 
             WHEN("calling remove()") {
                 file->remove();
                 THEN("the onedrive file endpoint should be called with DELETE") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/folder/file.txt");
                 }
             }
         }
         AND_GIVEN("a request that returns the files content") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "file content"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, "file content"));
 
-            WHEN("calling read_as_string()") {
-                const auto fileContent = file->read_as_string();
+            WHEN("calling read()") {
+                const auto fileContent = file->read();
 
                 THEN("the content get endpoint should be called with GET") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(
                         0,
@@ -59,13 +59,13 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
         }
 
         AND_GIVEN("a PUT request that returns a new file item description (with new revision)") {
-            WHEN_REQUEST().RESPOND(
-                request::Response(200, json{{"eTag", "new_file_revision"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(
+                request::StringResponse(200, json{{"eTag", "new_file_revision"}}.dump(), "application/json"));
 
             WHEN("calling write_string(new file content)") {
-                file->write_string("new file content");
+                file->write("new file content");
                 THEN("the resource endpoint should be called with PUT & If-Match Header") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
                     REQUIRE_REQUEST(
                         0,
@@ -82,25 +82,25 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
         }
 
         AND_GIVEN("a request that throws a 412 Precondition Failed") {
-            WHEN_REQUEST().Throw(request::Response::PreconditionFailed(
+            When(Method(requestMock, request)).Throw(request::exceptions::response::PreconditionFailed(
                 json{{"error", {{"code", "notAllowed"}, {"message", "ETag does not match current item's value"}}}}
                     .dump()));
 
             WHEN("calling write_string(new content)") {
                 THEN("a ResourceHasChanged Exception should be thrown") {
-                    REQUIRE_THROWS_AS(file->write_string("new content"), CloudSync::exceptions::resource::ResourceHasChanged);
+                    REQUIRE_THROWS_AS(file->write("new content"), CloudSync::exceptions::resource::ResourceHasChanged);
                 }
             }
         }
 
         AND_GIVEN("a GET request that returns a file description (with new revision)") {
-            WHEN_REQUEST().RESPOND(
-                request::Response(200, json{{"eTag", "new_file_revision"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(
+                request::StringResponse(200, json{{"eTag", "new_file_revision"}}.dump(), "application/json"));
 
             WHEN("calling poll_change()") {
                 bool fileChanged = file->poll_change();
                 THEN("the file item endpoint should be called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(
                         0,
@@ -113,12 +113,12 @@ SCENARIO("OneDriveFile", "[file][onedrive]") {
             }
         }
         AND_GIVEN("a GET request that returns a file description (with the same old revision)") {
-            WHEN_REQUEST().RESPOND(request::Response(200, json{{"eTag", "file_revision"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, json{{"eTag", "file_revision"}}.dump(), "application/json"));
 
             WHEN("calling poll_change()") {
                 bool fileChanged = file->poll_change();
                 THEN("the file item endpoint should be called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(
                         0,

@@ -27,7 +27,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
         }
 
         AND_GIVEN("a request that returns a valid dropbox directory listing") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"entries",
@@ -58,7 +58,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
 
                 THEN("the dropbox list_folder endpoint should be called with a json payload pointing to the root "
                      "folder") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/list_folder");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"\",\"recursive\":false}");
@@ -74,8 +74,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
             }
         }
         AND_GIVEN("2 requests that return a valid dropbox directory listing with `has_more: true` and 1 returning `has_more: false`") {
-            WHEN_REQUEST()
-                .RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                     200,
                     json{
                         {"entries",
@@ -93,7 +92,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                         {"has_more", true}
                     }.dump(),
                     "application/json"))
-                .RESPOND(request::Response(
+                .Return(request::StringResponse(
                     200,
                     json{
                         {"entries",
@@ -111,7 +110,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                         {"has_more", true}
                     }.dump(),
                     "application/json"))
-                .RESPOND(request::Response(
+                .Return(request::StringResponse(
                     200,
                     json{
                         {"entries",
@@ -138,7 +137,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                     REQUIRE(list[2]->name() == "entry3");
                 }
                 THEN("the list_folder endpoint should have been called 3 times") {
-                    REQUIRE_REQUEST_CALLED().Exactly(3);
+                    Verify(Method(requestMock, request)).Exactly(3);
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/list_folder");
                     REQUIRE_REQUEST(0, headers.at("Content-Type") == Request::MIMETYPE_JSON);
@@ -156,8 +155,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that returns a valid folder metadata description (with .tag)") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a valid folder metadata description (with .tag)") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {".tag", "folder"},
@@ -173,7 +172,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 auto newDir = directory->get_directory(path);
                 THEN("the dropbox metadata endpoint should be called with a "
                      "json payload pointing to the desired folder") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/get_metadata");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test\"}");
@@ -190,8 +189,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that returns a valid folder metadata description (without .tag)") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a valid folder metadata description (without .tag)") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{{"metadata",
                       {{"name", "test"},
@@ -205,7 +204,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 auto newDir = directory->create_directory("test");
                 THEN("the dropbox create_folder_v2 endpoint should be called "
                      "with a json payload describing the new folder name") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/create_folder_v2");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test\"}");
@@ -216,8 +215,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that returns a valid file metadata description (without .tag)") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a valid file metadata description (without .tag)") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"name", "test.txt"},
@@ -238,7 +237,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
 
                 THEN("the dropbox upload endpoint should be called with the arg param pointing to the new file and "
                      "with an empty request body") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/upload");
                     REQUIRE_REQUEST(0, query_params.at("arg") == "{\"path\":\"/test.txt\"}");
@@ -251,8 +250,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that returns a valid file metadata description (with .tag)") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns a valid file metadata description (with .tag)") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {".tag", "file"},
@@ -272,7 +271,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
             WHEN("calling get_file(test.txt)") {
                 auto file = directory->get_file("test.txt");
                 THEN("the dropbox metadata endpoint should be called with a json payload pointing to the file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/get_metadata");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test.txt\"}");
@@ -294,8 +293,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::resource::PermissionDenied);
             }
         }
-        AND_GIVEN("a POST request that returns an invalid (non-json) response") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "un-parseable", "text/plain"));
+        AND_GIVEN("a request that returns an invalid (non-json) response") {
+            When(Method(requestMock, request)).Return(request::StringResponse(200, "un-parseable", "text/plain"));
             WHEN("calling list_resources") {
                 THEN("an InvalidResponse exception should be thrown") {
                     REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::exceptions::cloud::InvalidResponse);
@@ -322,8 +321,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that fails with a 409 (Conflict) response because a resource could not be found") {
-            WHEN_REQUEST().Throw(request::Response::Conflict(json{
+        AND_GIVEN("a request that fails with a 409 (Conflict) response because a resource could not be found") {
+            When(Method(requestMock, request)).Throw(request::exceptions::response::Conflict(json{
                 {"error_summary", "path/not_found/.."},
                 {"error", {
                     {".tag", "path"},
@@ -348,8 +347,8 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
                 }
             }
         }
-        AND_GIVEN("a POST request that fails with a 409 (Conflict) that cannot be parsed") {
-            WHEN_REQUEST().Throw(request::Response::Conflict("un-parseable"));
+        AND_GIVEN("a request that fails with a 409 (Conflict) that cannot be parsed") {
+            When(Method(requestMock, request)).Throw(request::exceptions::response::Conflict("un-parseable"));
             WHEN("calling list_resources") {
                 THEN("an InvalidResponse Exception should be thrown") {
                     REQUIRE_THROWS_AS(directory->list_resources(), CloudSync::exceptions::cloud::InvalidResponse);
@@ -369,13 +368,13 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
     }
     GIVEN("a dropbox (non-root) directory") {
         const auto directory = std::make_shared<DropboxDirectory>("/test", credentials, request, "test");
-        AND_GIVEN("a POST request that returns 200") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "", ""));
+        AND_GIVEN("a request that returns 200") {
+            When(Method(requestMock, request)).Return(request::StringResponse(200));
             WHEN("deleting the current directory") {
                 directory->remove();
                 THEN("the dropbox delete_v2 endpoint should be called with a "
                      "json pointing to the to be deleted file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/delete_v2");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test\"}");
@@ -384,7 +383,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
             }
         }
         AND_GIVEN("a request that fails with a 409 (Conflict) response because a path lookup has failed") {
-            WHEN_REQUEST().Throw(request::Response::Conflict(json{
+            When(Method(requestMock, request)).Throw(request::exceptions::response::Conflict(json{
                 {"error_summary", "path_lookup/not_found/.."},
                 {"error", {{".tag", "path_lookup"}, {"path_lookup", {{".tag", "not_found"}}}}}}
                                                                  .dump()));
@@ -395,7 +394,7 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
             }
         }
         AND_GIVEN("a request that fails with a 409 (Conflict) that cannot be parsed") {
-            WHEN_REQUEST().Throw(request::Response::Conflict("un-parseable"));
+            When(Method(requestMock, request)).Throw(request::exceptions::response::Conflict("un-parseable"));
             WHEN("calling remove") {
                 THEN("an InvalidResponse Exception should be thrown") {
                     REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::cloud::InvalidResponse);

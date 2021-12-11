@@ -29,7 +29,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
         }
 
         AND_GIVEN("a request that returns a valid folder listing") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{{"items",
                       {
@@ -52,7 +52,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             WHEN("calling list_resources()") {
                 const auto resourceList = directory->list_resources();
                 THEN("the google drive files endpoint should be called with the correct query") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
@@ -74,8 +74,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 }
             }
         }
-        AND_GIVEN("a GET request that throws 401 unauthorized") {
-            WHEN_REQUEST().Throw(request::Response::Unauthorized(""));
+        AND_GIVEN("a request that throws 401 unauthorized") {
+            When(Method(requestMock, request)).Throw(request::exceptions::response::Unauthorized());
 
             WHEN("calling list_resources()") {
                 THEN("an Cloud::AuthorizationFailed exception should be thrown") {
@@ -83,8 +83,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                 }
             }
         }
-        AND_GIVEN("a GET request that a folder description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that a folder description") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {
@@ -114,7 +114,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
                     GENERATE(as<std::string>{}, "testfolder", "/testfolder/", "/subfolder/../testfolder");
                 const auto newDir = directory->get_directory(path);
                 THEN("the google drive files endpoint should be called with the correct query") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
@@ -133,7 +133,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             }
         }
         AND_GIVEN("a request that returns a file description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {
@@ -161,7 +161,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             WHEN("calling get_file(test.txt)") {
                 const auto file = directory->get_file("test.txt");
                 THEN("the google drive files endpoint should be called with the correct query parameters") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
@@ -181,12 +181,12 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             }
         }
         AND_GIVEN("a request series that returns an empty query result and then returns a new folder resource description") {
-            WHEN_REQUEST()
-                .RESPOND(request::Response(
+            When(Method(requestMock, request))
+                .Return(request::StringResponse(
                     200,
                     json{{"items",{}}}.dump(),
                 "application/json"))
-                .RESPOND(request::Response(
+                .Return(request::StringResponse(
                     200,
                     json{
                         {"kind", "drive#file"},
@@ -207,7 +207,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             WHEN("calling create_directory(newfolder)") {
                 const auto newDir = directory->create_directory("newfolder");
                 THEN("the endpoint for creating a new resource should be called") {
-                    REQUIRE_REQUEST_CALLED().Exactly(2);
+                    Verify(Method(requestMock, request)).Exactly(2);
                     REQUIRE_REQUEST(1, verb == "POST");
                     REQUIRE_REQUEST(1, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(
@@ -227,12 +227,12 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             }
         }
         AND_GIVEN("a request series that returns an empty query result and then a new file resource description") {
-            WHEN_REQUEST()
-                .RESPOND(request::Response(
+            When(Method(requestMock, request))
+                .Return(request::StringResponse(
                     200,
                     json{{"items",{}}}.dump(),
                 "application/json"))
-                .RESPOND(request::Response(
+                .Return(request::StringResponse(
                     200,
                     json{
                         {"kind", "drive#file"},
@@ -255,7 +255,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             WHEN("calling create_file(newfile.txt)") {
                 const auto new_file = directory->create_file("newfile.txt");
                 THEN("the endpoint for creating a new resource should be called") {
-                    REQUIRE_REQUEST_CALLED().Exactly(2);
+                    Verify(Method(requestMock, request)).Exactly(2);
                     REQUIRE_REQUEST(1, verb == "POST");
                     REQUIRE_REQUEST(1, url == BASE_URL + "/files");
                     REQUIRE_REQUEST(1, query_params.at("fields") == "kind,id,title,mimeType,etag,parents(id,isRoot)");
@@ -289,7 +289,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             "folder");
 
         AND_GIVEN("a request that returns a valid folder description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"kind", "drive#file"},
@@ -303,8 +303,8 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
 
             WHEN("calling get_directory(..)") {
                 const auto parentDir = directory->get_directory("..");
-                THEN("a google drive lists request should be done with a query for the parent folder id") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                THEN("a google drive lists resource should be done with a query for the parent folder id") {
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files/parentId");
                     REQUIRE_REQUEST(
@@ -321,7 +321,7 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             WHEN("calling get_directory(../../") {
                 const auto rootDir = directory->get_directory("../../");
                 THEN("only one request should be made. The root cannot be queried") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                 }
                 THEN("the root dir should be returned") {
                     REQUIRE(rootDir->name() == "");
@@ -330,19 +330,19 @@ SCENARIO("GDriveDirectory", "[directory][gdrive]") {
             }
         }
         AND_GIVEN("a request that returns 204") {
-            WHEN_REQUEST().RESPOND(request::Response(204));
+            When(Method(requestMock, request)).Return(request::StringResponse(204));
 
             WHEN("calling remove()") {
                 directory->remove();
                 THEN("a google drive delete call should be made") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files/resourceId");
                 }
             }
         }
         AND_GIVEN("a request that throws 404 Not Found") {
-            WHEN_REQUEST().Throw(request::Response::NotFound(
+            When(Method(requestMock, request)).Throw(request::exceptions::response::NotFound(
                 json{{"error", {{"errors", {{{"domain", "global"}, {"reason", "notFound"}}}}}}}.dump()));
             WHEN("calling remove()") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {

@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <filesystem>
 
 namespace CloudSync {
     class Resource {
@@ -10,7 +11,7 @@ namespace CloudSync {
 
         [[nodiscard]] virtual std::string name() const = 0;
 
-        [[nodiscard]] virtual std::string path() const = 0;
+        [[nodiscard]] virtual std::filesystem::path path() const = 0;
 
         /**
          * remove this resource.

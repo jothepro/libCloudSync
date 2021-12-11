@@ -15,8 +15,8 @@ SCENARIO("OneDriveCloud", "[cloud][onedrive]") {
     GIVEN("a onedrive cloud instance") {
         const auto cloud = std::make_shared<onedrive::OneDriveCloud>("me/drive/root", credentials, request);
         AND_GIVEN("a request that returns a graph user account description") {
-            WHEN_REQUEST().RESPOND(
-                request::Response(200, json{{"displayName", "John Doe"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(
+                request::StringResponse(200, json{{"displayName", "John Doe"}}.dump(), "application/json"));
 
             WHEN("calling get_user_display_name()") {
                 const auto name = cloud->get_user_display_name();
@@ -24,7 +24,7 @@ SCENARIO("OneDriveCloud", "[cloud][onedrive]") {
                     REQUIRE(name == "John Doe");
                 }
                 THEN("the Graph user endpoint should be called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me");
                 }

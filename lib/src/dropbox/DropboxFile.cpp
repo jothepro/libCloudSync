@@ -1,6 +1,6 @@
 #include "DropboxFile.hpp"
 #include "request/Request.hpp"
-#include "DropboxCloud.hpp"
+#include "DropboxExceptionTranslator.hpp"
 #include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include <nlohmann/json.hpp>
 
@@ -12,11 +12,11 @@ using json = nlohmann::json;
 void DropboxFile::remove() {
     try {
         const auto token = m_credentials->get_current_access_token();
-        m_request->POST(resource_path() + "/delete_v2")
+        m_request->POST("https://api.dropboxapi.com/2/files/delete_v2")
                 ->token_auth(token)
-                ->send_json({{"path", this->path()}});
+                ->json_body({{"path", m_path.generic_string()}})->request();
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path());
+        DropboxExceptionTranslator::translate(m_path);
     }
 }
 
@@ -24,59 +24,80 @@ bool DropboxFile::poll_change() {
     bool hasChanged = false;
     try {
         const auto token = m_credentials->get_current_access_token();
-        const auto response_json = m_request->POST(resource_path() + "/get_metadata")
+        const auto response_json = m_request->POST("https://api.dropboxapi.com/2/files/get_metadata")
                 ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
-                ->send_json({{"path", this->path()}}).json();
+                ->json_body({{"path", m_path.generic_string()}})->request().json();
         const std::string newRevision = response_json.at("rev");
         if (this->revision() != newRevision) {
             m_revision = newRevision;
             hasChanged = true;
         }
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path());
+        DropboxExceptionTranslator::translate(m_path);
     }
     return hasChanged;
 }
 
-std::string DropboxFile::read_as_string() const {
-    std::string data;
-    try {
-        const auto token = m_credentials->get_current_access_token();
-        data = m_request->POST("https://content.dropboxapi.com/2/files/download")
-                ->token_auth(token)
-                ->content_type(Request::MIMETYPE_TEXT)
-                ->query_param("arg", json{{"path", this->path()}}.dump())
-                ->send().data;
-    } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path());
-    }
-    return data;
+std::shared_ptr<request::Request> DropboxFile::prepare_read_request() const {
+    const auto token = m_credentials->get_current_access_token();
+    return m_request->POST("https://content.dropboxapi.com/2/files/download")
+            ->token_auth(token)
+            ->content_type(Request::MIMETYPE_TEXT)
+            ->query_param("arg", json{{"path", m_path.generic_string()}}.dump());
 }
 
-void DropboxFile::write_string(const std::string &content) {
+std::string DropboxFile::read() const {
+    std::string content;
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto response_json = m_request->POST("https://content.dropboxapi.com/2/files/upload")
-                ->token_auth(token)
-                ->accept(Request::MIMETYPE_JSON)
-                ->content_type(Request::MIMETYPE_BINARY)
-                ->query_param("arg", json{
-                    {"path", this->path()},
-                    {"mode", {
-                        {".tag", "update"},
-                        {"update", this->revision()}
-                    }}
-                }.dump())
-                ->send(content).json();
-        m_revision = response_json.at("rev");
-    } catch(const request::Response::Conflict &e) {
-        throw exceptions::resource::ResourceHasChanged(path());
+        content = prepare_read_request()->request().data;
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), this->path());
+        DropboxExceptionTranslator::translate(m_path);
+    }
+    return content;
+}
+
+std::vector<std::uint8_t> DropboxFile::read_binary() const {
+    std::vector<std::uint8_t> content;
+    try {
+        content = prepare_read_request()->request_binary().data;
+    } catch (...) {
+        DropboxExceptionTranslator::translate(m_path);
+    }
+    return content;
+}
+
+std::shared_ptr<request::Request> DropboxFile::prepare_write_request() const {
+    const auto token = m_credentials->get_current_access_token();
+    return m_request->POST("https://content.dropboxapi.com/2/files/upload")
+            ->token_auth(token)
+            ->accept(Request::MIMETYPE_JSON)
+            ->content_type(Request::MIMETYPE_BINARY)
+            ->query_param("arg", json{
+                {"path", m_path.generic_string()},
+                {"mode", {
+                    {".tag", "update"},
+                    {"update", this->revision()}
+                }}
+            }.dump());
+}
+
+void DropboxFile::write(const std::string& content) {
+    try {
+        m_revision = prepare_write_request()->body(content)->request().json().at("rev");
+    } catch(const request::exceptions::response::Conflict &e) {
+        throw exceptions::resource::ResourceHasChanged(m_path);
+    } catch (...) {
+        DropboxExceptionTranslator::translate(m_path);
     }
 }
 
-std::string DropboxFile::resource_path() const {
-    return "https://api.dropboxapi.com/2/files";
+void DropboxFile::write_binary(const std::vector<std::uint8_t> &content) {
+    try {
+        m_revision = prepare_write_request()->binary_body(content)->request().json().at("rev");
+    } catch(const request::exceptions::response::Conflict &e) {
+        throw exceptions::resource::ResourceHasChanged(m_path);
+    } catch (...) {
+        DropboxExceptionTranslator::translate(m_path);
+    }
 }

@@ -11,7 +11,7 @@ class GDriveDirectory : public OAuthDirectoryImpl {
     public:
         GDriveDirectory(
                 const std::string &baseUrl, std::string rootName, std::string resourceId,
-                std::string parentResourceId, const std::string &dir,
+                std::string parentResourceId, const std::filesystem::path &dir,
                 const std::shared_ptr<credentials::OAuth2CredentialsImpl>& credentials,
                 const std::shared_ptr<request::Request> &request,
                 const std::string &name)
@@ -22,15 +22,15 @@ class GDriveDirectory : public OAuthDirectoryImpl {
 
         [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::filesystem::path &path) const override;
 
         void remove() override;
 
-        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> create_file(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> get_file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::filesystem::path &path) const override;
 
     private:
         enum ResourceType {

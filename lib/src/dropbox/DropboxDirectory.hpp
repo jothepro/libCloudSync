@@ -17,15 +17,15 @@ namespace CloudSync::dropbox {
 
         [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::filesystem::path &path) const override;
 
         void remove() override;
 
-        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> create_file(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> get_file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::filesystem::path &path) const override;
 
     private:
         /**
@@ -39,17 +39,5 @@ namespace CloudSync::dropbox {
          * the fallback type. The parsing will fail if they don't match up.
          */
         std::shared_ptr<Resource> parseEntry(const json &entry, const std::string &resourceTypeFallback = "") const;
-
-        /**
-         * Parses a new path-string to make it a valid path that can be passed to
-         * dropbox.
-         *
-         * Normalizes the path (removes all clutter like `//`, `/..`) and removes
-         * any trailing `/` if present, because dropbox does not accept paths with
-         * trailing `/`
-         * @param path a path representation
-         * @return a normalized path
-         */
-        static std::string parsePath(const std::string &path, const std::string &path2 = "");
     };
 } // namespace CloudSync::dropbox

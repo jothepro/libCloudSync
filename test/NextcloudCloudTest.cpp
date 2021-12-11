@@ -16,7 +16,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
     GIVEN("a nextcloud cloud instance") {
         const auto cloud = std::make_shared<nextcloud::NextcloudCloud>("http://nextcloud", credentials, request);
         AND_GIVEN("a request that returns a ocs user description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>"
                 "<ocs>"
@@ -32,7 +32,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
                     REQUIRE(name == "John Doe");
                 }
                 THEN("a request to the OCS endpoint should be made") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v1.php/cloud/user");
                     REQUIRE_REQUEST(0, headers.at("OCS-APIRequest") == "true");
@@ -54,7 +54,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
             }
         }
         AND_GIVEN("a request that returns an OCS success response") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 "<?xml version=\"1.0\"?>\n"
                 "<ocs>\n"
@@ -69,7 +69,7 @@ SCENARIO("NextcloudCloud", "[cloud][nextcloud]") {
             WHEN("calling logout()") {
                 cloud->logout();
                 THEN("the app-password should be invalidated") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == "http://nextcloud/ocs/v2.php/core/apppassword");
                     REQUIRE_REQUEST(0, headers.at("OCS-APIRequest") == "true");

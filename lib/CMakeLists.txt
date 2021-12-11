@@ -5,7 +5,8 @@ project(CloudSync)
 # dependencies
 find_package(nlohmann_json REQUIRED)
 find_package(pugixml REQUIRED)
-find_package(CURL REQUIRED)
+find_package(CURL)
+find_package(libcurl)
 
 set(INCLUDE
     include/CloudSync/CloudFactory.hpp
@@ -52,6 +53,7 @@ set(SRC_CREDENTIALS
 )
 
 set(SRC_WEBDAV
+    src/webdav/WebdavExceptionTranslator.hpp
     src/webdav/WebdavCloud.cpp
     src/webdav/WebdavCloud.hpp
     src/webdav/WebdavDirectory.hpp
@@ -66,6 +68,7 @@ set(SRC_NEXTCLOUD
 )
 
 set(SRC_DROPBOX
+    src/dropbox/DropboxExceptionTranslator.hpp
     src/dropbox/DropboxCloud.cpp
     src/dropbox/DropboxCloud.hpp
     src/dropbox/DropboxDirectory.hpp
@@ -75,6 +78,7 @@ set(SRC_DROPBOX
 )
 
 set(SRC_ONEDRIVE
+    src/onedrive/OneDriveExceptionTranslator.hpp
     src/onedrive/OneDriveCloud.cpp
     src/onedrive/OneDriveCloud.hpp
     src/onedrive/OneDriveDirectory.hpp
@@ -84,6 +88,7 @@ set(SRC_ONEDRIVE
 )
 
 set(SRC_GDRIVE
+    src/gdrive/GDriveExceptionTranslator.hpp
     src/gdrive/GDriveCloud.cpp
     src/gdrive/GDriveCloud.hpp
     src/gdrive/GDriveDirectory.hpp
@@ -95,6 +100,8 @@ set(SRC_GDRIVE
 set(SRC_REQUEST
     src/request/Request.hpp
     src/request/Response.hpp
+    src/request/StringResponse.hpp
+    src/request/BinaryResponse.hpp
     src/request/Request.cpp
 )
 
@@ -145,8 +152,15 @@ target_link_libraries(CloudSync
     PUBLIC
         nlohmann_json::nlohmann_json
         pugixml::pugixml
-        CURL::CURL
 )
+
+if(CURL_FOUND)
+    target_link_libraries(CloudSync PUBLIC CURL::CURL)
+elseif(libcurl_FOUND)
+    target_link_libraries(CloudSync PUBLIC libcurl::curl)
+else()
+    message(SEND_ERROR "libcurl dependency not found")
+endif()
 
 set_target_properties (CloudSync PROPERTIES
     FOLDER CloudSync

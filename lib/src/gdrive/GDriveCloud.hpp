@@ -27,8 +27,6 @@ namespace CloudSync::gdrive {
                     "");
         }
 
-        static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);
-
         std::string get_user_display_name() const override;
 
         void logout() override;

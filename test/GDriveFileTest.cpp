@@ -22,26 +22,26 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
     GIVEN("a google drive file") {
         const auto file = std::make_shared<GDriveFile>(BASE_URL, "fileId", "/test.txt", credentials, request, "test.txt", "2");
         AND_GIVEN("a request that returns 204") {
-            WHEN_REQUEST().RESPOND(request::Response(204));
+            When(Method(requestMock, request)).Return(request::StringResponse(204, ""));
 
             WHEN("calling remove()") {
                 file->remove();
                 THEN("the file endpoint should be called for deletion") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "DELETE");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files/fileId");
                 }
             }
         }
         AND_GIVEN("a request that returns a download link and a GET request that returns the file content") {
-            WHEN_REQUEST()
-                .RESPOND(request::Response(200, json{{"downloadUrl", "downloadlink"}}.dump(), "application/json"))
-                .RESPOND(request::Response(200, "file content", "text/plain"));
+            When(Method(requestMock, request))
+                .Return(request::StringResponse(200, json{{"downloadUrl", "downloadlink"}}.dump(), "application/json"))
+                .Return(request::StringResponse(200, "file content", "text/plain"));
 
-            WHEN("calling read_as_string()") {
-                const auto content = file->read_as_string();
-                THEN("a request to get the download link and a request to download the actual content should be made") {
-                    REQUIRE_REQUEST_CALLED().Twice();
+            WHEN("calling read()") {
+                const auto content = file->read();
+                THEN("a request to get the download link and a resource to download the actual content should be made") {
+                    Verify(Method(requestMock, request)).Twice();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == BASE_URL + "/files/fileId");
                     REQUIRE_REQUEST(0, query_params.at("fields") == "downloadUrl");
@@ -54,12 +54,12 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
             }
         }
         AND_GIVEN("a request that returns a new etag") {
-            WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "newetag"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, json{{"etag", "newetag"}}.dump(), "application/json"));
 
             WHEN("calling write_string(somenewcontent)") {
-                file->write_string("somenewcontent");
-                THEN("a PUT request should be made on the file upload endpoint") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                file->write("somenewcontent");
+                THEN("a PUT request should be made to the file upload endpoint") {
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
                     REQUIRE_REQUEST(0, url == "https://www.googleapis.com/upload/drive/v2/files/fileId");
                     REQUIRE_REQUEST(0, query_params.at("uploadType") == "media");
@@ -73,12 +73,12 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
             }
         }
         AND_GIVEN("a request that returns the current etag (no change)") {
-            WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "2"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, json{{"etag", "2"}}.dump(), "application/json"));
 
             WHEN("calling poll_change()") {
                 bool hasChanged = file->poll_change();
                 THEN("the etag field should be requested for the file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://www.googleapis.com/drive/v3/files/fileId");
                     REQUIRE_REQUEST(0, query_params.at("fields") == "etag");
@@ -92,7 +92,7 @@ SCENARIO("GDriveFile", "[file][gdrive]") {
             }
         }
         AND_GIVEN("a request that returns a new etag (new revision)") {
-            WHEN_REQUEST().RESPOND(request::Response(200, json{{"etag", "thisisanewetag"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, json{{"etag", "thisisanewetag"}}.dump(), "application/json"));
 
             WHEN("calling poll_change()") {
                 bool hasChanged = file->poll_change();

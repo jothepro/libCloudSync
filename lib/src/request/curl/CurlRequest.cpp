@@ -1,5 +1,6 @@
 #include "CurlRequest.hpp"
 #include "credentials/OAuth2CredentialsImpl.hpp"
+#include "request/exceptions/RequestException.hpp"
 
 namespace CloudSync::request::curl {
     CurlRequest::CurlRequest() {
@@ -10,7 +11,18 @@ namespace CloudSync::request::curl {
         curl_easy_cleanup(m_curl);
     }
 
-    static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    static size_t BinaryWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+        std::vector<std::uint8_t> new_contents(
+                (std::uint8_t *) contents,
+                (std::uint8_t *) contents + size * nmemb);
+        ((std::vector<std::uint8_t> *) userp)->insert(
+                ((std::vector<std::uint8_t> *) userp)->end(),
+                new_contents.begin(),
+                new_contents.end());
+        return size * nmemb;
+    }
+
+    static size_t StringWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
         ((std::string *) userp)->append((char *) contents, size * nmemb);
         return size * nmemb;
     }
@@ -32,7 +44,15 @@ namespace CloudSync::request::curl {
         return size * nmemb;
     }
 
-    std::shared_ptr<Request> CurlRequest::request(const std::string &verb, const std::string &url) {
+    std::shared_ptr<Request> CurlRequest::resource(const std::string &verb, const std::string &url) {
+        // make sure that the resource call is the first one in a request
+        assert(m_verb.empty());
+        assert(m_url.empty());
+        assert(m_query_params.empty());
+        assert(m_postfields.empty());
+        assert(m_form == nullptr);
+        assert(m_headers == nullptr);
+
         m_verb = verb;
         m_url = url;
         return this->shared_from_this();
@@ -44,11 +64,7 @@ namespace CloudSync::request::curl {
     }
 
     std::shared_ptr<Request> CurlRequest::query_param(const std::string &key, const std::string &value) {
-        if(m_query_params.empty()) {
-            m_query_params += "?";
-        } else {
-            m_query_params += "&";
-        }
+        m_query_params += m_query_params.empty() ? "?" : "&";
         m_query_params += url_encode_param(key, value);
         return this->shared_from_this();
     }
@@ -67,47 +83,27 @@ namespace CloudSync::request::curl {
         }
         curl_mimepart *mime_part = curl_mime_addpart(m_form);
         curl_mime_name(mime_part, key.c_str());
-        curl_mime_data(mime_part, value.c_str(), CURL_ZERO_TERMINATED);
+        curl_mime_data(mime_part, value.c_str(), value.size());
         return this->shared_from_this();
     }
 
-    std::shared_ptr<Request> CurlRequest::mime_postfile(const std::string &key, const std::string &value) {
-        if(m_form == nullptr) {
-            m_form = curl_mime_init(m_curl);
-        }
-        curl_mimepart *mime_part = curl_mime_addpart(m_form);
-        curl_mime_filename(mime_part, "upload");
-        curl_mime_name(mime_part, key.c_str());
-        curl_mime_data(mime_part, value.c_str(), CURL_ZERO_TERMINATED);
-        return this->shared_from_this();
+    StringResponse CurlRequest::request() {
+        curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, StringWriteCallback);
+        return perform_request<StringResponse, std::string>();
     }
 
-    Response CurlRequest::send(const std::optional<std::string>& body) {
-        // enable redirects
-        if (m_option_follow_redirects)
+    BinaryResponse CurlRequest::request_binary() {
+        curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, BinaryWriteCallback);
+        return perform_request<BinaryResponse, std::vector<std::uint8_t>>();
+    }
+
+    void CurlRequest::prepare_request() {
+        if (m_option_follow_redirects) {
             curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1);
+        }
 
-        // set verbose
-        if (m_option_verbose)
+        if (m_option_verbose) {
             curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1);
-
-        // apply proxy
-        if (!m_proxy_url.empty()) {
-            curl_easy_setopt(m_curl, CURLOPT_PROXY, m_proxy_url.c_str());
-            if (!m_proxy_user.empty() && !m_proxy_password.empty()) {
-                const auto escaped_proxy_user = curl_easy_escape(
-                        m_curl,
-                        m_proxy_user.c_str(),
-                        m_proxy_user.length());
-                const auto escaped_proxy_password = curl_easy_escape(
-                        m_curl,
-                        m_proxy_password.c_str(),
-                        m_proxy_password.length());
-                const auto m_proxy_user_pwd = std::string(escaped_proxy_user) + ":" + std::string(escaped_proxy_password);
-                curl_free(escaped_proxy_user);
-                curl_free(escaped_proxy_password);
-                curl_easy_setopt(m_curl, CURLOPT_PROXYUSERPWD, m_proxy_user_pwd.c_str());
-            }
         }
         // set url (including potential query params)
         auto final_url = m_url + m_query_params;
@@ -126,18 +122,44 @@ namespace CloudSync::request::curl {
                 curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, m_postfields.c_str());
             } else if (m_form != nullptr) {
                 curl_easy_setopt(m_curl, CURLOPT_MIMEPOST, m_form);
-            } else if(body != std::nullopt) {
-                curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, body->c_str());
             }
         }
+    }
+
+    void CurlRequest::apply_proxy() {
+        if (!m_proxy_url.empty()) {
+            curl_easy_setopt(m_curl, CURLOPT_PROXY, m_proxy_url.c_str());
+            if (!m_proxy_user.empty() && !m_proxy_password.empty()) {
+                const auto escaped_proxy_user = curl_easy_escape(
+                        m_curl,
+                        m_proxy_user.c_str(),
+                        m_proxy_user.size());
+                const auto escaped_proxy_password = curl_easy_escape(
+                        m_curl,
+                        m_proxy_password.c_str(),
+                        m_proxy_password.size());
+                const auto m_proxy_user_pwd = std::string(escaped_proxy_user) + ":" + std::string(escaped_proxy_password);
+                curl_free(escaped_proxy_user);
+                curl_free(escaped_proxy_password);
+                curl_easy_setopt(m_curl, CURLOPT_PROXYUSERPWD, m_proxy_user_pwd.c_str());
+            }
+        }
+    }
+
+    template<typename RESPONSE_T, typename READ_T>
+    RESPONSE_T CurlRequest::perform_request() {
+        assert(!m_verb.empty());
+        assert(!m_url.empty());
+
+        prepare_request();
+        apply_proxy();
 
         // perform request
-        std::string response_read_buffer;
+        READ_T response_read_buffer;
         std::unordered_map<std::string, std::string> response_headers;
         long response_code;
         char *response_content_type;
         char error_buffer[CURL_ERROR_SIZE];
-        curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, &response_read_buffer);
         curl_easy_setopt(m_curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
         curl_easy_setopt(m_curl, CURLOPT_HEADERDATA, &response_headers);
@@ -145,27 +167,32 @@ namespace CloudSync::request::curl {
         const auto request_result = curl_easy_perform(m_curl);
         const auto response_code_info_result = curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &response_code);
         const auto content_type_info_result = curl_easy_getinfo(m_curl, CURLINFO_CONTENT_TYPE, &response_content_type);
-        // when the response has no body, responseContentType is a nullptr. This needs to be checked when
+        // when the response has no body, response_content_type is a nullptr. This needs to be checked when
         // transforming the char* to a string.
         const std::string response_content_type_string = response_content_type ? std::string(response_content_type) : "";
+        // return result
+        if (request_result == CURLE_OK && response_code_info_result == CURLE_OK && content_type_info_result == CURLE_OK) {
+            cleanup_request();
+            return RESPONSE_T(response_code, response_read_buffer, response_content_type_string, response_headers);
+        } else {
+            const auto error_message = std::string(error_buffer);
+            cleanup_request();
+            throw request::exceptions::RequestException(error_message);
+        }
+    }
 
-        // cleanup after request
+    void CurlRequest::cleanup_request() {
         curl_mime_free(m_form);
         m_form = nullptr;
         curl_slist_free_all(m_headers);
         m_headers = nullptr;
         m_query_params.clear();
         m_postfields.clear();
+        m_verb.clear();
+        m_url.clear();
+        m_body.clear();
+        m_binary_body.clear();
         curl_easy_reset(m_curl);
-
-        // return result
-        if (request_result == CURLE_OK && response_code_info_result == CURLE_OK && content_type_info_result == CURLE_OK) {
-            auto response = Response(response_code, response_read_buffer, response_content_type_string, response_headers);
-            return response;
-        } else {
-            const auto errorMessage = std::string(error_buffer);
-            throw RequestException(errorMessage);
-        }
     }
 
     std::string CurlRequest::url_encode_param(const std::string& key, const std::string& value) const {
@@ -178,11 +205,11 @@ namespace CloudSync::request::curl {
         return result;
     }
 
-    void CurlRequest::set_proxy(const std::string &proxyUrl, const std::string &proxyUser,
-                                const std::string &proxyPassword) {
-        m_proxy_url = proxyUrl;
-        m_proxy_user = proxyUser;
-        m_proxy_password = proxyPassword;
+    void CurlRequest::set_proxy(const std::string &proxy_url, const std::string &proxy_user,
+                                const std::string &proxy_password) {
+        m_proxy_url = proxy_url;
+        m_proxy_user = proxy_user;
+        m_proxy_password = proxy_password;
     }
 
     std::shared_ptr<Request> CurlRequest::basic_auth(const std::string &username, const std::string &password) {
@@ -196,6 +223,23 @@ namespace CloudSync::request::curl {
         curl_easy_setopt(m_curl, CURLOPT_HTTPAUTH, CURLAUTH_BEARER);
         curl_easy_setopt(m_curl, CURLOPT_XOAUTH2_BEARER, token.c_str());
         return this->shared_from_this();
+    }
+
+    std::shared_ptr<Request> CurlRequest::binary_body(const std::vector<std::uint8_t> &body) {
+        m_binary_body = body;
+        set_char_body(reinterpret_cast<const char *>(m_binary_body.data()), m_binary_body.size());
+        return this->shared_from_this();
+    }
+
+    std::shared_ptr<Request> CurlRequest::body(const std::string &body) {
+        m_body = body;
+        set_char_body(m_body.data(), m_body.size());
+        return this->shared_from_this();
+    }
+
+    void CurlRequest::set_char_body(const char *body, const size_t size) {
+        curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, body);
+        curl_easy_setopt(m_curl, CURLOPT_POSTFIELDSIZE, size);
     }
 
 }

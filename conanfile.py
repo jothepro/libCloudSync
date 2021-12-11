@@ -42,7 +42,7 @@ class LibCloudSyncConan(ConanFile):
     requires = (
         "nlohmann_json/3.9.1",
         "pugixml/1.11",
-        "libcurl/7.79.1",
+        "libcurl/7.80.0",
         ("cxxopts/2.2.1", "private"),
         ("catch2/2.13.4", "private"),
         ("fakeit/2.0.7", "private")
@@ -51,6 +51,9 @@ class LibCloudSyncConan(ConanFile):
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
+            self.options['libcurl'].with_ssl = "schannel"
+        if tools.is_apple_os(self.settings.os):
+            self.options['libcurl'].with_ssl = "darwinssl"
 
     def build(self):
         cmake = CMake(self)

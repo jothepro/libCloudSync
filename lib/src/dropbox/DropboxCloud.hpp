@@ -18,8 +18,6 @@ namespace CloudSync::dropbox {
             return std::make_shared<DropboxDirectory>("/", m_credentials, m_request, "");
         }
 
-        static void handleExceptions(const std::exception_ptr &e, const std::string &resourcePath);
-
         std::string get_user_display_name() const override;
 
         void logout() override;

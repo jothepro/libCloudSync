@@ -23,8 +23,6 @@ namespace CloudSync::onedrive {
                     m_request, "");
         }
 
-        static void handleExceptions(const std::exception_ptr &e, const std::string &resource_path);
-
         std::string get_user_display_name() const override;
 
         void logout() override;

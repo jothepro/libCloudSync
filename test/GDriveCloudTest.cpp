@@ -16,15 +16,15 @@ SCENARIO("GDriveCloud", "[cloud][gdrive]") {
     GIVEN("a google drive cloud instance") {
         const auto cloud = std::make_shared<gdrive::GDriveCloud>("root", credentials, request);
         AND_GIVEN("a request that returns a user description") {
-            WHEN_REQUEST().RESPOND(request::Response(200, json{{"name", "john doe"}}.dump(), "application/json"));
+            When(Method(requestMock, request)).Return(request::StringResponse(200, json{{"name", "john doe"}}.dump(), "application/json"));
 
             WHEN("calling get_user_display_name()") {
                 const auto name = cloud->get_user_display_name();
                 THEN("john doe should be returned") {
                     REQUIRE(name == "john doe");
                 }
-                THEN("a request the google oauth2 userinfo endpoint should be made") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                THEN("a GET request to the google oauth2 userinfo endpoint should be made") {
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://www.googleapis.com/userinfo/v2/me");
                 }
@@ -38,11 +38,11 @@ SCENARIO("GDriveCloud", "[cloud][gdrive]") {
             }
         }
         AND_GIVEN("a request that returns 200") {
-            WHEN_REQUEST().RESPOND(request::Response(200));
+            When(Method(requestMock, request)).Return(request::StringResponse(200));
             WHEN("calling logout()") {
                 cloud->logout();
                 THEN("the OAuth-token should be invalidated") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://oauth2.googleapis.com/revoke");
                     REQUIRE_REQUEST(0, mime_postfields.at("token") == "mytoken");

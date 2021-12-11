@@ -5,6 +5,7 @@
 #include <catch2/catch.hpp>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include <utility>
 
 struct RequestRecording {
@@ -16,6 +17,7 @@ struct RequestRecording {
     const std::string verb;
     const std::string url;
     std::string body;
+    std::vector<std::uint8_t> binary_body;
     std::string bearer_token;
     std::string basic_username;
     std::string basic_password;
@@ -23,7 +25,6 @@ struct RequestRecording {
     std::unordered_map<std::string, std::string> query_params;
     std::unordered_map<std::string, std::string> postfields;
     std::unordered_map<std::string, std::string> mime_postfields;
-    std::unordered_map<std::string, std::string> mime_postfiles;
 };
 
 static std::vector<RequestRecording> requestRecording;
@@ -31,7 +32,7 @@ static std::vector<RequestRecording> requestRecording;
 #define INIT_REQUEST()                                                                                                 \
     requestRecording.clear();                                                                                          \
     SHARED_PTR_MOCK(request, request::Request);                                                                        \
-    When(Method(requestMock, request)).AlwaysDo([request](const std::string& verb, const std::string& url){            \
+    When(Method(requestMock, resource)).AlwaysDo([request](const std::string& verb, const std::string& url){           \
         requestRecording.emplace_back(verb, url);                                                                      \
         return request;                                                                                                \
     });                                                                                                                \
@@ -51,10 +52,6 @@ static std::vector<RequestRecording> requestRecording;
         requestRecording.back().mime_postfields.insert({key, value});                                                  \
         return request;                                                                                                \
     });                                                                                                                \
-    When(Method(requestMock, mime_postfile)).AlwaysDo([request](const std::string& key, const std::string& value){     \
-        requestRecording.back().mime_postfiles.insert({key, value});                                                   \
-        return request;                                                                                                \
-    });                                                                                                                \
     When(Method(requestMock, basic_auth)).AlwaysDo([request](const std::string& username, const std::string& password){\
         requestRecording.back().basic_username = username;                                                             \
         requestRecording.back().basic_password = password;                                                             \
@@ -63,17 +60,14 @@ static std::vector<RequestRecording> requestRecording;
     When(Method(requestMock, token_auth)).AlwaysDo([request](const std::string& token){                                \
         requestRecording.back().bearer_token = token;                                                                  \
         return request;                                                                                                \
-    })
-
-
-#define WHEN_REQUEST() When(Method(requestMock, send))
-
-#define RESPOND(returnvalue)                                                                                           \
-    Do([](const std::optional<std::string>& body){                                                                     \
-        requestRecording.back().body = body.value_or("");                                                              \
-        return returnvalue;                                                                                            \
+    });                                                                                                                \
+    When(Method(requestMock, body)).AlwaysDo([request](const std::string& content){                                    \
+        requestRecording.back().body = content;                                                                        \
+        return request;                                                                                                \
+    });                                                                                                                \
+    When(Method(requestMock, binary_body)).AlwaysDo([request](const std::vector<std::uint8_t>& content){               \
+        requestRecording.back().binary_body = content;                                                                 \
+        return request;                                                                                                \
     })
 
 #define REQUIRE_REQUEST(number, condition) REQUIRE(requestRecording.at(number).condition)
-
-#define REQUIRE_REQUEST_CALLED() Verify(Method(requestMock, request))

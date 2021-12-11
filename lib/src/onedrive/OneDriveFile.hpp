@@ -6,20 +6,25 @@ namespace CloudSync::onedrive {
     class OneDriveFile : public OAuthFileImpl {
     public:
         OneDriveFile(
-                const std::string &baseUrl, const std::string &dir,
-                const std::shared_ptr<credentials::OAuth2CredentialsImpl> credentials,
+                const std::string &baseUrl,
+                const std::filesystem::path &dir,
+                const std::shared_ptr<credentials::OAuth2CredentialsImpl>& credentials,
                 const std::shared_ptr<request::Request> &request,
-                const std::string &name, const std::string &revision)
-                : OAuthFileImpl(baseUrl, dir, credentials, request, name, revision) {};
+                const std::string &name,
+                const std::string &revision)
+                : OAuthFileImpl(baseUrl, dir, credentials, request, name, revision)
+                , m_resource_path(m_base_url + ":" + m_path.generic_string()){};
 
         void remove() override;
 
         bool poll_change() override;
 
-        [[nodiscard]] std::string read_as_string() const override;
+        [[nodiscard]] std::string read() const override;
+        [[nodiscard]] std::vector<std::uint8_t> read_binary() const override;
 
-        void write_string(const std::string &content) override;
+        void write(const std::string& content) override;
+        void write_binary(const std::vector<std::uint8_t> & content) override;
     private:
-        [[nodiscard]] std::string resource_path() const override;
+        const std::string m_resource_path;
     };
 } // namespace CloudSync::onedrive

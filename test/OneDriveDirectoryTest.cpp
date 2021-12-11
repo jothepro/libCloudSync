@@ -23,7 +23,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             std::make_shared<OneDriveDirectory>("https://graph.microsoft.com/v1.0/me/drive/root", "/", credentials, request, "");
 
         AND_GIVEN("a request that returns a valid directory listing") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{{"value",
                       {{{"id", "ABW1234"},
@@ -44,7 +44,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                 const auto dirList = directory->list_resources();
 
                 THEN("the /children graph endpoint should have been called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root/children");
                 }
@@ -59,7 +59,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             }
         }
         AND_GIVEN("a request that returns a valid folder description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"name", "somefolder"},
@@ -73,7 +73,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                     GENERATE(as<std::string>{}, "somefolder", "/somefolder", "/somefolder/", "/somefolder/some/..");
                 const auto newDirectory = directory->get_directory(path);
                 THEN("the graph resource endpoint should have been called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/somefolder");
                 }
@@ -92,7 +92,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             request,
             "folder");
         AND_GIVEN("a request that returns a directory listing") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{{"value",
                       {{{"id", "ABW1234"},
@@ -113,7 +113,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                 const auto dirList = directory->list_resources();
 
                 THEN("the /childern grap endpoint should be called on the resource") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/some/folder:/children");
                 }
@@ -129,7 +129,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         }
 
         AND_GIVEN("a request that throws 404 Resource Not Found") {
-            WHEN_REQUEST().Throw(request::Response::NotFound(
+            When(Method(requestMock, request)).Throw(request::exceptions::response::NotFound(
                 json{{"error", {{"code", "itemNotFound"}, {"message", "The resource could not be found."}}}}.dump()));
 
             WHEN("calling list_resources()") {
@@ -140,7 +140,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         }
 
         AND_GIVEN("a request that returns a valid folder description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"name", "somefolder"},
@@ -152,7 +152,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             WHEN("calling get_directory(somefolder)") {
                 const auto newDirectory = directory->get_directory("somefolder");
                 THEN("the graph resource endpoint should have been called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/some/folder/somefolder");
                 }
@@ -164,7 +164,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         }
 
         AND_GIVEN("a request that returns a valid file description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"id", "ABW1234"},
@@ -179,7 +179,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
                 const auto file = directory->get_file("somefile.txt");
 
                 THEN("the item endpoint should be called on the file path") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "GET");
                     REQUIRE_REQUEST(
                         0,
@@ -195,7 +195,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         }
 
         AND_GIVEN("a request that throws 404 Resource Not Found") {
-            WHEN_REQUEST().Throw(request::Response::NotFound(""));
+            When(Method(requestMock, request)).Throw(request::exceptions::response::NotFound());
 
             WHEN("calling get_file(somefile.txt)") {
                 THEN("a NoSuchFileOrDirectory Exception should be thrown") {
@@ -205,7 +205,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         }
 
         AND_GIVEN("a request that returns a valid file description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"id", "ABW1234"},
@@ -219,7 +219,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             WHEN("calling create_file(somefile.txt)") {
                 const auto newFile = directory->create_file("somefile.txt");
                 THEN("the content endpoint should be called with no file content on the desired resource path") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "PUT");
                     REQUIRE_REQUEST(
                         0,
@@ -236,7 +236,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
         }
 
         AND_GIVEN("a request sequence that returns 200 and a valid folder description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"name", "somefolder"},
@@ -248,7 +248,7 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             WHEN("calling create_directory(somefolder)") {
                 const auto newFolder = directory->create_directory("somefolder");
                 THEN("the children endpoint should have been called with a json payload telling the new folder name") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(
                         0,

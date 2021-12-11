@@ -17,21 +17,19 @@ namespace CloudSync::onedrive {
 
         [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::filesystem::path &path) const override;
 
         void remove() override;
 
-        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> create_file(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> get_file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::filesystem::path &path) const override;
 
     private:
-        std::shared_ptr<Resource> parseDriveItem(const json &value, const std::string &expectedType = "") const;
+        std::shared_ptr<Resource> parse_drive_item(const json &value, const std::string &expectedType = "") const;
 
-        std::string apiResourcePath(const std::string &path, bool children = true) const;
-
-        std::string newResourcePath(const std::string &path) const;
+        std::string api_resource_path(const std::string &path, bool children = true) const;
     };
 } // namespace CloudSync::onedrive

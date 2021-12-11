@@ -34,27 +34,27 @@ namespace CloudSync {
          *          * `foldername/` leading slashes are ignored. Same as: `foldername`
          * @return the desired directory
          */
-        virtual std::shared_ptr<Directory> get_directory(const std::string &path) const = 0;
+        virtual std::shared_ptr<Directory> get_directory(const std::filesystem::path &path) const = 0;
 
         /**
          * Create a new directory.
          * @param path to the new folder. Intermediates are created if they don't exist.
          * @return the requested directory
          */
-        virtual std::shared_ptr<Directory> create_directory(const std::string &path) const = 0;
+        virtual std::shared_ptr<Directory> create_directory(const std::filesystem::path &path) const = 0;
 
         /**
          * Create a new file.
          * @param path to the new file. Intermediate folders are created if they don't exist.
          * @return the newly created file
          */
-        virtual std::shared_ptr<File> create_file(const std::string &path) const = 0;
+        virtual std::shared_ptr<File> create_file(const std::filesystem::path &path) const = 0;
 
         /**
          * get file from path
          * @param path to the file. The file must already exist.
          * @return the requested file
          */
-        virtual std::shared_ptr<File> get_file(const std::string &path) const = 0;
+        virtual std::shared_ptr<File> get_file(const std::filesystem::path &path) const = 0;
     };
 } // namespace CloudSync

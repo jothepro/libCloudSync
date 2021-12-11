@@ -10,7 +10,7 @@ namespace CloudSync::webdav {
     class WebdavDirectory : public DirectoryImpl {
     public:
         WebdavDirectory(
-                const std::string &baseUrl, std::string dirOffset, const std::string &dir,
+                const std::string &baseUrl, std::string dirOffset, const std::filesystem::path &dir,
                 std::shared_ptr<credentials::BasicCredentialsImpl> credentials,
                 const std::shared_ptr<request::Request> &request, const std::string &name)
                 : DirectoryImpl(baseUrl, dir, request, name)
@@ -19,15 +19,15 @@ namespace CloudSync::webdav {
 
         [[nodiscard]] std::vector<std::shared_ptr<Resource>> list_resources() const override;
 
-        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::string &path) const override;
+        [[nodiscard]] std::shared_ptr<Directory> get_directory(const std::filesystem::path &path) const override;
 
         void remove() override;
 
-        std::shared_ptr<Directory> create_directory(const std::string &path) const override;
+        std::shared_ptr<Directory> create_directory(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> create_file(const std::string &path) const override;
+        std::shared_ptr<File> create_file(const std::filesystem::path &path) const override;
 
-        std::shared_ptr<File> get_file(const std::string &path) const override;
+        std::shared_ptr<File> get_file(const std::filesystem::path &path) const override;
 
     private:
         static const std::string XML_QUERY;
@@ -35,13 +35,10 @@ namespace CloudSync::webdav {
 
         const std::shared_ptr<credentials::BasicCredentialsImpl> m_credentials;
 
-        std::vector<std::shared_ptr<Resource>> parseXmlResponse(const pugi::xml_node &response) const;
+        [[nodiscard]] std::vector<std::shared_ptr<Resource>> parse_xml_response(const pugi::xml_node &response) const;
 
-        bool resource_exists(const std::string& resource_path) const;
+        bool resource_exists(const std::filesystem::path& resource_path) const;
 
-        /// Appends `path` to the current path and returns the result.
-        std::string request_url(const std::string &path) const;
-
-        static std::string remove_trailing_slashes(const std::string &path);
+        void create_parent_directories_if_missing(const std::filesystem::path& absolute_path) const;
     };
 } // namespace CloudSync::webdav

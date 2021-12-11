@@ -20,11 +20,11 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
     GIVEN("a DropboxFile instance") {
         const auto file = std::make_shared<DropboxFile>("/test.txt", credentials, request, "test.txt", "revision-id");
         AND_GIVEN("a request that returns 200") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "", ""));
+            When(Method(requestMock, request)).Return(request::StringResponse(200));
             WHEN("the file is deleted") {
                 file->remove();
                 THEN("the dropbox delete endpoint should be called with a json payload pointing to the file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/delete_v2");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test.txt\"}");
@@ -33,12 +33,12 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
             }
         }
         AND_GIVEN("a request that returns binary data") {
-            WHEN_REQUEST().RESPOND(request::Response(200, "binary-data-010101", "application/octet-stream"));
+            When(Method(requestMock, request_binary)).Return(request::BinaryResponse(200, {0x12, 0x13, 0x14}, "application/octet-stream"));
 
-            WHEN("the file is read_as_string") {
-                std::string content = file->read_as_string();
+            WHEN("the file is being read") {
+                const auto content = file->read_binary();
                 THEN("the dropbox download endpoint should be called with an arg parameter pointing to the file") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request_binary)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/download");
                     REQUIRE_REQUEST(0, body == "");
@@ -46,12 +46,12 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
                     REQUIRE_REQUEST(0, query_params.at("arg") == "{\"path\":\"/test.txt\"}");
                 }
                 THEN("the file-content should be returned") {
-                    REQUIRE(content == "binary-data-010101");
+                    REQUIRE(content == std::vector<std::uint8_t>({0x12, 0x13, 0x14}));
                 }
             }
         }
-        AND_GIVEN("a POST request that returns an updated file metadata description") {
-            WHEN_REQUEST().RESPOND(request::Response(
+        AND_GIVEN("a request that returns an updated file metadata description") {
+            When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
                 json{
                     {"name", "test.txt"},
@@ -69,10 +69,10 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
 
             WHEN("writing to the file") {
                 const std::string newContent = "awesome new content";
-                file->write_string(newContent);
+                file->write(newContent);
                 THEN("the dropbox upload endpoint should have been called with an arg param pointing to the file and "
                      "requesting an update") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://content.dropboxapi.com/2/files/upload");
                     REQUIRE_REQUEST(0, body == newContent);
@@ -89,7 +89,7 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
             WHEN("calling poll_change()") {
                 const bool hasChanged = file->poll_change();
                 THEN("the dropbox get_metadata endpoint should be called") {
-                    REQUIRE_REQUEST_CALLED().Once();
+                    Verify(Method(requestMock, request)).Once();
                     REQUIRE_REQUEST(0, verb == "POST");
                     REQUIRE_REQUEST(0, url == "https://api.dropboxapi.com/2/files/get_metadata");
                     REQUIRE_REQUEST(0, body == "{\"path\":\"/test.txt\"}");
@@ -102,15 +102,15 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
             }
         }
         AND_GIVEN("a request that returns 409 conflict") {
-            WHEN_REQUEST().Throw(request::Response::Conflict(""));
+            When(Method(requestMock, request)).Throw(request::exceptions::response::Conflict());
             WHEN("writing to the file") {
-                THEN("a ResourceHasChanged exeception should be thrown") {
-                    REQUIRE_THROWS_AS(file->write_string("test"), CloudSync::exceptions::resource::ResourceHasChanged);
+                THEN("a ResourceHasChanged exception should be thrown") {
+                    REQUIRE_THROWS_AS(file->write({"test"}), CloudSync::exceptions::resource::ResourceHasChanged);
                 }
             }
         }
-        AND_GIVEN("a POST request that returns a file description with the same revision") {
-            WHEN_REQUEST().RESPOND(request::Response(200, json{{"rev", "revision-id"}}.dump(), "application/json"));
+        AND_GIVEN("a request that returns a file description with the same revision") {
+            When(Method(requestMock, request)).Return(request::StringResponse(200, json{{"rev", "revision-id"}}.dump(), "application/json"));
             WHEN("calling poll_change()") {
                 const bool hasChanged = file->poll_change();
                 THEN("false should be returned") {

@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
                 std::string filename;
                 std::cin >> filename;
                 auto file = dir->get_file(filename);
-                std::cout << file->read_as_string() << std::endl;
+                std::cout << file->read() << std::endl;
             } else if (action == "mkdir") {
                 std::string dirname;
                 std::cin >> dirname;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
                         break;
                     }
                 }
-                file->write_string(filecontent);
+                file->write(filecontent);
             } else if (action == "logout") {
                 std::cout << "Logging out will revoke your access-token / app password, if possible.\n"
                              "Do you want to proceed? (y/n)" << std::endl;

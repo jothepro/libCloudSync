@@ -17,13 +17,17 @@ namespace CloudSync::gdrive {
 
         bool poll_change() override;
 
-        [[nodiscard]] std::string read_as_string() const override;
+        [[nodiscard]] std::string read() const override;
 
-        void write_string(const std::string &content) override;
+        [[nodiscard]] std::vector<std::uint8_t> read_binary() const override;
+
+        void write(const std::string& content) override;
+
+        void write_binary(const std::vector<std::uint8_t>& content) override;
 
     private:
         const std::string resourceId;
 
-        [[nodiscard]] std::string resource_path() const override;
+        const std::string m_resource_path = m_base_url + "/files/" + this->resourceId;
     };
 } // namespace CloudSync::gdrive

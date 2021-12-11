@@ -1,6 +1,6 @@
 #include "WebdavFile.hpp"
 #include "request/Request.hpp"
-#include "WebdavCloud.hpp"
+#include "WebdavExceptionTranslator.hpp"
 #include "CloudSync/exceptions/cloud/CloudException.hpp"
 
 using namespace CloudSync;
@@ -19,24 +19,27 @@ const std::string WebdavFile::XML_QUERY =
 
 void WebdavFile::remove() {
     try {
-        m_request->DELETE(resource_path())
+        m_request->DELETE(m_resource_path)
             ->basic_auth(m_credentials->username(), m_credentials->password())
-            ->send();
+            ->request();
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), path());
+        WebdavExceptionTranslator::translate(m_path);
     }
 }
 
 bool WebdavFile::poll_change() {
     bool has_changed = false;
     try {
-        const auto response_xml = m_request->PROPFIND(resource_path())
+
+        const auto response = m_request->PROPFIND(m_resource_path)
                 ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("Depth", "0")
                 ->accept(Request::MIMETYPE_XML)
                 ->content_type(Request::MIMETYPE_XML)
-                ->send(XML_QUERY).xml();
-        const std::string new_revision = response_xml
+                ->body(XML_QUERY)
+                ->request();
+
+        const std::string new_revision = response.xml()
                 ->select_node("/*[local-name()='multistatus']"
                               "/*[local-name()='response']"
                               "/*[local-name()='propstat']"
@@ -53,36 +56,59 @@ bool WebdavFile::poll_change() {
             throw exceptions::cloud::InvalidResponse("reading XML failed: missing required 'getetag' property");
         }
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), path());
+        WebdavExceptionTranslator::translate(m_path);
     }
     return has_changed;
 }
 
-std::string WebdavFile::read_as_string() const {
-    std::string data;
+std::string WebdavFile::read() const {
+    std::string result;
     try {
-        data = m_request->GET(resource_path())
+        result = m_request->GET(m_resource_path)
                 ->basic_auth(m_credentials->username(), m_credentials->password())
-                ->send().data;
+                ->request().data;
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), path());
+        WebdavExceptionTranslator::translate(m_path);
     }
-    return data;
+    return result;
 }
 
-void WebdavFile::write_string(const std::string &input) {
+std::vector<std::uint8_t> WebdavFile::read_binary() const {
+    std::vector<std::uint8_t> result;
     try {
-        const auto response = m_request->PUT(resource_path())
+        result = m_request->GET(m_resource_path)
+                        ->basic_auth(m_credentials->username(), m_credentials->password())
+                        ->request_binary().data;
+    } catch (...) {
+        WebdavExceptionTranslator::translate(m_path);
+    }
+    return result;
+}
+
+void WebdavFile::write(const std::string& content) {
+    try {
+        const auto response = m_request->PUT(m_resource_path)
                 ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->if_match(revision())
                 ->content_type(Request::MIMETYPE_BINARY)
-                ->send(input);
+                ->body(content)
+                ->request();
         m_revision = response.headers.at("etag");
     } catch (...) {
-        WebdavCloud::handleExceptions(std::current_exception(), path());
+        WebdavExceptionTranslator::translate(m_path);
     }
 }
 
-std::string WebdavFile::resource_path() const {
-    return m_base_url + path();
+void WebdavFile::write_binary(const std::vector<std::uint8_t> &content) {
+    try {
+        const auto response = m_request->PUT(m_resource_path)
+                ->basic_auth(m_credentials->username(), m_credentials->password())
+                ->if_match(revision())
+                ->content_type(Request::MIMETYPE_BINARY)
+                ->binary_body(content)
+                ->request();
+        m_revision = response.headers.at("etag");
+    } catch (...) {
+        WebdavExceptionTranslator::translate(m_path);
+    }
 }

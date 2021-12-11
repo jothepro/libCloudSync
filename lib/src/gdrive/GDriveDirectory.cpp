@@ -1,6 +1,6 @@
 #include "GDriveDirectory.hpp"
 #include "request/Request.hpp"
-#include "GDriveCloud.hpp"
+#include "GDriveExceptionTranslator.hpp"
 #include "GDriveFile.hpp"
 #include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "CloudSync/exceptions/cloud/CloudException.hpp"
@@ -13,7 +13,7 @@ using namespace CloudSync::gdrive;
 namespace fs = std::filesystem;
 
 std::vector<std::shared_ptr<Resource>> GDriveDirectory::list_resources() const {
-    std::vector<std::shared_ptr<Resource>> resourceList;
+    std::vector<std::shared_ptr<Resource>> resource_list;
     try {
         const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(m_base_url + "/files")
@@ -21,119 +21,119 @@ std::vector<std::shared_ptr<Resource>> GDriveDirectory::list_resources() const {
                 ->query_param("q", "'" + this->m_resource_id + "' in parents and trashed = false")
                 ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
                 ->accept(Request::MIMETYPE_JSON)
-                ->send().json();
+                ->request().json();
         for (const auto &file: response_json.at("items")) {
-            resourceList.push_back(this->parse_file(file));
+            resource_list.push_back(this->parse_file(file));
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path());
+        GDriveExceptionTranslator::translate(path());
     }
-    return resourceList;
+    return resource_list;
 }
 
-std::shared_ptr<Directory> GDriveDirectory::get_directory(const std::string &path) const {
+std::shared_ptr<Directory> GDriveDirectory::get_directory(const std::filesystem::path &path) const {
     std::shared_ptr<Directory> newDir;
     // calculate "diff" between current position & wanted path. What do we need
     // to do to get there?
-    const auto relativePath = (fs::path(this->path()) / path).lexically_normal().lexically_relative(this->path());
+    const auto relative_path = append_path(path).lexically_relative(m_path);
     try {
-        if (relativePath == ".") {
+        if (relative_path == ".") {
             // no path change required, return current dir
             newDir = std::make_shared<GDriveDirectory>(
                     m_base_url,
                     m_root_name,
                     m_resource_id,
                     m_parent_resource_id,
-                    this->path(),
+                    m_path,
                     m_credentials,
                     m_request,
-                    name());
-        } else if (relativePath.begin() == --relativePath.end() && *relativePath.begin() != "..") {
+                    m_name);
+        } else if (relative_path.begin() == --relative_path.end() && *relative_path.begin() != "..") {
             // depth of navigation = 1, get a list of all folders in folder and
             // pick the desired one.
-            newDir = this->child(relativePath.string());
+            newDir = this->child(relative_path.string());
         } else {
             // depth of navigation > 1, slowly navigate from folder to folder
             // one by one.
-            std::shared_ptr<GDriveDirectory> currentDir = std::make_shared<GDriveDirectory>(
+            std::shared_ptr<GDriveDirectory> current_dir = std::make_shared<GDriveDirectory>(
                     m_base_url,
                     m_root_name,
                     m_resource_id,
                     m_parent_resource_id,
-                    this->path(),
+                    m_path,
                     m_credentials,
                     m_request,
                     name());
-            for (const auto &pathComponent: relativePath) {
-                if (pathComponent == "..") {
-                    currentDir = currentDir->parent();
+            for (const auto &path_component: relative_path) {
+                if (path_component == "..") {
+                    current_dir = current_dir->parent();
                 } else {
-                    currentDir = std::static_pointer_cast<GDriveDirectory>(
-                            currentDir->get_directory(pathComponent.string()));
+                    current_dir = std::static_pointer_cast<GDriveDirectory>(
+                            current_dir->get_directory(path_component));
                 }
             }
-            newDir = currentDir;
+            newDir = current_dir;
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path());
+        GDriveExceptionTranslator::translate(m_path);
     }
-
     return newDir;
 }
 
 void GDriveDirectory::remove() {
     try {
-        if (this->path() != "/") {
+        if (m_path.generic_string() == "/") {
+            throw exceptions::resource::PermissionDenied(m_path);
+        } else {
             const auto token = m_credentials->get_current_access_token();
             m_request->DELETE(m_base_url + "/files/" + this->m_resource_id)
                     ->token_auth(token)
-                    ->send();
-        } else {
-            throw exceptions::resource::PermissionDenied("deleting the root folder is not allowed");
+                    ->request();
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), this->path());
+        GDriveExceptionTranslator::translate(path());
     }
 }
 
-std::shared_ptr<Directory> GDriveDirectory::create_directory(const std::string &path) const {
-    std::shared_ptr<Directory> newDir;
-    std::string folderName;
+std::shared_ptr<Directory> GDriveDirectory::create_directory(const std::filesystem::path &path) const {
+    std::shared_ptr<Directory> new_directory;
+    std::string folder_name;
+    const auto full_path = append_path(path);
+    const auto base_directory = this->parent(path.generic_string(), folder_name, true);
     try {
-        const auto baseDir = this->parent(path, folderName, true);
-        if(baseDir->child_resource_exists(folderName)) {
-            throw exceptions::resource::ResourceConflict(path);
+        if(base_directory->child_resource_exists(folder_name)) {
+            throw exceptions::resource::ResourceConflict(full_path);
         } else {
             const auto token = m_credentials->get_current_access_token();
             const auto response_json = m_request->POST(m_base_url + "/files")
                     ->token_auth(token)
                     ->accept(Request::MIMETYPE_JSON)
                     ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
-                    ->send_json({
+                    ->json_body({
                             {"mimeType", "application/vnd.google-apps.folder"},
-                            {"title",    folderName},
+                            {"title",    folder_name},
                             {
                              "parents",  {
                                              {
-                                                 {"id", baseDir->m_resource_id}
+                                                 {"id", base_directory->m_resource_id}
                                              }
                                          }
                             }
-                    }).json();
-            newDir = std::dynamic_pointer_cast<Directory>(baseDir->parse_file(response_json, ResourceType::FOLDER));
+                    })->request().json();
+            new_directory = std::dynamic_pointer_cast<Directory>(base_directory->parse_file(response_json, ResourceType::FOLDER));
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), path);
+        GDriveExceptionTranslator::translate(full_path);
     }
-    return newDir;
+    return new_directory;
 }
 
-std::shared_ptr<File> GDriveDirectory::create_file(const std::string &path) const {
-    std::string fileName;
-    std::shared_ptr<File> newFile;
+std::shared_ptr<File> GDriveDirectory::create_file(const std::filesystem::path &path) const {
+    std::string file_name;
+    std::shared_ptr<File> new_file;
+    const auto base_dir = this->parent(path.generic_string(), file_name, true);
     try {
-        const auto baseDir = this->parent(path, fileName, true);
-        if(baseDir->child_resource_exists(fileName)) {
+        if(base_dir->child_resource_exists(file_name)) {
             throw exceptions::resource::ResourceConflict(path);
         } else {
             const auto token = m_credentials->get_current_access_token();
@@ -141,45 +141,46 @@ std::shared_ptr<File> GDriveDirectory::create_file(const std::string &path) cons
                     ->token_auth(token)
                     ->accept(Request::MIMETYPE_JSON)
                     ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
-                    ->send_json({
+                    ->json_body({
                             {"mimeType", "text/plain"},
-                            {"title",    fileName},
+                            {"title",    file_name},
                             {
                              "parents",  {
                                              {
-                                                 {"id", baseDir->m_resource_id}
+                                                 {"id", base_dir->m_resource_id}
                                              }
                                          }
                             }
-                    }).json();
-            newFile = std::dynamic_pointer_cast<GDriveFile>(baseDir->parse_file(response_json, ResourceType::FILE));
+                    })->request().json();
+            new_file = std::dynamic_pointer_cast<GDriveFile>(base_dir->parse_file(response_json, ResourceType::FILE));
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), path);
+        GDriveExceptionTranslator::translate(base_dir->path() / path);
     }
-    return newFile;
+    return new_file;
 }
 
-std::shared_ptr<File> GDriveDirectory::get_file(const std::string &path) const {
+std::shared_ptr<File> GDriveDirectory::get_file(const std::filesystem::path &path) const {
     std::shared_ptr<GDriveFile> file;
-    std::string fileName;
+    std::string file_name;
+    const auto full_path = append_path(path);
     try {
-        const auto baseDir = this->parent(path, fileName);
+        const auto base_dir = this->parent(path.generic_string(), file_name);
         const auto token = m_credentials->get_current_access_token();
         const auto response_json = m_request->GET(m_base_url + "/files")
                 ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
-                ->query_param("q", "'" + baseDir->m_resource_id + "' in parents and title = '" + fileName + "' and trashed = false")
+                ->query_param("q", "'" + base_dir->m_resource_id + "' in parents and title = '" + file_name + "' and trashed = false")
                 ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
-                ->send().json();
+                ->request().json();
         if (!response_json.at("items").empty()) {
             file = std::dynamic_pointer_cast<GDriveFile>(
-                    baseDir->parse_file(response_json.at("items").at(0), ResourceType::FILE));
+                    base_dir->parse_file(response_json.at("items").at(0), ResourceType::FILE));
         } else {
-            throw exceptions::resource::NoSuchResource(fileName);
+            throw exceptions::resource::NoSuchResource(full_path);
         }
     } catch (...) {
-        GDriveCloud::handleExceptions(std::current_exception(), path);
+        GDriveExceptionTranslator::translate(full_path);
     }
     return file;
 }
@@ -190,7 +191,7 @@ GDriveDirectory::parse_file(const json &file, ResourceType expected_type, const 
     const std::string name = file.at("title");
     const std::string id = file.at("id");
     const std::string mime_type = file.at("mimeType");
-    const std::string resource_path = (fs::path(this->path()) / name).lexically_normal().generic_string();
+    const std::string resource_path = (m_path / name).lexically_normal().generic_string();
     std::string parent_id;
     if (file.at("parents").at(0).at("isRoot") == true) {
         parent_id = "root";
@@ -252,7 +253,7 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent() const {
                 ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
                 ->query_param("fields", "kind,id,title,mimeType,etag,parents(id,isRoot)")
-                ->send().json();
+                ->request().json();
         parentDirectory = std::dynamic_pointer_cast<GDriveDirectory>(
                 this->parse_file(
                         response_json,
@@ -269,7 +270,7 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::parent(const std::string &path
     const auto relativeParentPath = relativePath.parent_path();
     folderName = relativePath.lexically_relative(relativeParentPath).generic_string();
     try {
-        return std::static_pointer_cast<GDriveDirectory>(this->get_directory(relativeParentPath.generic_string()));
+        return std::static_pointer_cast<GDriveDirectory>(get_directory(relativeParentPath.generic_string()));
     } catch (const exceptions::resource::NoSuchResource &e) {
         if(createIfMissing && relativeParentPath != "") {
             return std::static_pointer_cast<GDriveDirectory>(this->create_directory(relativeParentPath.generic_string()));
@@ -287,12 +288,12 @@ std::shared_ptr<GDriveDirectory> GDriveDirectory::child(const std::string &name)
             ->accept(Request::MIMETYPE_JSON)
             ->query_param("q", "'" + this->m_resource_id + "' in parents and title = '" + name + "' and trashed = false")
             ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
-            ->send().json();
+            ->request().json();
     if (!response_json.at("items").empty()) {
         childDir = std::dynamic_pointer_cast<GDriveDirectory>(
                 this->parse_file(response_json.at("items").at(0), ResourceType::FOLDER));
     } else {
-        throw exceptions::resource::NoSuchResource(fs::path(this->path() + "/" + name).lexically_normal().generic_string());
+        throw exceptions::resource::NoSuchResource(append_path(name));
     }
     return childDir;
 }
@@ -304,6 +305,6 @@ bool GDriveDirectory::child_resource_exists(const std::string &resource_name) co
             ->accept(Request::MIMETYPE_JSON)
             ->query_param("q", "'" + this->m_resource_id + "' in parents and title = '" + resource_name + "' and trashed = false")
             ->query_param("fields", "items(kind,id,title,mimeType,etag,parents(id,isRoot))")
-            ->send().json();
+            ->request().json();
     return !response_json.at("items").empty();
 }

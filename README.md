@@ -37,7 +37,6 @@ conan install -if build --build missing . -e CONAN_RUN_TESTS=0
 ## Quick start
 
 ```cpp
-auto credentials = std::make_shared<OAuth2Credentials>(token, refresh_token, 3600s);
 // if this is the users first login, provide the authorization code to get a fresh access_token & refresh_token
 auto credentials = OAuth2Credentials::from_authorization_code(client_id, authorization_code, redirect_uri, code_verifier);
 // if you already have an access token that is still valid, create a session that will automatically refresh when the token gets outdated
@@ -53,8 +52,6 @@ auto cloud = CloudFactory().create_dropbox(credentials);
 try {
     auto root_directory = cloud->root();
     root_directory->get_file("test.txt");
-    // ...
-    cloud->logout();
 } catch(const CloudException &e) {
     std::cerr << "Sth went wrong: " << e.what() << std::endl;
 }
@@ -64,7 +61,7 @@ try {
 auto credentials = BasicCredentials::from_username_password("john", "password123");
 auto cloud = CloudFactory().create_nextcloud("nextcloud.com", credentials);
 try {
-    auto file = cloud->root->create_file("test.txt");
+    auto file = cloud->root()->create_file("test.txt");
 } catch(const CloudException &e) {
     std::cerr << "Sth went wrong: " << e.what() << std::endl;
 }
@@ -165,12 +162,12 @@ The C++ code should follow a derivation of [cppbestpractices code style](https:/
 - Functions and variables are snake_case: `my_method`
 - Constants are all upper case: `const double PI=3.14159265358979323;`
 - Name private data with a `m_` prefix to distinguish it from public data. `m_` stands for "member" data
-- Never use `using namespace` in a header get_file
+- Never use `using namespace` in a header file
 - `{}` are required for blocks.
 - Use `""` for including local files, `<>` is reserved for system includes
 - Initialize member variables with the member initializer list
 - Always use namespaces
-- Use `.hpp` and `.cpp` for your get_file extensions
+- Use `.hpp` and `.cpp` for your file extensions
 - mark single parameter constructors as `explicit`, which requires them to be explicitly called.
 - do not provide any of the functions that the compiler can provide (copy constructor, copy assignment operator, 
   move constructor, move assignment operator, destructor) unless the class you are constructing does some novel form 
@@ -181,17 +178,12 @@ The C++ code should follow a derivation of [cppbestpractices code style](https:/
 
 ### API Documentation
 
-- [Box](https://developer.box.com/reference/)
 - [Dropbox](https://www.dropbox.com/developers/documentation/http/documentation)
 - [OneDrive](https://docs.microsoft.com/en-us/onedrive/developer/rest-api/)
 - [GDrive](https://developers.google.com/drive/api/v2/about-sdk)
 - [Nextcloud](https://docs.nextcloud.com/server/18/developer_manual/client_apis/WebDAV/index.html)
 
 ### Getting developer tokens
-
-#### Box
-
-Go to [`https://app.box.com/developers/console`](https://app.box.com/developers/console) and create a new app. In the left-navigation click on `Configuration`. You can find a button there that will create a developer-token for you. The generated token will be valid for 60 minutes.
 
 #### Dropbox
 
@@ -213,9 +205,9 @@ and let the tool do its job.
 
 Does not support OAuth2, requires Username/Password login.
 
-In your Nextcloud installation go to `/settings/user/security` to create a specific app-password (recommended).
+In your Nextcloud installation go to <kbd>settings</kbd> >  <kbd>user</kbd> > <kbd>security</kbd> to create a specific app-password (recommended).
 
-## Roadmap / TODO
+## Roadmap
 
 - Implement equality operators for Cloud, Directory, File
 - Add tests for CURL wrapper (e.g. by going against a (mocked?) http server)

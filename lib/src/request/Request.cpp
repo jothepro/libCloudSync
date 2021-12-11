@@ -18,9 +18,9 @@ namespace CloudSync::request {
         this->m_option_verbose = verbose;
     }
 
-    Response Request::send_json(const nlohmann::json &json_data) {
+    std::shared_ptr<Request> Request::json_body(const nlohmann::json &json_data) {
         content_type(Request::MIMETYPE_JSON);
-        return send(json_data.dump());
+        return body(json_data.dump());
     }
 
     std::shared_ptr<Request> Request::accept(const std::string &mimetype) {

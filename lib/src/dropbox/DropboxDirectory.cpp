@@ -1,9 +1,8 @@
 #include "DropboxDirectory.hpp"
 #include "request/Request.hpp"
 #include "request/Response.hpp"
-#include "DropboxCloud.hpp"
 #include "DropboxFile.hpp"
-#include "CloudSync/exceptions/Exception.hpp"
+#include "DropboxExceptionTranslator.hpp"
 #include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "CloudSync/exceptions/cloud/CloudException.hpp"
 #include <filesystem>
@@ -16,16 +15,17 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 std::vector<std::shared_ptr<Resource>> DropboxDirectory::list_resources() const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path());
     std::vector<std::shared_ptr<Resource>> resources;
     try {
+        const auto token = m_credentials->get_current_access_token();
+        const auto path_string = m_path.generic_string();
         const json response_json = m_request->POST("https://api.dropboxapi.com/2/files/list_folder")
-                ->token_auth(m_credentials->get_current_access_token())
+                ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
-                ->send_json({
-                        {"path",      resourcePath},
+                ->json_body({
+                        {"path", path_string == "/" ? "" : path_string},
                         {"recursive", false}
-                }).json();
+                })->request().json();
         for (const auto &entry: response_json.at("entries")) {
             resources.push_back(this->parseEntry(entry));
         }
@@ -38,9 +38,9 @@ std::vector<std::shared_ptr<Resource>> DropboxDirectory::list_resources() const 
                             "https://api.dropboxapi.com/2/files/list_folder/continue")
                     ->token_auth(token)
                     ->accept(Request::MIMETYPE_JSON)
-                    ->send_json({
+                    ->json_body({
                             {"cursor", cursor}
-                    }).json();
+                    })->request().json();
             hasMore = continue_response_json.at("has_more");
             cursor = continue_response_json.at("cursor");
             for (const auto &entry: continue_response_json.at("entries")) {
@@ -48,71 +48,69 @@ std::vector<std::shared_ptr<Resource>> DropboxDirectory::list_resources() const 
             }
         }
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
+        DropboxExceptionTranslator::translate(m_path);
     }
     return resources;
 }
 
-std::shared_ptr<Directory> DropboxDirectory::get_directory(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
+std::shared_ptr<Directory> DropboxDirectory::get_directory(const std::filesystem::path &path) const {
+    const auto resource_path = append_path(path);
     std::shared_ptr<DropboxDirectory> directory;
     // get_metadata is not supported for the root folder
-    if (!resourcePath.empty()) {
+    if (resource_path.generic_string() == "/") {
+        directory = std::make_shared<DropboxDirectory>("/", m_credentials, m_request, "");
+    } else {
         try {
             const auto token = m_credentials->get_current_access_token();
             const json response_json = m_request->POST("https://api.dropboxapi.com/2/files/get_metadata")
                     ->token_auth(token)
                     ->accept(Request::MIMETYPE_JSON)
-                    ->send_json({
-                            {"path", resourcePath}
-                    }).json();
+                    ->json_body({{"path", resource_path.generic_string()}})
+                    ->request().json();
             directory = std::dynamic_pointer_cast<DropboxDirectory>(this->parseEntry(response_json, "folder"));
 
         } catch (...) {
-            DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
+            DropboxExceptionTranslator::translate(resource_path);
         }
-    } else {
-        directory = std::make_shared<DropboxDirectory>("/", m_credentials, m_request, "");
     }
     return directory;
 }
 
 void DropboxDirectory::remove() {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path());
-    if (resourcePath.empty()) {
-        throw exceptions::resource::PermissionDenied("deleting the root folder is not allowed");
+    if (m_path.generic_string() == "/") {
+        throw exceptions::resource::PermissionDenied(m_path);
     }
     try {
         const auto token = m_credentials->get_current_access_token();
         m_request->POST("https://api.dropboxapi.com/2/files/delete_v2")
                 ->token_auth(token)
-                ->send_json({{"path", resourcePath}});
+                ->json_body({{"path", m_path.generic_string()}})->request();
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
+        DropboxExceptionTranslator::translate(m_path);
     }
 }
 
-std::shared_ptr<Directory> DropboxDirectory::create_directory(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
+std::shared_ptr<Directory> DropboxDirectory::create_directory(const std::filesystem::path &path) const {
+    const auto resource_path = append_path(path);
     std::shared_ptr<Directory> directory;
     try {
         const auto token = m_credentials->get_current_access_token();
         const json response_json = m_request->POST("https://api.dropboxapi.com/2/files/create_folder_v2")
                 ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
-                ->send_json({
-                        {"path", resourcePath}
-                }).json();
+                ->json_body({
+                        {"path", resource_path.generic_string()}
+                })->request().json();
         directory = std::dynamic_pointer_cast<DropboxDirectory>(
                         this->parseEntry(response_json.at("metadata"), "folder"));
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
+        DropboxExceptionTranslator::translate(resource_path);
     }
     return directory;
 }
 
-std::shared_ptr<File> DropboxDirectory::create_file(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
+std::shared_ptr<File> DropboxDirectory::create_file(const std::filesystem::path &path) const {
+    const auto resource_path = append_path(path);
     std::shared_ptr<File> file;
     try {
         const auto token = m_credentials->get_current_access_token();
@@ -121,29 +119,29 @@ std::shared_ptr<File> DropboxDirectory::create_file(const std::string &path) con
                 ->content_type(Request::MIMETYPE_BINARY)
                 ->accept(Request::MIMETYPE_JSON)
                 ->query_param("arg", json{
-                        {"path", resourcePath}
-                }.dump())->send().json();
+                        {"path", resource_path.generic_string()}
+                }.dump())->request().json();
         file = std::dynamic_pointer_cast<DropboxFile>(this->parseEntry(response_json, "file"));
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
+        DropboxExceptionTranslator::translate(resource_path);
     }
     return file;
 }
 
-std::shared_ptr<File> DropboxDirectory::get_file(const std::string &path) const {
-    const auto resourcePath = DropboxDirectory::parsePath(this->path(), path);
+std::shared_ptr<File> DropboxDirectory::get_file(const std::filesystem::path &path) const {
+    const auto resource_path = append_path(path);
     std::shared_ptr<DropboxFile> file;
     try {
         const auto token = m_credentials->get_current_access_token();
         json response_json = m_request->POST("https://api.dropboxapi.com/2/files/get_metadata")
                 ->token_auth(token)
                 ->accept(Request::MIMETYPE_JSON)
-                ->send_json({
-                        {"path", resourcePath}
-                }).json();
+                ->json_body({
+                        {"path", resource_path.generic_string()}
+                })->request().json();
         file = std::dynamic_pointer_cast<DropboxFile>(this->parseEntry(response_json, "file"));
     } catch (...) {
-        DropboxCloud::handleExceptions(std::current_exception(), resourcePath);
+        DropboxExceptionTranslator::translate(resource_path);
     }
     return file;
 }
@@ -172,13 +170,4 @@ DropboxDirectory::parseEntry(const json &entry, const std::string &resourceTypeF
         resource = std::make_shared<DropboxFile>(path, m_credentials, m_request, name, entry.at("rev"));
     }
     return resource;
-}
-
-std::string DropboxDirectory::parsePath(const std::string &path, const std::string &path2) {
-    std::string parsedPath = (fs::path(path) / path2).lexically_normal().generic_string();
-    // remove trailing slashes because dropbox won't accept them
-    while (!parsedPath.empty() && parsedPath.back() == '/') {
-        parsedPath = parsedPath.erase(parsedPath.size() - 1);
-    }
-    return parsedPath;
 }

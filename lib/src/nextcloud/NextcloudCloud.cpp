@@ -1,4 +1,5 @@
 #include "NextcloudCloud.hpp"
+#include "webdav/WebdavExceptionTranslator.hpp"
 
 using namespace CloudSync;
 using namespace CloudSync::nextcloud;
@@ -10,10 +11,10 @@ std::string NextcloudCloud::get_user_display_name() const {
                 ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("OCS-APIRequest", "true")
                 ->accept(Request::MIMETYPE_XML)
-                ->send().xml();
+                ->request().xml();
         user_display_name = response_xml->select_node("/ocs/data/display-name").node().child_value();
     } catch (...) {
-        NextcloudCloud::handleExceptions(std::current_exception(), "");
+        webdav::WebdavExceptionTranslator::translate();
     }
     return user_display_name;
 }
@@ -24,8 +25,8 @@ void NextcloudCloud::logout() {
                 ->basic_auth(m_credentials->username(), m_credentials->password())
                 ->header("OCS-APIRequest", "true")
                 ->accept(Request::MIMETYPE_XML)
-                ->send();
+                ->request();
     } catch (...) {
-        NextcloudCloud::handleExceptions(std::current_exception(), "");
+        webdav::WebdavExceptionTranslator::translate();
     }
 }

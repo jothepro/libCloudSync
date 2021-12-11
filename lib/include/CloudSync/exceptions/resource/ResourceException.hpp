@@ -2,11 +2,17 @@
 
 #include "CloudSync/exceptions/Exception.hpp"
 
+#include <utility>
+#include <filesystem>
+
 namespace CloudSync::exceptions::resource {
     /// Base-exception for all resource-related errors.
     class ResourceException : public Exception {
     public:
-        explicit ResourceException(const std::string &what) : Exception(what) {};
+        explicit ResourceException(const std::string &what, std::filesystem::path path)
+        : Exception(what)
+        , path(std::move(path)) {};
+        const std::filesystem::path path;
     };
 
     /**
@@ -14,8 +20,8 @@ namespace CloudSync::exceptions::resource {
      */
     class NoSuchResource : public ResourceException {
     public:
-        explicit NoSuchResource(const std::string &path) : ResourceException(
-                "A resource with the requested type and name doesn't exist: " + path) {};
+        explicit NoSuchResource(const std::filesystem::path &path)
+        : ResourceException("A resource with the requested type and name doesn't exist: " + path.generic_string(), path) {};
     };
 
     /**
@@ -23,8 +29,8 @@ namespace CloudSync::exceptions::resource {
      */
     class PermissionDenied : public ResourceException {
     public:
-        explicit PermissionDenied(const std::string &path)
-                : ResourceException("Forbidden action on file or directory: " + path) {};
+        explicit PermissionDenied(const std::filesystem::path &path)
+        : ResourceException("Forbidden action on file or directory: " + path.generic_string(), path) {};
     };
 
     /**
@@ -32,8 +38,8 @@ namespace CloudSync::exceptions::resource {
      */
     class ResourceHasChanged : public ResourceException {
     public:
-        explicit ResourceHasChanged(const std::string &path) : ResourceException(
-                "Resource has changed: " + path) {};
+        explicit ResourceHasChanged(const std::filesystem::path &path)
+        : ResourceException("Resource has changed: " + path.generic_string(), path) {};
     };
 
     /**
@@ -41,7 +47,7 @@ namespace CloudSync::exceptions::resource {
      */
     class ResourceConflict : public ResourceException {
     public:
-        explicit ResourceConflict(const std::string &path) : ResourceException(
-                "A resource with this name already exists: " + path) {};
+        explicit ResourceConflict(const std::filesystem::path &path)
+        : ResourceException("A resource with this name already exists: " + path.generic_string(), path) {};
     };
 }
