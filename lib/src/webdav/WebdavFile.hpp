@@ -32,5 +32,8 @@ namespace CloudSync::webdav {
         const std::shared_ptr<credentials::BasicCredentialsImpl> m_credentials;
 
         const std::string m_resource_path;
+
+        std::shared_ptr<request::Request> prepare_read_request() const;
+        std::shared_ptr<request::Request> prepare_write_request() const;
     };
 } // namespace CloudSync::webdav

@@ -64,9 +64,7 @@ bool WebdavFile::poll_change() {
 std::string WebdavFile::read() const {
     std::string result;
     try {
-        result = m_request->GET(m_resource_path)
-                ->basic_auth(m_credentials->username(), m_credentials->password())
-                ->request().data;
+        result = prepare_read_request()->request().data;
     } catch (...) {
         WebdavExceptionTranslator::translate(m_path);
     }
@@ -76,21 +74,21 @@ std::string WebdavFile::read() const {
 std::vector<std::uint8_t> WebdavFile::read_binary() const {
     std::vector<std::uint8_t> result;
     try {
-        result = m_request->GET(m_resource_path)
-                        ->basic_auth(m_credentials->username(), m_credentials->password())
-                        ->request_binary().data;
+        result = prepare_read_request()->request_binary().data;
     } catch (...) {
         WebdavExceptionTranslator::translate(m_path);
     }
     return result;
 }
 
+std::shared_ptr<request::Request> WebdavFile::prepare_read_request() const {
+    return m_request->GET(m_resource_path)
+            ->basic_auth(m_credentials->username(), m_credentials->password());
+}
+
 void WebdavFile::write(const std::string& content) {
     try {
-        const auto response = m_request->PUT(m_resource_path)
-                ->basic_auth(m_credentials->username(), m_credentials->password())
-                ->if_match(revision())
-                ->content_type(Request::MIMETYPE_BINARY)
+        const auto response = prepare_write_request()
                 ->body(content)
                 ->request();
         m_revision = response.headers.at("etag");
@@ -101,14 +99,18 @@ void WebdavFile::write(const std::string& content) {
 
 void WebdavFile::write_binary(const std::vector<std::uint8_t> &content) {
     try {
-        const auto response = m_request->PUT(m_resource_path)
-                ->basic_auth(m_credentials->username(), m_credentials->password())
-                ->if_match(revision())
-                ->content_type(Request::MIMETYPE_BINARY)
+        const auto response = prepare_write_request()
                 ->binary_body(content)
                 ->request();
         m_revision = response.headers.at("etag");
     } catch (...) {
         WebdavExceptionTranslator::translate(m_path);
     }
+}
+
+std::shared_ptr<request::Request> WebdavFile::prepare_write_request() const {
+    return m_request->PUT(m_resource_path)
+            ->basic_auth(m_credentials->username(), m_credentials->password())
+            ->if_match(revision())
+            ->content_type(Request::MIMETYPE_BINARY);
 }

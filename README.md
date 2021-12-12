@@ -211,6 +211,7 @@ In your Nextcloud installation go to <kbd>settings</kbd> >  <kbd>user</kbd> > <k
 
 - Implement equality operators for Cloud, Directory, File
 - Add tests for CURL wrapper (e.g. by going against a (mocked?) http server)
-- wrapper object for reading/writing content to file. abstract container that holds binary & can convert to string.
-  this allows the read/write interfaces to be more generic and to write content when creating a new file
 - implementing support for big file upload/download (chunked upload/download)
+- Find out why integrationTest crashes on Windows in Release build. Probably a memory leak?
+- Improve integration-test coverage
+- Improve unit-test coverage

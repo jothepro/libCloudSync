@@ -38,11 +38,7 @@ bool OneDriveFile::poll_change() {
 std::string OneDriveFile::read() const {
     std::string data;
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto response = m_request->GET(m_resource_path + ":/content")
-                ->token_auth(token)
-                ->request();
-        data = response.data;
+        data = prepare_read_request()->request().data;
     } catch (...) {
         OneDriveExceptionTranslator::translate(m_path);
     }
@@ -52,25 +48,21 @@ std::string OneDriveFile::read() const {
 std::vector<std::uint8_t> OneDriveFile::read_binary() const {
     std::vector<std::uint8_t> data;
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto response = m_request->GET(m_resource_path + ":/content")
-                ->token_auth(token)
-                ->request_binary();
-        data = response.data;
+        data = prepare_read_request()->request_binary().data;
     } catch (...) {
         OneDriveExceptionTranslator::translate(m_path);
     }
     return data;
 }
 
+std::shared_ptr<request::Request> OneDriveFile::prepare_read_request() const {
+    const auto token = m_credentials->get_current_access_token();
+    return m_request->GET(m_resource_path + ":/content")->token_auth(token);
+}
+
 void OneDriveFile::write(const std::string& content) {
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const json response_json = m_request->PUT(m_resource_path + ":/content")
-                ->token_auth(token)
-                ->content_type(Request::MIMETYPE_BINARY)
-                ->if_match(revision())
-                ->body(content)->request().json();
+        const json response_json = prepare_write_request()->body(content)->request().json();
         m_revision = response_json.at("eTag");
     } catch (...) {
         OneDriveExceptionTranslator::translate(m_path);
@@ -79,14 +71,17 @@ void OneDriveFile::write(const std::string& content) {
 
 void OneDriveFile::write_binary(const std::vector<std::uint8_t> &content) {
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto response_json = m_request->PUT(m_resource_path + ":/content")
-                ->token_auth(token)
-                ->content_type(Request::MIMETYPE_BINARY)
-                ->if_match(revision())
-                ->binary_body(content)->request().json();
+        const auto response_json = prepare_write_request()->binary_body(content)->request().json();
         m_revision = response_json.at("eTag");
     } catch (...) {
         OneDriveExceptionTranslator::translate(m_path);
     }
+}
+
+std::shared_ptr<request::Request> OneDriveFile::prepare_write_request() const {
+    const auto token = m_credentials->get_current_access_token();
+    return m_request->PUT(m_resource_path + ":/content")
+            ->token_auth(token)
+            ->content_type(Request::MIMETYPE_BINARY)
+            ->if_match(revision());
 }

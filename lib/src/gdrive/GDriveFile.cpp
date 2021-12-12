@@ -40,16 +40,7 @@ bool GDriveFile::poll_change() {
 std::string GDriveFile::read() const {
     std::string content;
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto response_json = m_request->GET(m_resource_path)
-                ->token_auth(token)
-                ->query_param("fields", "downloadUrl")
-                ->accept(Request::MIMETYPE_JSON)
-                ->request().json();
-        const std::string web_content_link = response_json.at("downloadUrl");
-        content = m_request->GET(web_content_link)
-                ->token_auth(token)
-                ->request().data;
+        content = prepare_read_request()->request().data;
     } catch (...) {
         GDriveExceptionTranslator::translate(m_path);
     }
@@ -59,33 +50,27 @@ std::string GDriveFile::read() const {
 std::vector<std::uint8_t> GDriveFile::read_binary() const {
     std::vector<std::uint8_t> content;
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto response_json = m_request->GET(m_resource_path)
-                ->token_auth(token)
-                ->query_param("fields", "downloadUrl")
-                ->accept(Request::MIMETYPE_JSON)
-                ->request().json();
-        const std::string web_content_link = response_json.at("downloadUrl");
-        content = m_request->GET(web_content_link)
-                ->token_auth(token)
-                ->request_binary().data;
+        content = prepare_read_request()->request_binary().data;
     } catch (...) {
         GDriveExceptionTranslator::translate(m_path);
     }
     return content;
 }
 
+std::shared_ptr<request::Request> GDriveFile::prepare_read_request() const {
+    const auto token = m_credentials->get_current_access_token();
+    const auto response_json = m_request->GET(m_resource_path)
+            ->token_auth(token)
+            ->query_param("fields", "downloadUrl")
+            ->accept(Request::MIMETYPE_JSON)
+            ->request().json();
+    const std::string web_content_link = response_json.at("downloadUrl");
+    return m_request->GET(web_content_link)->token_auth(token);
+}
+
 void GDriveFile::write(const std::string& content) {
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto res = m_request->PUT("https://www.googleapis.com/upload/drive/v2/files/" + this->resourceId)
-                ->token_auth(token)
-                ->if_match(this->revision())
-                ->content_type(Request::MIMETYPE_BINARY)
-                ->accept(Request::MIMETYPE_JSON)
-                ->query_param("uploadType", "media")
-                ->query_param("fields", "etag")
-                ->body(content)->request().json();
+        const auto res = prepare_write_request()->body(content)->request().json();
         m_revision = res.at("etag");
     } catch (...) {
         GDriveExceptionTranslator::translate(m_path);
@@ -94,17 +79,20 @@ void GDriveFile::write(const std::string& content) {
 
 void GDriveFile::write_binary(const std::vector<std::uint8_t> &content) {
     try {
-        const auto token = m_credentials->get_current_access_token();
-        const auto res = m_request->PUT("https://www.googleapis.com/upload/drive/v2/files/" + this->resourceId)
-                ->token_auth(token)
-                ->if_match(this->revision())
-                ->content_type(Request::MIMETYPE_BINARY)
-                ->accept(Request::MIMETYPE_JSON)
-                ->query_param("uploadType", "media")
-                ->query_param("fields", "etag")
-                ->binary_body(content)->request().json();
+        const auto res = prepare_write_request()->binary_body(content)->request().json();
         m_revision = res.at("etag");
     } catch (...) {
         GDriveExceptionTranslator::translate(m_path);
     }
+}
+
+std::shared_ptr<request::Request> GDriveFile::prepare_write_request() const {
+    const auto token = m_credentials->get_current_access_token();
+    return m_request->PUT("https://www.googleapis.com/upload/drive/v2/files/" + m_resource_id)
+            ->token_auth(token)
+            ->if_match(this->revision())
+            ->content_type(Request::MIMETYPE_BINARY)
+            ->accept(Request::MIMETYPE_JSON)
+            ->query_param("uploadType", "media")
+            ->query_param("fields", "etag");
 }

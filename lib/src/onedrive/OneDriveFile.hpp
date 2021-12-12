@@ -26,5 +26,8 @@ namespace CloudSync::onedrive {
         void write_binary(const std::vector<std::uint8_t> & content) override;
     private:
         const std::string m_resource_path;
+
+        std::shared_ptr<request::Request> prepare_read_request() const;
+        std::shared_ptr<request::Request> prepare_write_request() const;
     };
 } // namespace CloudSync::onedrive
