@@ -18,4 +18,4 @@ namespace CloudSync {
         std::shared_ptr<request::Request> m_request;
         std::string m_base_url;
     };
-} // namespace CloudSync
+}

@@ -28,4 +28,4 @@ namespace CloudSync::nextcloud {
 
         void logout() override;
     };
-} // namespace CloudSync::nextcloud
+}

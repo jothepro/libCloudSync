@@ -22,4 +22,4 @@ namespace CloudSync::dropbox {
 
         void logout() override;
     };
-} // namespace CloudSync::dropbox
+}

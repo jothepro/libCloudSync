@@ -6,6 +6,7 @@
 #include <functional>
 
 namespace CloudSync {
+    /// OAuth2 credentials for authorization at Dropbox, GDrive, OneDrive
     class OAuth2Credentials {
     public:
         virtual ~OAuth2Credentials() = default;

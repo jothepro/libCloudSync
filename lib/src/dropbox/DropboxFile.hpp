@@ -27,4 +27,4 @@ namespace CloudSync::dropbox {
         std::shared_ptr<request::Request> prepare_read_request() const;
         std::shared_ptr<request::Request> prepare_write_request() const;
     };
-} // namespace CloudSync::dropbox
+}

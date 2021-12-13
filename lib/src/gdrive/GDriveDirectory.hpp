@@ -54,4 +54,4 @@ class GDriveDirectory : public OAuthDirectoryImpl {
 
         bool child_resource_exists(const std::string & resource_name) const;
     };
-} // namespace CloudSync::gdrive
+}

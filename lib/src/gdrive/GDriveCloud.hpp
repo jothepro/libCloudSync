@@ -34,4 +34,4 @@ namespace CloudSync::gdrive {
     private:
         std::string m_root_name;
     };
-} // namespace CloudSync::gdrive
+}

@@ -4,9 +4,7 @@
 #include <memory>
 
 namespace CloudSync {
-    /**
-     * @brief Basic access authentication credentials. Used for authorization in webdav & nextcloud.
-     */
+    /// Basic access authentication credentials for authorization in WebDav & Nextcloud.
     class BasicCredentials {
     public:
         virtual ~BasicCredentials() = default;

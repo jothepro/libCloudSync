@@ -40,4 +40,4 @@ namespace CloudSync::dropbox {
          */
         std::shared_ptr<Resource> parseEntry(const json &entry, const std::string &resourceTypeFallback = "") const;
     };
-} // namespace CloudSync::dropbox
+}

@@ -7,6 +7,7 @@
 #include <vector>
 
 namespace CloudSync {
+    /// Common interface for both directories and files
     class Resource {
     public:
 
@@ -23,9 +24,8 @@ namespace CloudSync {
          * @note Be aware that deletion a file doesn't always mean it's gone. Most clouds know the concept of a
          * recycle bin and will move deleted resources there.
          *
-         * @bug If a directory cannot be removed because it still contains resources, this fails with an undefined behaviour.
-         *      It may for example throw a Cloud::CommunicationError.
-         *      [Help me to improve this](https://gitlab.com/jothepro/libcloudsync)
+         * @bug If a directory cannot be removed because it still contains resources, this may fail for some cloud providers.
+         *      [Help me to improve this](https://github.com/jothepro/libCloudSync)
          */
         virtual void remove() = 0;
 

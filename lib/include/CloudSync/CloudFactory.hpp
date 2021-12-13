@@ -4,15 +4,12 @@
 #include "OAuth2Credentials.hpp"
 #include "BasicCredentials.hpp"
 
-
-
 namespace CloudSync {
     namespace request {
         class Request;
     }
-    /**
-     * @brief Entrypoint to the library: Create any cloud instance from a given configuration.
-     */
+
+    /// Entrypoint to the library: Create any cloud instance from a given configuration.
     class CloudFactory {
     public:
         CloudFactory();
@@ -102,4 +99,4 @@ namespace CloudSync {
         std::shared_ptr<request::Request> m_request;
     };
 
-} // namespace CloudSync
+}

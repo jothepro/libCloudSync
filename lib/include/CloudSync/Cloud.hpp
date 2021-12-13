@@ -3,7 +3,7 @@
 #include "Directory.hpp"
 
 namespace CloudSync {
-
+    /// Provider-independent representation of the connected cloud.
     class Cloud {
     public:
 
@@ -55,4 +55,4 @@ namespace CloudSync {
         virtual void logout() = 0;
     };
 
-} // namespace CloudSync
+}

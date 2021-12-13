@@ -211,6 +211,6 @@ In your Nextcloud installation go to <kbd>settings</kbd> >  <kbd>user</kbd> > <k
 
 - Implement equality operators for Cloud, Directory, File
 - Add tests for CURL wrapper (e.g. by going against a (mocked?) http server)
-- implementing support for big file upload/download (chunked upload/download
+- implementing support for big file upload/download (chunked upload/download)
 - Improve integration-test coverage
 - Improve unit-test coverage

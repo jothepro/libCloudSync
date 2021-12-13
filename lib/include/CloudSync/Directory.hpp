@@ -2,13 +2,14 @@
 
 #include "File.hpp"
 #include "Resource.hpp"
-#include <vector>
 
 namespace CloudSync {
-/**
- * Provider-independent representation of a directory. Can be seen as a pointer to the actual folder in the cloud. This
- * does not hold the contents of the folder in memory but makes a network call each time you ask for a resource.
- */
+    /**
+     * @brief Provider-independent representation of a directory.
+     *
+     * Can be seen as a pointer to the actual folder in the cloud. This
+     * does not hold the contents of the folder in memory but makes a network call each time you ask for a resource.
+     */
     class Directory : public Resource {
     public:
         /**
@@ -57,4 +58,4 @@ namespace CloudSync {
          */
         virtual std::shared_ptr<File> get_file(const std::filesystem::path &path) const = 0;
     };
-} // namespace CloudSync
+}
