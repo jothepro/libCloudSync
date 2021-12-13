@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <filesystem>
+#include <vector>
 
 namespace CloudSync {
     class Resource {
