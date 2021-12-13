@@ -5,8 +5,7 @@ project(CloudSync)
 # dependencies
 find_package(nlohmann_json REQUIRED)
 find_package(pugixml REQUIRED)
-find_package(CURL)
-find_package(libcurl)
+find_package(CURL REQUIRED)
 
 set(INCLUDE
     include/CloudSync/CloudFactory.hpp
@@ -152,15 +151,8 @@ target_link_libraries(CloudSync
     PUBLIC
         nlohmann_json::nlohmann_json
         pugixml::pugixml
+        CURL::CURL
 )
-
-if(CURL_FOUND)
-    target_link_libraries(CloudSync PUBLIC CURL::CURL)
-elseif(libcurl_FOUND)
-    target_link_libraries(CloudSync PUBLIC libcurl::curl)
-else()
-    message(SEND_ERROR "libcurl dependency not found")
-endif()
 
 set_target_properties (CloudSync PROPERTIES
     FOLDER CloudSync
