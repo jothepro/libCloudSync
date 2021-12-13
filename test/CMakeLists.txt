@@ -7,8 +7,15 @@ find_package(fakeit MODULE REQUIRED)
 
 include(Catch)
 
+set(REQUEST_TEST_SRC
+    request/StringResponseTest.cpp
+    request/BinaryResponseTest.cpp)
+
+source_group(request FILES ${REQUEST_TEST_SRC})
+
 add_executable(CloudSyncTest
     main.cpp
+    OAuth2CredentialsTest.cpp
     WebdavCloudTest.cpp
     NextcloudCloudTest.cpp
     WebdavDirectoryTest.cpp
@@ -23,6 +30,7 @@ add_executable(CloudSyncTest
     GDriveDirectoryTest.cpp
     GDriveFileTest.cpp
     CloudFactoryTest.cpp
+    ${REQUEST_TEST_SRC}
 )
 
 target_link_libraries(CloudSyncTest

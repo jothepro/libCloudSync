@@ -35,7 +35,6 @@ std::shared_ptr<Cloud> CloudFactory::create_gdrive(const std::shared_ptr<OAuth2C
     return std::make_shared<gdrive::GDriveCloud>(rootName, std::static_pointer_cast<credentials::OAuth2CredentialsImpl>(credentials), m_request);
 }
 
-std::shared_ptr<CloudFactory> CloudFactory::set_proxy(const std::string& url, const std::string& username, const std::string& password) {
+void CloudFactory::set_proxy(const std::string& url, const std::string& username, const std::string& password) {
     m_request->set_proxy(url, username, password);
-    return shared_from_this();
 }

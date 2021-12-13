@@ -13,7 +13,7 @@ namespace CloudSync {
     /**
      * @brief Entrypoint to the library: Create any cloud instance from a given configuration.
      */
-    class CloudFactory final : public std::enable_shared_from_this<CloudFactory> {
+    class CloudFactory {
     public:
         CloudFactory();
 
@@ -97,7 +97,7 @@ namespace CloudSync {
          * auto cloud = CloudFactory().set_proxy("http://proxy:80").create_onedrive(credentials, "me/drive/root");
          * @endcode
          */
-        std::shared_ptr<CloudFactory> set_proxy(const std::string& url, const std::string& username = "", const std::string& password = "");
+        void set_proxy(const std::string& url, const std::string& username = "", const std::string& password = "");
     private:
         std::shared_ptr<request::Request> m_request;
     };

@@ -34,9 +34,5 @@ std::shared_ptr<OAuth2Credentials> OAuth2Credentials::from_access_token(
 std::shared_ptr<OAuth2Credentials> OAuth2Credentials::from_refresh_token(
         const std::string& client_id,
         const std::string &refresh_token) {
-    return std::make_shared<credentials::OAuth2CredentialsImpl>(
-        "",
-        std::chrono::system_clock::time_point::min(),
-        refresh_token,
-        client_id);
+    return from_access_token("", std::chrono::system_clock::time_point::min(), client_id, refresh_token);
 }

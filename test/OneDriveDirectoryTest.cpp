@@ -19,9 +19,17 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
     INIT_REQUEST();
     OAUTH_MOCK("mytoken");
     GIVEN("a onedrive root directory") {
-        const auto directory =
-            std::make_shared<OneDriveDirectory>("https://graph.microsoft.com/v1.0/me/drive/root", "/", credentials, request, "");
-
+        const auto directory = std::make_shared<OneDriveDirectory>(
+                "https://graph.microsoft.com/v1.0/me/drive/root",
+                "/",
+                credentials,
+                request,
+                "");
+        WHEN("calling remove()") {
+            THEN("a PermissionDenied exception should be thrown") {
+                REQUIRE_THROWS_AS(directory->remove(), CloudSync::exceptions::resource::PermissionDenied);
+            }
+        }
         AND_GIVEN("a request that returns a valid directory listing") {
             When(Method(requestMock, request)).Return(request::StringResponse(
                 200,
@@ -91,6 +99,19 @@ SCENARIO("OneDriveDirectory", "[directory][onedrive]") {
             credentials,
             request,
             "folder");
+        AND_GIVEN("a request that returns 200") {
+            When(Method(requestMock, request)).Return(request::StringResponse(200));
+
+            WHEN("calling remove()") {
+                directory->remove();
+
+                THEN("a DELETE request should be made to the file endpoint") {
+                    Verify(Method(requestMock, request)).Once();
+                    REQUIRE_REQUEST(0, verb == "DELETE");
+                    REQUIRE_REQUEST(0, url == "https://graph.microsoft.com/v1.0/me/drive/root:/some/folder");
+                }
+            }
+        }
         AND_GIVEN("a request that returns a directory listing") {
             When(Method(requestMock, request)).Return(request::StringResponse(
                 200,

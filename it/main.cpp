@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
     )
 
     TEST_IF("When calling list_resources(), then a resource list with both 'test.txt', 'test.bson' and 'new_directory' "
-            "should be returned",
+            "should be returned in no particular order",
         auto test_directory_resources_2 = test_directory->list_resources(),
         (
             test_directory_resources_2.size() == 3 &&
@@ -235,6 +235,11 @@ int main(int argc, char *argv[]) {
     TEST_IF("When calling create_directory('test/test'), a new directory 'test' should be created inside a new directory 'test'",
         auto test_test_directory = test_directory->create_directory("test/test"),
         (test_test_directory->name() == "test" && test_test_directory->path() == "/" + test_directory_name + "/test/test")
+    )
+
+    TEST_IF("When calling create_directory('new_directory/bla/../../new_directory/test2'), a new directory 'test2' should be created inside 'new_directory'",
+            auto new_directory_test2_directory = test_directory->create_directory("new_directory/bla/../../new_directory/test2"),
+            (new_directory_test2_directory->name() == "test2" && new_directory_test2_directory->path() == "/" + test_directory_name + "/new_directory/test2")
     )
 
     TEST_IF("When calling create_file('new_directory/test.txt'), a new file 'test.txt' should be created inside the "
@@ -259,6 +264,10 @@ int main(int argc, char *argv[]) {
 
     TEST("Deleting the 'new_directory/test' directory",
          new_directory_test_directory->remove()
+    )
+
+    TEST("Deleting the 'new_directory/test2' directory",
+         test_directory->get_directory("new_directory/../new_directory/bla/../test2")->remove()
     )
 
     TEST("Deleting the 'new_directory/test.txt' file",

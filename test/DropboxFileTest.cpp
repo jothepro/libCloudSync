@@ -19,6 +19,12 @@ SCENARIO("DropboxFile", "[file][dropbox]") {
     OAUTH_MOCK("mytoken");
     GIVEN("a DropboxFile instance") {
         const auto file = std::make_shared<DropboxFile>("/test.txt", credentials, request, "test.txt", "revision-id");
+        WHEN("calling is_file()") {
+                const bool is_file = file->is_file();
+            THEN("`true` should be returned") {
+                REQUIRE(is_file);
+            }
+        }
         AND_GIVEN("a request that returns 200") {
             When(Method(requestMock, request)).Return(request::StringResponse(200));
             WHEN("the file is deleted") {

@@ -1,6 +1,5 @@
 #include "OneDriveDirectory.hpp"
 #include "request/Request.hpp"
-#include "OneDriveCloud.hpp"
 #include "OneDriveFile.hpp"
 #include "CloudSync/exceptions/resource/ResourceException.hpp"
 #include "OneDriveExceptionTranslator.hpp"

@@ -20,12 +20,16 @@ SCENARIO("DropboxDirectory", "[directory][dropbox]") {
     INIT_REQUEST();
     OAUTH_MOCK("mytoken");
     GIVEN("a dropbox root directory") {
-
         const auto directory = std::make_shared<DropboxDirectory>("/", credentials, request, "");
         THEN("the working dir should be '/'") {
             REQUIRE(directory->path() == "/");
         }
-
+        WHEN("calling is_file()") {
+            const bool is_file =directory->is_file();
+            THEN("`true` should be returned") {
+                REQUIRE(!is_file);
+            }
+        }
         AND_GIVEN("a request that returns a valid dropbox directory listing") {
             When(Method(requestMock, request)).Return(request::StringResponse(
                 200,

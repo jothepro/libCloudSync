@@ -7,7 +7,6 @@
 #include "CloudSync/exceptions/cloud/CloudException.hpp"
 #include <pugixml.hpp>
 #include <filesystem>
-#include <sstream>
 #include <vector>
 
 using namespace CloudSync;

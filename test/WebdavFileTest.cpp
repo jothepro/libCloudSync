@@ -77,6 +77,21 @@ SCENARIO("WebdavFile", "[file][webdav]") {
                 }
             }
         }
+        AND_GIVEN("a request that returns binary data") {
+            When(Method(requestMock, request_binary)).Return(request::BinaryResponse(200, {0x12, 0x13, 0x14}, "application/octet-stream"));
+
+            WHEN("the file is being read") {
+                const auto content = file->read_binary();
+                THEN("a GET request should be made on the desired file\"") {
+                    Verify(Method(requestMock, request_binary)).Once();
+                    REQUIRE_REQUEST(0, verb == "GET");
+                    REQUIRE_REQUEST(0, url == BASE_URL + "/test.txt");
+                }
+                THEN("the binary file-content should be returned") {
+                    REQUIRE(content == std::vector<std::uint8_t>({0x12, 0x13, 0x14}));
+                }
+            }
+        }
         AND_GIVEN("a request that returns 204") {
             When(Method(requestMock, request)).Return(request::StringResponse(204));
             WHEN("deleting the file") {
