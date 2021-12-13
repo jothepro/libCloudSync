@@ -1,0 +1,6 @@
+<map id="CloudSync::exceptions::resource::ResourceConflict" name="CloudSync::exceptions::resource::ResourceConflict">
+<area shape="rect" id="node1" title="A file or directory with this name already exists." alt="" coords="11,411,194,503"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_exception.html" title="Base&#45;exception for all resource&#45;related errors." alt="" coords="5,271,200,363"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1exceptions_1_1_exception.html" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="27,131,179,223"/>
+<area shape="rect" id="node4" title=" " alt="" coords="41,5,164,83"/>
+</map>

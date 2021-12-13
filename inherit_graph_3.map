@@ -1,0 +1,12 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_conflict.html" title="A file or directory with this name already exists." alt="" coords="5,139,188,180"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1exceptions_1_1_exception.html" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="236,109,388,151"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_cloud_exception.html" title="Base&#45;exception for all cloud&#45;related errors." alt="" coords="456,71,611,112"/>
+<area shape="rect" id="node7" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_exception.html" title="Base&#45;exception for all resource&#45;related errors." alt="" coords="436,168,631,209"/>
+<area shape="rect" id="node4" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_authorization_failed.html" title="Thrown if authorization to the cloud has failed." alt="" coords="699,5,873,47"/>
+<area shape="rect" id="node5" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_communication_error.html" title="Thrown if the communication to with the server failed." alt="" coords="695,71,877,112"/>
+<area shape="rect" id="node6" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_invalid_response.html" title="Thrown if the server response cannot be parsed." alt="" coords="941,71,1103,112"/>
+<area shape="rect" id="node8" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_no_such_resource.html" title="A resource with the requested type and name doesn&#39;t exist." alt="" coords="693,136,879,177"/>
+<area shape="rect" id="node9" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_permission_denied.html" title="Forbidden action on a file or directory." alt="" coords="691,201,881,243"/>
+<area shape="rect" id="node10" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_has_changed.html" title="The resource has changed on the server." alt="" coords="679,267,893,308"/>
+</map>

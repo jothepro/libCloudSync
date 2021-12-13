@@ -1,0 +1,6 @@
+<map id="CloudSync::exceptions::cloud::AuthorizationFailed" name="CloudSync::exceptions::cloud::AuthorizationFailed">
+<area shape="rect" id="node1" title="Thrown if authorization to the cloud has failed." alt="" coords="5,411,180,503"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_cloud_exception.html" title="Base&#45;exception for all cloud&#45;related errors." alt="" coords="15,271,170,363"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1exceptions_1_1_exception.html" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="17,131,169,223"/>
+<area shape="rect" id="node4" title=" " alt="" coords="31,5,154,83"/>
+</map>

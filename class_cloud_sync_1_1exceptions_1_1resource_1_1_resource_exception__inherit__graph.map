@@ -1,0 +1,9 @@
+<map id="CloudSync::exceptions::resource::ResourceException" name="CloudSync::exceptions::resource::ResourceException">
+<area shape="rect" id="node1" title="Base&#45;exception for all resource&#45;related errors." alt="" coords="319,271,513,363"/>
+<area shape="rect" id="node4" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_no_such_resource.html" title="A resource with the requested type and name doesn&#39;t exist." alt="" coords="5,411,192,503"/>
+<area shape="rect" id="node5" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_permission_denied.html" title="Forbidden action on a file or directory." alt="" coords="216,411,405,503"/>
+<area shape="rect" id="node6" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_conflict.html" title="A file or directory with this name already exists." alt="" coords="430,411,613,503"/>
+<area shape="rect" id="node7" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_has_changed.html" title="The resource has changed on the server." alt="" coords="637,411,851,503"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1exceptions_1_1_exception.html" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="340,131,492,223"/>
+<area shape="rect" id="node3" title=" " alt="" coords="355,5,477,83"/>
+</map>

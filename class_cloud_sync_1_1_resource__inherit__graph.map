@@ -1,0 +1,5 @@
+<map id="CloudSync::Resource" name="CloudSync::Resource">
+<area shape="rect" id="node1" title="Common interface for both directories and files." alt="" coords="78,5,223,127"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1_directory.html" title="Provider&#45;independent representation of a directory." alt="" coords="5,182,147,318"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1_file.html" title="Provider&#45;independent representation of a file." alt="" coords="171,175,282,325"/>
+</map>

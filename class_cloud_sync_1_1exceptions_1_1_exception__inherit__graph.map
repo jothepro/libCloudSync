@@ -1,0 +1,13 @@
+<map id="CloudSync::exceptions::Exception" name="CloudSync::exceptions::Exception">
+<area shape="rect" id="node1" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="430,131,582,223"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_cloud_exception.html" title="Base&#45;exception for all cloud&#45;related errors." alt="" coords="218,271,373,363"/>
+<area shape="rect" id="node7" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_exception.html" title="Base&#45;exception for all resource&#45;related errors." alt="" coords="619,271,814,363"/>
+<area shape="rect" id="node2" title=" " alt="" coords="445,5,567,83"/>
+<area shape="rect" id="node4" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_authorization_failed.html" title="Thrown if authorization to the cloud has failed." alt="" coords="5,411,180,503"/>
+<area shape="rect" id="node5" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_communication_error.html" title="Thrown if the communication to with the server failed." alt="" coords="204,411,387,503"/>
+<area shape="rect" id="node6" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_invalid_response.html" title="Thrown if the server response cannot be parsed." alt="" coords="215,551,376,643"/>
+<area shape="rect" id="node8" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_no_such_resource.html" title="A resource with the requested type and name doesn&#39;t exist." alt="" coords="411,411,598,503"/>
+<area shape="rect" id="node9" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_permission_denied.html" title="Forbidden action on a file or directory." alt="" coords="622,411,811,503"/>
+<area shape="rect" id="node10" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_conflict.html" title="A file or directory with this name already exists." alt="" coords="836,411,1019,503"/>
+<area shape="rect" id="node11" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_has_changed.html" title="The resource has changed on the server." alt="" coords="1043,411,1257,503"/>
+</map>

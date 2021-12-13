@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_cloud_sync_1_1_resource.html" title="Common interface for both directories and files." alt="" coords="5,31,151,57"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1_directory.html" title="Provider&#45;independent representation of a directory." alt="" coords="199,5,340,32"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1_file.html" title="Provider&#45;independent representation of a file." alt="" coords="214,56,325,83"/>
+</map>

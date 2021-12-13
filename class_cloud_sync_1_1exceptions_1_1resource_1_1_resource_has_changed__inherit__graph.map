@@ -1,0 +1,6 @@
+<map id="CloudSync::exceptions::resource::ResourceHasChanged" name="CloudSync::exceptions::resource::ResourceHasChanged">
+<area shape="rect" id="node1" title="The resource has changed on the server." alt="" coords="5,411,220,503"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1exceptions_1_1resource_1_1_resource_exception.html" title="Base&#45;exception for all resource&#45;related errors." alt="" coords="15,271,210,363"/>
+<area shape="rect" id="node3" href="$class_cloud_sync_1_1exceptions_1_1_exception.html" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="37,131,189,223"/>
+<area shape="rect" id="node4" title=" " alt="" coords="51,5,174,83"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="CloudSync::exceptions::cloud::CloudException" name="CloudSync::exceptions::cloud::CloudException">
+<area shape="rect" id="node1" title="Base&#45;exception for all cloud&#45;related errors." alt="" coords="117,271,271,363"/>
+<area shape="rect" id="node4" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_authorization_failed.html" title="Thrown if authorization to the cloud has failed." alt="" coords="5,411,180,503"/>
+<area shape="rect" id="node5" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_communication_error.html" title="Thrown if the communication to with the server failed." alt="" coords="204,411,387,503"/>
+<area shape="rect" id="node2" href="$class_cloud_sync_1_1exceptions_1_1_exception.html" title="Super&#45;exception for all logical exceptions in this library." alt="" coords="118,131,270,223"/>
+<area shape="rect" id="node3" title=" " alt="" coords="133,5,255,83"/>
+<area shape="rect" id="node6" href="$class_cloud_sync_1_1exceptions_1_1cloud_1_1_invalid_response.html" title="Thrown if the server response cannot be parsed." alt="" coords="215,551,376,643"/>
+</map>
