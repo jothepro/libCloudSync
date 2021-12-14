@@ -38,7 +38,7 @@ namespace CloudSync {
          * Resets the credentials after revoking them.
          *
          * - For Dropbox & GDrive the OAuth-token will be revoked.
-         * - For Box & OneDrive the token will not be revoked, because this is not supported.
+         * - For OneDrive the token will not be revoked, because this is not supported.
          * - For Nextcloud the app-password will be revoked, if an app password was used.
          * - For Webdav or a Nextcloud-session with a normal password it will do nothing.
          *

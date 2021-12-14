@@ -59,7 +59,7 @@ try {
 
 ```cpp
 auto credentials = BasicCredentials::from_username_password("john", "password123");
-auto cloud = CloudFactory().create_nextcloud("nextcloud.com", credentials);
+auto cloud = CloudFactory().create_nextcloud("https://my.nextcloud-cloud.com", credentials);
 try {
     auto file = cloud->root()->create_file("test.txt");
 } catch(const CloudException &e) {

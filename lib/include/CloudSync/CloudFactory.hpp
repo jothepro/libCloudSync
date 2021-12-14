@@ -91,7 +91,9 @@ namespace CloudSync {
          * This method overrides the environment variable with a custom proxy for all network calls.
          * @code
          * // all network calls to onedrive will be made through the applied proxy
-         * auto cloud = CloudFactory().set_proxy("http://proxy:80").create_onedrive(credentials, "me/drive/root");
+         * auto cloud_factory = CloudFactory()
+         * cloud_factory.set_proxy("http://proxy:80")
+         * auto cloud = cloud_factory.create_onedrive(credentials, "me/drive/root");
          * @endcode
          */
         void set_proxy(const std::string& url, const std::string& username = "", const std::string& password = "");
