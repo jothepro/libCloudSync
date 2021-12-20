@@ -26,7 +26,7 @@ conan remote add gitlab-cloudsync https://gitlab.com/api/v4/projects/15425736/pa
 
 ```ini
 [requires]
-libcloudsync/0.0.1@jothepro/stable
+libcloudsync/0.1.0@jothepro/release
 ```
 
 If you don't want to build & run tests when building from source, set the [CONAN_RUN_TESTS](https://docs.conan.io/en/latest/reference/env_vars.html#conan-run-tests) variable:
